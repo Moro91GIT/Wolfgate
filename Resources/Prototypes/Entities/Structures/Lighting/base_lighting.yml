@@ -10,7 +10,6 @@
   description: "An always powered light."
   suffix: Always powered
   components:
-  - type: WFAnchorPassable # WOLFGATE(Construction): machines anchor on the tile under a wall light
   - type: MeleeSound
     soundGroups:
       Brute:

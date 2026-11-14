@@ -94,6 +94,34 @@ public sealed class WFFeedbackBatch1114Test
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>Report 940: with the starting-gear event raised, the keys that landed in hand go into the worn headset.</summary>
+    [Test]
+    public async Task KeysFromHandsAreSlottedIntoTheHeadset()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var em = server.EntMan;
+        var map = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var mob = em.SpawnEntity("MobHuman", map.GridCoords);
+            var inventory = em.System<InventorySystem>();
+            Assert.That(inventory.TryEquip(mob, em.SpawnEntity("JetpackBlue", map.GridCoords), "back", silent: true, force: true));
+            var headset = em.SpawnEntity("ClothingHeadsetGrey", map.GridCoords);
+            Assert.That(inventory.TryEquip(mob, headset, "ears", silent: true, force: true), "The headset wasn't worn.");
+            var gear = server.ProtoMan.Index<StartingGearPrototype>("WFTestBagKeysGear");
+            em.System<SharedStationSpawningSystem>().EquipStartingGear(mob, gear, raiseEvent: true);
+
+            var keys = em.GetComponent<EncryptionKeyHolderComponent>(headset).KeyContainer.ContainedEntities
+                .Select(key => em.GetComponent<MetaDataComponent>(key).EntityPrototype?.ID)
+                .ToList();
+            Assert.That(keys, Is.SupersetOf(new[] { "EncryptionKeyService", "EncryptionKeySecurity" }),
+                "The keys from hand weren't slotted into the headset.");
+        });
+        await pair.CleanReturnAsync();
+    }
+
     /// <summary>
     /// Report 903: a failed organ is kept at 0 health for the heal surgery, which then refused to list it, so the organ
     /// could only be replaced.

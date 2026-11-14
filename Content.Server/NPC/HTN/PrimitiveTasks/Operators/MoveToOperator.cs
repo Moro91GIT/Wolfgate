@@ -198,6 +198,8 @@ public sealed partial class MoveToOperator : HTNOperator, IHtnConditionalShutdow
 
     // Given steering is complicated we'll hand it off to a dedicated system rather than this singleton operator.
 
+    private const string WfTargetLostKey = "WFMoveTargetLost"; // WOLFGATE: set when Startup found no target
+
     public override void Startup(NPCBlackboard blackboard)
     {
         base.Startup(blackboard);
@@ -210,6 +212,7 @@ public sealed partial class MoveToOperator : HTNOperator, IHtnConditionalShutdow
             || _entManager.Deleted(targetCoordinates.EntityId))
         {
             targetCoordinates = _entManager.GetComponent<TransformComponent>(uid).Coordinates;
+            blackboard.SetValue(WfTargetLostKey, true); // Update fails the move instead of finishing it in place
         }
         // WOLFGATE END
 
@@ -251,6 +254,9 @@ public sealed partial class MoveToOperator : HTNOperator, IHtnConditionalShutdow
         if (!_entManager.TryGetComponent<NPCSteeringComponent>(owner, out var steering))
             return HTNOperatorStatus.Failed;
 
+        if (blackboard.ContainsKey(WfTargetLostKey)) // WOLFGATE: the target went before the move started
+            return HTNOperatorStatus.Failed; // WOLFGATE: the target went before the move started
+
         // Just keep moving in the background and let the other tasks handle it.
         if (ShutdownState == HTNPlanState.PlanFinished && steering.Status == SteeringStatus.Moving)
         {
@@ -269,6 +275,7 @@ public sealed partial class MoveToOperator : HTNOperator, IHtnConditionalShutdow
     public void ConditionalShutdown(NPCBlackboard blackboard)
     {
         // Cleanup the blackboard and remove steering.
+        blackboard.Remove<bool>(WfTargetLostKey); // WOLFGATE: a lost target is forgotten with the move
         if (blackboard.TryGetValue<CancellationTokenSource>(MovementCancelToken, out var cancelToken, _entManager))
         {
             cancelToken.Cancel();

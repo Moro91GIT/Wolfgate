@@ -139,6 +139,8 @@ public sealed class PlanetLayerReturnTest
             await server.WaitPost(() => sEntMan.DeleteEntity(viewer));
             viewer = await AttachViewer(pair, far.MapUid, Vector2.Zero);
             await pair.RunTicksSync(150);
+            Assert.That(cEntMan.TryGetEntity(wall, out _), Is.False,
+                "The client still holds the wall, so its return isn't tested.");
 
             await server.WaitPost(() => sEntMan.DeleteEntity(viewer));
             await AttachViewer(pair, room.MapUid, Vector2.Zero);

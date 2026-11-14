@@ -129,6 +129,9 @@ public sealed class WFPlanetPoiSite
 
     /// <summary>When an expedition cleared the site; it is offered again once it has had time to fill back up.</summary>
     public TimeSpan ClearedAt;
+
+    /// <summary>Hostiles a cleared expedition left alive, removed when the site is offered again.</summary>
+    public List<EntityUid> Leftovers = new();
 }
 
 /// <summary>

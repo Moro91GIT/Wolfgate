@@ -206,7 +206,11 @@ Standalone edits outside `_WF` that serve no module: files with an untagged `WOL
 - [`Content.Server/Mind/MindSystem.cs`](../../Content.Server/Mind/MindSystem.cs): a session whose data is already gone (a client torn down mid-delete) failed the asserts with a KeyNotFoundException
 - [`Content.Server/Mining/MiningSystem.cs`](../../Content.Server/Mining/MiningSystem.cs): restore the licence header removed by Kill Spdx
 - [`Content.Server/Movement/Systems/LagCompensationSystem.cs`](../../Content.Server/Movement/Systems/LagCompensationSystem.cs): restore the licence header removed by Kill Spdx
-- [`Content.Server/NPC/HTN/PrimitiveTasks/Operators/MoveToOperator.cs`](../../Content.Server/NPC/HTN/PrimitiveTasks/Operators/MoveToOperator.cs): a target dropped since planning, or on a map since deleted, threw and stopped every NPC that tick
+- [`Content.Server/NPC/HTN/PrimitiveTasks/Operators/MoveToOperator.cs`](../../Content.Server/NPC/HTN/PrimitiveTasks/Operators/MoveToOperator.cs)
+  - set when Startup found no target
+  - a target dropped since planning, or on a map since deleted, threw and stopped every NPC that tick
+  - the target went before the move started
+  - a lost target is forgotten with the move
 - [`Content.Server/NPC/Systems/NPCSteeringSystem.Context.cs`](../../Content.Server/NPC/Systems/NPCSteeringSystem.Context.cs): a path over a grid deleted since it was found threw and put the NPC to sleep; repath instead
 - [`Content.Server/Nutrition/EntitySystems/DrinkSystem.cs`](../../Content.Server/Nutrition/EntitySystems/DrinkSystem.cs): restore the licence header removed by Kill Spdx
 - [`Content.Server/Nutrition/EntitySystems/FoodSystem.cs`](../../Content.Server/Nutrition/EntitySystems/FoodSystem.cs): restore the licence header removed by Kill Spdx

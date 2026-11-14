@@ -82,7 +82,16 @@ public sealed partial class SalvageSystem
             {
                 var site = record.Sites[i];
                 if (site.Cleared && _timing.CurTime >= site.ClearedAt + WfSiteRecovery)
+                {
                     site.Cleared = false;
+                    foreach (var hostile in site.Leftovers)
+                    {
+                        if (!TerminatingOrDeleted(hostile) && !_mobState.IsDead(hostile))
+                            QueueDel(hostile);
+                    }
+
+                    site.Leftovers.Clear();
+                }
 
                 if (site.Expeditions && site.ExpeditionClaim == null && site.ContractClaim == null && !site.Cleared)
                     free.Add((ground, i));
@@ -466,6 +475,9 @@ public sealed partial class SalvageSystem
             site.ExpeditionClaim = null;
             site.Cleared = completed;
             site.ClearedAt = _timing.CurTime;
+            // Survivors of a cleared site go when it recovers, so the next claim doesn't stack on them.
+            if (completed)
+                site.Leftovers = new List<EntityUid>(active.Hostiles);
         }
 
         if (completed)

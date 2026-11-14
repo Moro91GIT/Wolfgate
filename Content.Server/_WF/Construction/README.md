@@ -29,7 +29,6 @@ when the machine is deconstructed (`WFKitRefundSystem`).
 ### Shared
 
 - [`Content.Shared/_WF/Construction/CraftRepeatRequestEvent.cs`](../../../Content.Shared/_WF/Construction/CraftRepeatRequestEvent.cs)
-- [`Content.Shared/_WF/Construction/WFAnchorPassableComponent.cs`](../../../Content.Shared/_WF/Construction/WFAnchorPassableComponent.cs)
 - [`Content.Shared/_WF/Construction/WFKitRefundComponent.cs`](../../../Content.Shared/_WF/Construction/WFKitRefundComponent.cs)
 - [`Content.Shared/_WF/Construction/WFKitRefundSystem.cs`](../../../Content.Shared/_WF/Construction/WFKitRefundSystem.cs)
 
@@ -57,6 +56,5 @@ when the machine is deconstructed (`WFKitRefundSystem`).
   - wrenching past a wall light
   - wfAnchoring skips wall lights
   - a wall light doesn't block anchoring under it
-- [`Resources/Prototypes/Entities/Structures/Lighting/base_lighting.yml`](../../../Resources/Prototypes/Entities/Structures/Lighting/base_lighting.yml): machines anchor on the tile under a wall light
 
 <!-- WOLFGATE-GENERATED END -->

@@ -241,17 +241,23 @@ public sealed partial class PhotoAlbumSystem : EntitySystem
         if (preferences.TryIndexOfCharacter(profile, out slot))
             return true;
 
+        // Two identical characters can't be told apart; the selected one is the one that spawned, else none.
+        var matches = new List<int>();
         foreach (var (index, candidate) in preferences.Characters)
         {
-            if (candidate is not HumanoidCharacterProfile humanoid
-                || !profile.WithBankBalance(humanoid.BankBalance).MemberwiseEquals(humanoid))
-                continue;
-
-            slot = index;
-            return true;
+            if (candidate is HumanoidCharacterProfile humanoid
+                && profile.WithBankBalance(humanoid.BankBalance).MemberwiseEquals(humanoid))
+                matches.Add(index);
         }
 
-        return false;
+        if (matches.Count == 1)
+            slot = matches[0];
+        else if (matches.Contains(preferences.SelectedCharacterIndex))
+            slot = preferences.SelectedCharacterIndex;
+        else
+            return false;
+
+        return true;
     }
 
     /// <summary>Gives a saved album back, unless a copy of it is in the world.</summary>

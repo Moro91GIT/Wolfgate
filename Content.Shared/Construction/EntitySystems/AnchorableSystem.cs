@@ -312,7 +312,7 @@ public sealed partial class AnchorableSystem : EntitySystem
                 continue;
             }
 
-            if (wfAnchoring && HasComp<Content.Shared._WF.Construction.WFAnchorPassableComponent>(ent)) // WOLFGATE(Construction): a wall light doesn't block anchoring under it
+            if (wfAnchoring && HasComp<Content.Shared.Light.Components.PoweredLightComponent>(ent)) // WOLFGATE(Construction): a wall light doesn't block anchoring under it
                 continue; // WOLFGATE(Construction)
 
             if ((body.CollisionMask & collisionLayer) != 0x0 ||

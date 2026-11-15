@@ -429,7 +429,7 @@
     # - FullAuto # Mono
     - Burst # Mono
     soundGunshot:
-      path: /Audio/Weapons/Guns/Gunshots/laser_cannon.ogg
+      path: /Audio/_WF/Weapons/Guns/pulse_rifle.ogg # WOLFGATE(Weapons): own pulse rifle shot
   - type: HitscanBatteryAmmoProvider
     proto: Pulse
     fireCost: 100

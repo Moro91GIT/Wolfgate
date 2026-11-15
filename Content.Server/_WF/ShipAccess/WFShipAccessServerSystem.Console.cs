@@ -1,12 +1,17 @@
+using Content.Server.Administration.Managers;
 using Content.Server.Shuttles.Components;
 using Content.Shared._Mono.Shipyard;
 using Content.Shared._WF.ShipAccess;
+using Content.Shared.Administration;
 using Content.Shared.Shuttles.Components;
+using Robust.Shared.Player;
 
 namespace Content.Server._WF.ShipAccess;
 
 public sealed partial class WFShipAccessServerSystem
 {
+    [Dependency] private IAdminManager _adminManager = default!;
+
     /// <summary>The shuttle console's access tab: lock, add, remove, builder flags, door rules and codes.</summary>
     private void InitializeConsole()
     {
@@ -31,6 +36,13 @@ public sealed partial class WFShipAccessServerSystem
         if (!TryGetEditableShip(console, args.Actor, out var ship))
             return;
 
+        // Public is for staff to set. Anyone who manages the ship may switch away from it, but only staff to it.
+        if (args.Mode == WFShipAccessMode.Public && ship.Comp.Mode != WFShipAccessMode.Public && !IsStaff(args.Actor))
+        {
+            Popup(console, args.Actor, "ship-access-mode-unavailable");
+            return;
+        }
+
         // Someone who manages the ship without owning it, an admin or an officer, must not bind it to a crew or
         // company of their own: they may only switch to one it is already linked to.
         var owner = _access.IsOwner(args.Actor, ship);
@@ -46,6 +58,12 @@ public sealed partial class WFShipAccessServerSystem
         }
         if (!SetMode(ship, args.Mode))
             Popup(console, args.Actor, "ship-access-mode-unavailable");
+    }
+
+    /// <summary>Whether a body is played by an active admin with the staff flag.</summary>
+    private bool IsStaff(EntityUid actor)
+    {
+        return TryComp<ActorComponent>(actor, out var played) && _adminManager.HasAdminFlag(played.PlayerSession, AdminFlags.Admin);
     }
 
     private void OnSetLocked(Entity<ShuttleConsoleComponent> console, ref WFShipAccessSetLockedMessage args)

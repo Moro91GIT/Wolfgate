@@ -120,7 +120,7 @@ public sealed partial class ShipyardSystem
             suffix: shipDeed.ShuttleNameSuffix ?? string.Empty,
             ownerName: ownerName,
             entityUid: netShuttle,
-            purchasedWithVoucher: false,
+            purchasedWithVoucher: shipDeed.PurchasedWithVoucher,
             purchasePrice: 0));
     }
 

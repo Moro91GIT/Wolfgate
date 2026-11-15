@@ -106,9 +106,10 @@ public sealed partial class WFShipAdminSystem
             return false;
         }
 
+        // Only a full hundred ends a recharge or overload, so only that is reported as a restore.
         var whole = (int) MathF.Round(percent);
-        Audit(admin, LogImpact.Medium, grid, $"set its shield strength to {whole}%");
-        result = whole >= 100
+        Audit(admin, LogImpact.Medium, grid, $"set its shield strength to {percent:0.##}%");
+        result = percent >= 100f
             ? Loc.GetString("wf-ship-admin-result-shields-restored", ("ship", Name(grid)))
             : Loc.GetString("wf-ship-admin-result-shields-strength", ("ship", Name(grid)), ("percent", whole));
         return true;

@@ -12,6 +12,7 @@ using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Tiles;
 using Robust.Shared.GameObjects;
+using Robust.Shared.Localization;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
@@ -95,7 +96,11 @@ public sealed class ShipAdminSystemsTest
             Assert.That(ships.SetShieldStrength(session, grid, 150f, out result), Is.False, "Strength is a percentage.");
             Assert.That(ships.SetShieldStrength(session, grid, 40f, out result), Is.True, result);
             Assert.That(ships.BuildDetail(grid)!.ShieldPercent, Is.EqualTo(40));
+            var restored = Loc.GetString("wf-ship-admin-result-shields-restored", ("ship", "Staff Test"));
+            Assert.That(ships.SetShieldStrength(session, grid, 99.6f, out result), Is.True, result);
+            Assert.That(result, Is.Not.EqualTo(restored), "Just under a hundred is not a restore, though it rounds to one.");
             Assert.That(ships.SetShieldStrength(session, grid, 100f, out result), Is.True, result);
+            Assert.That(result, Is.EqualTo(restored));
             Assert.That(ships.BuildDetail(grid)!.ShieldPercent, Is.EqualTo(100));
 
             Assert.That(ships.FitBestParts(session, grid, out result), Is.True, result);

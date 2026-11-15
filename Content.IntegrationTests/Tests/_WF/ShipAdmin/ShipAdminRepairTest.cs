@@ -46,7 +46,7 @@ public sealed class ShipAdminRepairTest
 
         EntityUid grid = default, moved = default, hurt = default;
         Vector2 goneAt = default;
-        Vector2i tile = default, laid = default, pried = default;
+        Vector2i tile = default, laid = default, pried = default, late = default;
         int tileType = 0, laidType = 0, priedType = 0;
         var tileDefs = server.ResolveDependency<ITileDefinitionManager>();
         var wasAdmin = false;
@@ -83,21 +83,23 @@ public sealed class ShipAdminRepairTest
             tileType = maps.GetTileRef(grid, gridComp, tile).Tile.TypeId;
             maps.SetTile(grid, gridComp, tile, Tile.Empty);
 
-            // Two floor tiles over a sub-floor: a player lays another floor on one, and the other is pried up.
+            // Three floor tiles over a sub-floor: a player lays another floor on one, and the others are pried up.
             laidType = tileDefs["FloorWood"].TileId;
             var floors = maps.GetAllTiles(grid, gridComp)
                 .Where(floor => floor.Tile.TypeId != laidType
                                 && tileDefs[floor.Tile.TypeId] is ContentTileDefinition def
                                 && !string.IsNullOrEmpty(def.BaseTurf)
                                 && tileDefs[def.BaseTurf].TileId != Tile.Empty.TypeId)
-                .Take(2)
+                .Take(3)
                 .ToList();
-            Assert.That(floors, Has.Count.EqualTo(2), "Precondition: the design has floor over a sub-floor.");
+            Assert.That(floors, Has.Count.EqualTo(3), "Precondition: the design has floor over a sub-floor.");
             laid = floors[0].GridIndices;
             pried = floors[1].GridIndices;
             priedType = floors[1].Tile.TypeId;
+            late = floors[2].GridIndices;
             maps.SetTile(grid, gridComp, laid, new Tile(laidType));
             maps.SetTile(grid, gridComp, pried, new Tile(tileDefs[((ContentTileDefinition) tileDefs[priedType]).BaseTurf].TileId));
+            maps.SetTile(grid, gridComp, late, new Tile(tileDefs[((ContentTileDefinition) tileDefs[floors[2].Tile.TypeId]).BaseTurf].TileId));
 
             xforms.Unanchor(moved);
             xforms.SetLocalPosition(moved, parts[1].LocalPosition + new Vector2(0.3f, 0.3f));
@@ -121,6 +123,9 @@ public sealed class ShipAdminRepairTest
             Assert.That(ships.Snapshot(session, grid, out result), Is.False, "No new snapshot while a fix runs.");
             Assert.That(ships.TryGetFix(grid, out _, out var total), Is.True);
             Assert.That(total, Is.GreaterThanOrEqualTo(3));
+
+            // A player floors one of the pried tiles over while its hull is still queued.
+            maps.SetTile(grid, gridComp, late, new Tile(laidType));
         });
 
         await pair.RunTicksSync(30);
@@ -138,6 +143,7 @@ public sealed class ShipAdminRepairTest
                 Assert.That(maps.GetTileRef(grid, gridComp, tile).Tile.TypeId, Is.EqualTo(tileType), "The hull tile is back.");
                 Assert.That(maps.GetTileRef(grid, gridComp, pried).Tile.TypeId, Is.EqualTo(priedType), "A floor pried up to its sub-floor is laid again.");
                 Assert.That(maps.GetTileRef(grid, gridComp, laid).Tile.TypeId, Is.EqualTo(laidType), "A floor a player laid in the hull's place is left alone.");
+                Assert.That(maps.GetTileRef(grid, gridComp, late).Tile.TypeId, Is.EqualTo(laidType), "So is one laid after the fix was queued.");
                 Assert.That(entMan.TryGetEntity(rebuilt.OriginalEntity, out var again) && !entMan.Deleted(again), Is.True, "The missing part is rebuilt.");
                 Assert.That(entMan.Deleted(moved), Is.False, "A part a player moved is left alone.");
                 Assert.That(entMan.GetComponent<TransformComponent>(moved).Anchored, Is.False, "It is not put back either.");

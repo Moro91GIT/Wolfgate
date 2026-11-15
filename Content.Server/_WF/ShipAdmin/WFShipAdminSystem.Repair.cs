@@ -208,6 +208,10 @@ public sealed partial class WFShipAdminSystem
                     && (!TryComp(item.Target, out TransformComponent? xform) || xform.GridUid != grid))
                     continue;
 
+                // So is a floor a player laid there since: the hull under it is no longer missing.
+                if (item.Kind == WFDrydockWorkKind.Tile && !_drydock.IsHullMissing(grid, item))
+                    continue;
+
                 _drydock.ApplyItem(grid, item);
                 switch (item.Kind)
                 {

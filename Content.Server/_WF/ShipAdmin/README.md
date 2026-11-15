@@ -45,7 +45,8 @@ up rewrites every door reader aboard.
 A fix never deletes what players moved or built. It uses drydock's own list (`WFDrydockSystem.BuildFreeRepairItems`):
 hull tiles and parts come back only where the repair snapshot says something is missing, and damaged parts are
 healed. A hull tile counts as missing when it is gone or down to one of its base turfs (pried up or blown to
-plating or lattice); a different floor laid in its place stays. The list is worked through a budget of items a tick (`FixItemsPerTick`), then air, fires, power, fuel,
+plating or lattice); a different floor laid in its place stays, also when it is laid while the fix is still
+queued. The list is worked through a budget of items a tick (`FixItemsPerTick`), then air, fires, power, fuel,
 door bolts and consoles are done in one pass. Restore to snapshot is Mono's `repairgrid`: it also deletes and
 rebuilds every part that moved. Free refits run through the same queue and record the tier on the ship when done.
 

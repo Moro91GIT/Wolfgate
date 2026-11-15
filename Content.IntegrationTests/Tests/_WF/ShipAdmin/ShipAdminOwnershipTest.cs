@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Content.Client._WF.ShipAdmin;
@@ -46,6 +47,9 @@ public sealed class ShipAdminOwnershipTest
     private const string GhostProto = "MobObserver";
     private const string HullFaction = "TSF";
     private const string CardFaction = "PDV";
+
+    /// <summary>The company an ID with no faction names.</summary>
+    private const string NoFaction = "None";
 
     [Test]
     public async Task TransferMovesEveryOwnerRecord()
@@ -302,26 +306,34 @@ public sealed class ShipAdminOwnershipTest
 
             // Ships nobody owned take the purchase path, which on its own puts the card's faction on the hull.
             var vessel = server.ProtoMan.Index<VesselPrototype>(VesselProto);
-            Assert.That(spawner.TrySpawnVessel(vessel, map.MapId, new Vector2(160, 0), null, out var keptHull), Is.True);
-            Assert.That(spawner.TrySpawnVessel(vessel, map.MapId, new Vector2(240, 0), null, out var clearedHull), Is.True);
-            var kept = keptHull!.Value;
-            var cleared = clearedHull!.Value;
-            Assert.That(entMan.HasComponent<WFShipAccessComponent>(kept) || entMan.HasComponent<ShuttleDeedComponent>(kept), Is.False, "Precondition: nobody owns it.");
-            entMan.EnsureComponent<CompanyComponent>(cleared).CompanyName = HullFaction;
-            var before = Faction(kept);
-
+            var guestId = entMan.GetComponent<IdCardComponent>(ship.GuestCard);
+            var hulls = new List<EntityUid>();
             server.PlayerMan.SetAttachedEntity(session, ship.Guest);
-            Assert.That(ships.Transfer(session, kept, Give(kept, WFShipAdminFaction.Keep), out result), Is.True, result);
-            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.GuestCard), Is.True, "Precondition: the purchase path ran.");
-            Assert.That(Faction(kept), Is.EqualTo(before), "Keep leaves a new ship's hull as it was.");
+            foreach (var (option, onCard, expected) in new (WFShipAdminFaction, string, string?)[]
+                     {
+                         (WFShipAdminFaction.Keep, CardFaction, HullFaction),
+                         (WFShipAdminFaction.Clear, CardFaction, null),
+                         (WFShipAdminFaction.FromCard, CardFaction, CardFaction),
+                         (WFShipAdminFaction.FromCard, NoFaction, NoFaction),
+                     })
+            {
+                Assert.That(spawner.TrySpawnVessel(vessel, map.MapId, new Vector2(160 + 80 * hulls.Count, 0), null, out var spawned), Is.True);
+                var hull = spawned!.Value;
+                hulls.Add(hull);
+                Assert.That(entMan.HasComponent<WFShipAccessComponent>(hull) || entMan.HasComponent<ShuttleDeedComponent>(hull), Is.False, "Precondition: nobody owns it.");
+                entMan.EnsureComponent<CompanyComponent>(hull).CompanyName = HullFaction;
+                guestId.CompanyName = onCard;
 
-            server.PlayerMan.SetAttachedEntity(session, ship.Ada);
-            Assert.That(ships.Transfer(session, cleared, Give(cleared, WFShipAdminFaction.Clear), out result), Is.True, result);
-            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.AdaCard), Is.True, "Precondition: the purchase path ran.");
-            Assert.That(Faction(cleared), Is.Null, "Clear takes the faction off a new ship too.");
+                Assert.That(ships.Transfer(session, hull, Give(hull, option), out result), Is.True, result);
+                Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.GuestCard), Is.True, "Precondition: the purchase path ran.");
+                Assert.That(Faction(hull), Is.EqualTo(expected), $"{option} on a new ship, with {onCard} on the card.");
+
+                // The card is freed for the next ship.
+                entMan.RemoveComponent<ShuttleDeedComponent>(ship.GuestCard);
+            }
 
             server.PlayerMan.SetAttachedEntity(session, null);
-            foreach (var hull in new[] { kept, cleared })
+            foreach (var hull in hulls)
             {
                 var station = stations.GetOwningStation(hull);
                 entMan.DeleteEntity(hull);

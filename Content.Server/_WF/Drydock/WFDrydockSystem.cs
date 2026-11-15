@@ -344,6 +344,16 @@ public sealed partial class WFDrydockSystem : EntitySystem
         }
     }
 
+    /// <summary>
+    /// Whether a free tile item still has hull to lay: the tile there is gone or down to one of its base turfs. False
+    /// once it is laid, or once another floor was laid there after the item was listed.
+    /// </summary>
+    public bool IsHullMissing(EntityUid ship, WFDrydockWorkItem item)
+    {
+        return TryComp<MapGridComponent>(ship, out var grid)
+               && IsRemnant(_map.GetTileRef(ship, grid, item.TileIndex).Tile.TypeId, item.TileType);
+    }
+
     /// <summary>Whether a tile is what is left of another once it is pried up or blown down: nothing, or one of its base turfs.</summary>
     private bool IsRemnant(int current, int stored)
     {

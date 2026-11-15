@@ -2,7 +2,7 @@ using Content.Client.Wires.UI;
 using Content.Shared.Wires;
 using Robust.Client.UserInterface;
 
-namespace Content.Client._WF.Ordnance;
+namespace Content.Client._WF.Warheads.UI;
 
 /// <summary>The stock wire panel, themed as a warhead's fuzing assembly.</summary>
 public sealed class WFNuclearWiresBoundUserInterface : BoundUserInterface

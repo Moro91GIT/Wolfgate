@@ -16,30 +16,17 @@
   - type: CargoSellBlacklist
 
 # A tactical warhead with a keyhole. Its fuzes are cut down on delivery to what the beacon was set up for.
-# No countdown under 90 s, a klaxon while armed, and no multitool disarm: unscrew the panel and cut one of two wires.
+# No countdown under 90 s, and a klaxon while armed.
 - type: entity
   parent: WFWarheadTactical
   id: WFWarheadTacticalKeyed
   components:
-  - type: WFWarhead
-    disarmQuality: null
   - type: WFTimerFuze
     options: [ 90, 120, 300, 600 ]
     minTimer: 90
   - type: WFRemoteFuze
     signalTimer: 90
   - type: WFOrdnanceKlaxon
-  - type: WiresPanel
-  - type: Wires
-    boardName: wf-ordnance-wires-board
-    layoutId: WFOrdnanceWarhead
-    alwaysRandomize: true
-  - type: UserInterface
-    interfaces:
-      enum.WFWarheadUiKey.Key:
-        type: WFWarheadBoundUserInterface
-      enum.WiresUiKey.Key:
-        type: WFNuclearWiresBoundUserInterface
   - type: AccessReader
     access: []
   - type: WFWarheadKeyLock
@@ -145,10 +132,3 @@
     access: [["MieyoLiason"]]
   - type: WFOrdnanceTerminal
     faction: wf-ordnance-faction-mieyo
-
-# The ordnance warhead's fuze wires: one makes it safe, the other sets it off. Colours are random per warhead.
-- type: wireLayout
-  id: WFOrdnanceWarhead
-  wires:
-  - !type:WFOrdnanceDisarmWireAction
-  - !type:WFOrdnanceDetonateWireAction

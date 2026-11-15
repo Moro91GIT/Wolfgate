@@ -17,11 +17,8 @@ switch linked to it. The key and switch go to whoever planted it if they are wit
 keys without its own key in its keyhole (an item slot). The key is cut for that one warhead.
 
 **Defusing.** While armed, the warhead sounds a klaxon that only carries about 20 m (`WFOrdnanceKlaxon`,
-`WFOrdnanceSystem.Klaxon.cs`). Its countdown is never under 90 s, the remote fuze's included. A multitool no longer
-disarms it: unscrew its panel and cut one of two fuze wires in the stock wires window, repainted as a fuzing assembly
-(`WFNuclearWiresBoundUserInterface`, `WiresMenu.Nuclear.cs`). One wire (`WFOrdnanceDisarmWireAction`) makes it safe,
-even in the final seconds; the other (`WFOrdnanceDetonateWireAction`) sets it off. Colours are random per warhead, so
-it is a coin flip. Cutting a wire on a safe warhead does nothing.
+`WFOrdnanceSystem.Klaxon.cs`). Its countdown is never under 90 s, the remote fuze's included. Like every warhead, it is
+disarmed only by its fuze wires (see the Warheads module).
 
 **DEFCON.** Arming any warhead (`WFWarheadArmedEvent`) sends DEFCON straight to 1 unless an admin has locked it, and
 while any warhead or station nuke is armed the level can't fall from 1. Each bought device not yet set off (a beacon or
@@ -43,17 +40,11 @@ at once.
 - [`Content.Server/_WF/Ordnance/WFOrdnanceSystem.Beacon.cs`](WFOrdnanceSystem.Beacon.cs)
 - [`Content.Server/_WF/Ordnance/WFOrdnanceSystem.cs`](WFOrdnanceSystem.cs)
 - [`Content.Server/_WF/Ordnance/WFOrdnanceSystem.Klaxon.cs`](WFOrdnanceSystem.Klaxon.cs)
-- [`Content.Server/_WF/Ordnance/WFOrdnanceWireActions.cs`](WFOrdnanceWireActions.cs)
-
-### Client
-
-- [`Content.Client/_WF/Ordnance/WFNuclearWiresBoundUserInterface.cs`](../../../Content.Client/_WF/Ordnance/WFNuclearWiresBoundUserInterface.cs)
-- [`Content.Client/_WF/Ordnance/WiresMenu.Nuclear.cs`](../../../Content.Client/_WF/Ordnance/WiresMenu.Nuclear.cs)
 
 ### Integration tests
 
 - [`Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceTest.cs)
-- [`Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceWiresTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceWiresTest.cs)
+- [`Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceTimerKlaxonTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceTimerKlaxonTest.cs)
 
 ### Prototypes
 

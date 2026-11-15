@@ -49,7 +49,3 @@ wf-ordnance-beacon-planted = Beacon planted. The pod lands in {$seconds} seconds
 wf-ordnance-beacon-inbound = Something heavy is screaming down towards the beacon.
 wf-ordnance-beacon-no-ground = It needs a deck or the ground to stand on.
 wf-ordnance-beacon-central = Caelestinus Central jams the beacon.
-
-wf-ordnance-wires-board = W-9 FUZING ASSEMBLY
-wf-ordnance-wire-name = FUZE
-wf-ordnance-wire-disarmed = The countdown dies. The warhead is safe.

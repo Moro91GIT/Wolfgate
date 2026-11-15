@@ -102,7 +102,7 @@
   id: WFOrdnanceTerminalTSF
   components:
   - type: AccessReader
-    access: [["HeadOfSecurity"]]
+    access: [["TsfmcColonel"]]
   - type: WFOrdnanceTerminal
     faction: wf-ordnance-faction-tsf
 

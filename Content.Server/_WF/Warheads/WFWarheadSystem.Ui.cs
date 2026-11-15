@@ -91,7 +91,7 @@ public sealed partial class WFWarheadSystem
             Timer = comp.Timer,
             FinalPhase = comp.FinalPhase,
             YieldClass = comp.YieldClass,
-            DisarmQuality = comp.DisarmQuality,
+            DisarmQuality = comp.DisarmQuality ?? string.Empty,
         };
 
         if (TryComp<WFTimerFuzeComponent>(uid, out var timer))

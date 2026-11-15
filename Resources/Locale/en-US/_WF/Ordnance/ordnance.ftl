@@ -1,7 +1,7 @@
 ent-WFNukeKey = warhead key
     .desc = A heavy, numbered arming key on a lanyard, cut for one warhead. Without it the warhead won't arm.
 ent-WFWarheadTacticalKeyed = tactical nuclear device
-    .desc = A faction-procured sub-kiloton warhead on a hand cart. It won't arm without its key in the keyhole.
+    .desc = A faction-procured sub-kiloton warhead on a hand cart. It won't arm without its key in the keyhole. A screwed-down panel covers two fuze wires.
 ent-WFOrdnanceBeaconTactical = nuclear delivery beacon
     .desc = Calls down a tactical nuclear device by drop pod. Set it up, plant it on a deck or open ground, and stand clear.
 ent-WFOrdnanceTerminalBase = ordnance terminal
@@ -49,3 +49,7 @@ wf-ordnance-beacon-planted = Beacon planted. The pod lands in {$seconds} seconds
 wf-ordnance-beacon-inbound = Something heavy is screaming down towards the beacon.
 wf-ordnance-beacon-no-ground = It needs a deck or the ground to stand on.
 wf-ordnance-beacon-central = Caelestinus Central jams the beacon.
+
+wf-ordnance-wires-board = W-9 FUZING ASSEMBLY
+wf-ordnance-wire-name = FUZE
+wf-ordnance-wire-disarmed = The countdown dies. The warhead is safe.

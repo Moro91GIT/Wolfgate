@@ -8,13 +8,20 @@ in `WFOrdnanceStation`. It is a vehicle shop terminal open only to that faction'
 whole sector under the faction's name.
 
 **The beacon** (`WFOrdnanceBeaconTactical`, `WFOrdnanceSystem.Beacon.cs`). Before it is planted, its verbs set it up:
-the fuze (timer, remote, or both), the warhead's timer (30 s to 10 min) and the drop delay (30 s to 5 min). Used in
+the fuze (timer, remote, or both), the warhead's timer (90 s to 10 min) and the drop delay (30 s to 5 min). Used in
 hand on any deck or planet ground (not Caelestinus Central's), it is set down and beeps; a rumble warns 8 s out, then a
 pod lands on it with a `WFWarheadTacticalKeyed` fuzed as set up, its `WFNukeKey`, and for a remote fuze a dead-man
 switch linked to it. The key and switch go to whoever planted it if they are within 12 m.
 
 **The key.** A keyed warhead (`WFWarheadKeyLock`, Warheads module) won't start its timer, take its safety off or turn
 keys without its own key in its keyhole (an item slot). The key is cut for that one warhead.
+
+**Defusing.** While armed, the warhead sounds a klaxon that only carries about 20 m (`WFOrdnanceKlaxon`,
+`WFOrdnanceSystem.Klaxon.cs`). Its countdown is never under 90 s, the remote fuze's included. A multitool no longer
+disarms it: unscrew its panel and cut one of two fuze wires in the stock wires window, repainted as a fuzing assembly
+(`WFNuclearWiresBoundUserInterface`, `WiresMenu.Nuclear.cs`). One wire (`WFOrdnanceDisarmWireAction`) makes it safe,
+even in the final seconds; the other (`WFOrdnanceDetonateWireAction`) sets it off. Colours are random per warhead, so
+it is a coin flip. Cutting a wire on a safe warhead does nothing.
 
 **DEFCON.** Arming any warhead (`WFWarheadArmedEvent`) sends DEFCON straight to 1 unless an admin has locked it, and
 while any warhead or station nuke is armed the level can't fall from 1. Each bought device not yet set off (a beacon or
@@ -35,10 +42,18 @@ at once.
 - [`Content.Server/_WF/Ordnance/WFOrdnanceComponents.cs`](WFOrdnanceComponents.cs)
 - [`Content.Server/_WF/Ordnance/WFOrdnanceSystem.Beacon.cs`](WFOrdnanceSystem.Beacon.cs)
 - [`Content.Server/_WF/Ordnance/WFOrdnanceSystem.cs`](WFOrdnanceSystem.cs)
+- [`Content.Server/_WF/Ordnance/WFOrdnanceSystem.Klaxon.cs`](WFOrdnanceSystem.Klaxon.cs)
+- [`Content.Server/_WF/Ordnance/WFOrdnanceWireActions.cs`](WFOrdnanceWireActions.cs)
+
+### Client
+
+- [`Content.Client/_WF/Ordnance/WFNuclearWiresBoundUserInterface.cs`](../../../Content.Client/_WF/Ordnance/WFNuclearWiresBoundUserInterface.cs)
+- [`Content.Client/_WF/Ordnance/WiresMenu.Nuclear.cs`](../../../Content.Client/_WF/Ordnance/WiresMenu.Nuclear.cs)
 
 ### Integration tests
 
 - [`Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceTest.cs)
+- [`Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceWiresTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Ordnance/WFOrdnanceWiresTest.cs)
 
 ### Prototypes
 

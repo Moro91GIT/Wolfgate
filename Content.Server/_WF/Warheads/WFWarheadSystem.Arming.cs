@@ -91,7 +91,7 @@ public sealed partial class WFWarheadSystem
 
     private void OnInteractUsing(Entity<WFWarheadComponent> ent, ref InteractUsingEvent args)
     {
-        if (args.Handled || !_tool.HasQuality(args.Used, ent.Comp.DisarmQuality))
+        if (args.Handled || ent.Comp.DisarmQuality is not { } quality || !_tool.HasQuality(args.Used, quality))
             return;
 
         switch (ent.Comp.State)
@@ -104,7 +104,7 @@ public sealed partial class WFWarheadSystem
                 return;
         }
 
-        args.Handled = _tool.UseTool(args.Used, args.User, ent, ent.Comp.DisarmDelay, ent.Comp.DisarmQuality,
+        args.Handled = _tool.UseTool(args.Used, args.User, ent, ent.Comp.DisarmDelay, quality,
             new WFWarheadDisarmDoAfterEvent());
     }
 

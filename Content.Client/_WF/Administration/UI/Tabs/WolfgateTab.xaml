@@ -26,6 +26,7 @@
             <cc:UICommandButton Command="planetcontrol" Text="{Loc wf-admin-tab-planet-control}" WindowType="{x:Type planets:PlanetControlWindow}" />
             <cc:CommandButton Command="testdummies" Text="{Loc wf-test-dummy-button}" />
             <cc:CommandButton Command="nukedesigner" Text="{Loc wf-nuke-designer-button}" />
+            <cc:CommandButton Command="shipadmin" Text="{Loc wf-ship-admin-button}" />
         </GridContainer>
     </BoxContainer>
 </Control>

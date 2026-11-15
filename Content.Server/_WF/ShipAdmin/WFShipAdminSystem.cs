@@ -1,0 +1,149 @@
+using Content.Server.Administration.Logs;
+using Content.Server.Administration.Managers;
+using Content.Server.EUI;
+using Content.Shared._WF.ShipAdmin;
+using Content.Shared.Administration;
+using Content.Shared.Database;
+using Content.Shared.Verbs;
+using Robust.Server.Player;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Player;
+using Robust.Shared.Utility;
+
+namespace Content.Server._WF.ShipAdmin;
+
+/// <summary>
+/// The admin ship panel: lists ships and applies what staff do to one from it. Each open panel is a
+/// <see cref="WFShipAdminEui"/>; this system builds their state, keeps them fresh and runs their actions.
+/// </summary>
+public sealed partial class WFShipAdminSystem : EntitySystem
+{
+    [Dependency] private IAdminManager _admin = default!;
+    [Dependency] private IAdminLogManager _adminLog = default!;
+    [Dependency] private EuiManager _eui = default!;
+    [Dependency] private IPlayerManager _player = default!;
+
+    private static readonly TimeSpan DetailInterval = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan ListInterval = TimeSpan.FromSeconds(10);
+    private static readonly SpriteSpecifier VerbIcon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/settings.svg.192dpi.png"));
+
+    private readonly Dictionary<ICommonSession, WFShipAdminEui> _panels = new();
+    private TimeSpan _detailTimer;
+    private TimeSpan _listTimer;
+
+    /// <summary>The panels that are open, one per admin.</summary>
+    public IReadOnlyCollection<WFShipAdminEui> Panels => _panels.Values;
+
+    public override void Initialize()
+    {
+        base.Initialize();
+        SubscribeLocalEvent<GetVerbsEvent<Verb>>(OnGetVerbs);
+    }
+
+    public override void Update(float frameTime)
+    {
+        base.Update(frameTime);
+        if (_panels.Count == 0)
+            return;
+
+        var elapsed = TimeSpan.FromSeconds(frameTime);
+        _detailTimer += elapsed;
+        _listTimer += elapsed;
+
+        var list = _listTimer >= ListInterval;
+        if (list)
+            _listTimer = TimeSpan.Zero;
+
+        if (!list && _detailTimer < DetailInterval)
+            return;
+
+        _detailTimer = TimeSpan.Zero;
+        foreach (var panel in _panels.Values)
+        {
+            if (list)
+                panel.RefreshList();
+            else
+                panel.RefreshDetail();
+        }
+    }
+
+    /// <summary>Opens the panel for an admin, or reselects in the one they have open.</summary>
+    public void Open(ICommonSession admin, EntityUid? grid)
+    {
+        if (_panels.TryGetValue(admin, out var open))
+        {
+            if (grid != null)
+                open.Select(grid);
+
+            open.RefreshList();
+            return;
+        }
+
+        _eui.OpenEui(new WFShipAdminEui(grid), admin);
+    }
+
+    public void PanelOpened(WFShipAdminEui panel)
+    {
+        _panels[panel.Player] = panel;
+    }
+
+    public void PanelClosed(WFShipAdminEui panel)
+    {
+        if (_panels.TryGetValue(panel.Player, out var open) && open == panel)
+            _panels.Remove(panel.Player);
+    }
+
+    /// <summary>The flags an admin holds right now; none while de-adminned.</summary>
+    public AdminFlags Flags(ICommonSession admin)
+    {
+        return _admin.GetAdminData(admin)?.Flags ?? AdminFlags.None;
+    }
+
+    /// <summary>Whether the admin may run an action, by <see cref="WFShipAdminPermissions"/>.</summary>
+    public bool Allowed(ICommonSession admin, WFShipAdminAction action)
+    {
+        return WFShipAdminPermissions.Allowed(Flags(admin), action);
+    }
+
+    /// <summary>Runs an action that needs no more than a switch; the result line goes back to the panel.</summary>
+    public void Run(WFShipAdminEui panel, EntityUid grid, WFShipAdminAction action, bool value, bool notify)
+    {
+        switch (action)
+        {
+            case WFShipAdminAction.Scan:
+                panel.Scanned(grid, Appraise(grid));
+                panel.SetResult(Loc.GetString("wf-ship-admin-result-scanned", ("ship", Name(grid))));
+                break;
+            default:
+                panel.SetResult(Loc.GetString("wf-ship-admin-result-unknown"), true);
+                break;
+        }
+    }
+
+    private void OnGetVerbs(GetVerbsEvent<Verb> args)
+    {
+        if (!TryComp<ActorComponent>(args.User, out var actor) || !_admin.HasAdminFlag(actor.PlayerSession, WFShipAdminPermissions.Base))
+            return;
+
+        var grid = HasComp<MapGridComponent>(args.Target) ? args.Target : Transform(args.Target).GridUid;
+        if (grid is not { } ship)
+            return;
+
+        var player = actor.PlayerSession;
+        args.Verbs.Add(new Verb
+        {
+            Text = Loc.GetString("wf-ship-admin-verb"),
+            Message = Loc.GetString("wf-ship-admin-verb-description", ("ship", Name(ship))),
+            Category = VerbCategory.Admin,
+            Icon = VerbIcon,
+            Act = () => Open(player, ship),
+            Impact = LogImpact.Low,
+        });
+    }
+
+    /// <summary>Writes one panel action to the admin log.</summary>
+    private void Audit(ICommonSession admin, LogImpact impact, EntityUid grid, string what)
+    {
+        _adminLog.Add(LogType.WFShipAdmin, impact, $"{admin.Name:actor} used the ship panel on {ToPrettyString(grid):grid}: {what}");
+    }
+}

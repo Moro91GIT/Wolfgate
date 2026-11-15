@@ -8,7 +8,7 @@ namespace Content.Client._WF.ShipAdmin.Tabs;
 /// <summary>What can't be taken back: emptying a ship of players, stripping it to a bare hull, deleting it.</summary>
 public sealed class WFShipAdminDangerTab : WFShipAdminTab
 {
-    private readonly Label _aboard;
+    private readonly WFShipAdminText _aboard;
     private readonly ConfirmButton _eject;
     private readonly ConfirmButton _strip;
     private readonly CheckBox _bring;
@@ -18,7 +18,7 @@ public sealed class WFShipAdminDangerTab : WFShipAdminTab
 
     public WFShipAdminDangerTab()
     {
-        _aboard = new Label();
+        _aboard = Status();
         Body.AddChild(_aboard);
 
         Body.AddChild(Heading(Loc.GetString("wf-ship-admin-danger-eject-heading")));

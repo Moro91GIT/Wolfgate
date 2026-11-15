@@ -5,35 +5,16 @@ using NUnit.Framework;
 
 namespace Content.Tests._WF.ShipAdmin;
 
-/// <summary>The ship panel's flag table: Admin for most actions, Debug on top for the ones that are hard to undo.</summary>
+/// <summary>Shipmaster's flag table: the staff flag runs every action, and nothing runs without it.</summary>
 [TestFixture]
 [TestOf(typeof(WFShipAdminPermissions))]
 public sealed class ShipAdminPermissionsTest
 {
-    private static readonly WFShipAdminAction[] ElevatedActions =
-    {
-        WFShipAdminAction.Release,
-        WFShipAdminAction.DetachHangar,
-        WFShipAdminAction.Restore,
-        WFShipAdminAction.Strip,
-        WFShipAdminAction.Delete,
-    };
-
     [Test]
-    public void AdminRunsEverythingButTheElevatedActions()
+    public void AdminRunsEverything()
     {
         foreach (var action in Enum.GetValues<WFShipAdminAction>())
-        {
-            var elevated = Array.IndexOf(ElevatedActions, action) >= 0;
-            Assert.That(WFShipAdminPermissions.Allowed(AdminFlags.Admin, action), Is.EqualTo(!elevated), action.ToString());
-        }
-    }
-
-    [Test]
-    public void DebugOnTopRunsEverything()
-    {
-        foreach (var action in Enum.GetValues<WFShipAdminAction>())
-            Assert.That(WFShipAdminPermissions.Allowed(AdminFlags.Admin | AdminFlags.Debug | AdminFlags.Fun, action), Is.True, action.ToString());
+            Assert.That(WFShipAdminPermissions.Allowed(AdminFlags.Admin, action), Is.True, action.ToString());
     }
 
     [Test]

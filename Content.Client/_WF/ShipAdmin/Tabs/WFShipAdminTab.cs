@@ -10,6 +10,9 @@ namespace Content.Client._WF.ShipAdmin.Tabs;
 /// <summary>One tab of the admin ship panel: shows part of the selected ship and raises the messages its buttons send.</summary>
 public abstract class WFShipAdminTab : ScrollContainer
 {
+    /// <summary>The width of the key column of a <see cref="Line"/>; the longest key, "Shipyard account", fits in it.</summary>
+    private const float KeyWidth = 170;
+
     /// <summary>Raised with a message for the server.</summary>
     public event Action<EuiMessageBase>? OnMessage;
 
@@ -84,12 +87,24 @@ public abstract class WFShipAdminTab : ScrollContainer
         return new Label { Text = text, StyleClasses = { "LabelHeading" }, Margin = new Thickness(0, 6, 0, 0) };
     }
 
-    /// <summary>A "key: value" line.</summary>
-    protected static Control Line(string key, string value)
+    /// <summary>
+    /// A "key: value" line. The key keeps one column width in every tab; the value wraps, or is cut short when
+    /// <paramref name="wrap"/> is off, as it must be in a row that ends in buttons.
+    /// </summary>
+    protected static Control Line(string key, string value, bool wrap = true)
     {
-        var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, HorizontalExpand = true };
-        row.AddChild(new Label { Text = key, StyleClasses = { "LabelKeyText" }, MinWidth = 130 });
-        row.AddChild(new Label { Text = value, HorizontalExpand = true, ClipText = true });
+        var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, HorizontalExpand = true, SeparationOverride = 8 };
+        row.AddChild(new Label
+        {
+            Text = key,
+            StyleClasses = { "LabelKeyText" },
+            SetWidth = KeyWidth,
+            ClipText = true,
+            VerticalAlignment = VAlignment.Top,
+        });
+        row.AddChild(wrap
+            ? new WFShipAdminText(value)
+            : new Label { Text = value, HorizontalExpand = true, ClipText = true });
         return row;
     }
 
@@ -103,6 +118,12 @@ public abstract class WFShipAdminTab : ScrollContainer
         return row;
     }
 
+    /// <summary>A dropdown with a search box, as every list in the panel has.</summary>
+    protected static WFShipAdminDropdown Dropdown(float minWidth = 220)
+    {
+        return new WFShipAdminDropdown { MinWidth = minWidth, HorizontalAlignment = HAlignment.Left };
+    }
+
     /// <summary>Keeps a control at its own width on the left.</summary>
     protected static Control Left(Control control)
     {
@@ -110,8 +131,15 @@ public abstract class WFShipAdminTab : ScrollContainer
         return control;
     }
 
-    protected static Label Note(string text)
+    /// <summary>Secondary text, wrapped to the tab's width.</summary>
+    protected static WFShipAdminText Note(string text)
     {
-        return new Label { Text = text, StyleClasses = { "LabelSubText" } };
+        return new WFShipAdminText(text, WFShipAdminText.Subdued);
+    }
+
+    /// <summary>A line of status text, wrapped to the tab's width.</summary>
+    protected static WFShipAdminText Status()
+    {
+        return new WFShipAdminText();
     }
 }

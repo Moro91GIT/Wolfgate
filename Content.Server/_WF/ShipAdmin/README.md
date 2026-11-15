@@ -1,27 +1,38 @@
 # ShipAdmin
 
-The admin ship panel: one window where staff see every ship and change one. It opens from the Ship Panel button
-on the Wolfgate admin tab, with `shipadmin [grid|here]`, or from the Ship Panel verb (Admin category) on a grid
-or anything standing on one, which opens it on that ship.
+Shipmaster, the admin ship panel: one window where staff see every ship and change one. It opens from the
+Shipmaster button on the Wolfgate admin tab, with `shipmaster [grid|here]`, from the Shipmaster verb (Admin
+category) on a grid or anything standing on one, or from the Shipmaster action staff hold while their body is
+over a ship. The verb and the action open it on that ship; opened with no ship named, it starts on the ship the
+admin is over.
 
 The left side lists ships: grids with a deed, an owner, ship access or a vessel design, or every grid with the
-All grids filter (the first 500). The right side shows the selected ship in tabs:
+All grids filter (the first 500). It is sorted on the client, nearest first by default: the ship the viewer is on,
+then ships on their map by distance, then the rest; name, owner and most aboard are the other sorts. Each row has
+an arrow and a distance to its ship, as does the selected ship's header. They are worked out on the client four
+times a second from where it sees the ships (or where the list last had them) and send nothing. The right side
+shows the selected ship in tabs:
 
 - **Overview**: design, position, what it is docked to, every owner (deed cards, vouchers and registered
   accounts, with who is online), access mode and lock, who is aboard. Scan appraises it and counts its damage.
 - **Ownership**: transfer to a connected player, add a co-owner by account, remove one owner, release.
-- **Access**: lock, mode, allow list, reset door rules and the ship code.
+- **Access**: lock, mode (Public included, which only staff set), allow list, reset door rules and the ship code.
 - **Repair**: a fix of ticked parts, and the repair snapshot (re-take, restore).
 - **Move**: bring it to the admin, send it to a position or another grid, dock it, undock, halt, clear pilots,
   FTL lock and jump cooldown.
-- **Systems**: rename, radar colour and visibility, shields, power, protections.
+- **Systems**: rename, radar colour and visibility, shields (raise, drop, restore to full, set strength), power,
+  protections.
 - **Upgrades**: refit tiers, best machine parts, hull modifiers, all free.
 - **Danger**: bring everyone aboard to the admin, strip to a bare hull, delete.
 
-The Admin flag opens the panel and runs most actions; release, detach from a hangar, restore, strip and delete
-also need Debug. `WFShipAdminPermissions` is the one table: the server checks it on every message and the window
-greys what the viewer may not do. Every action is written to the admin log as `WFShipAdmin`. Ownership and
-access actions carry a "tell the owners" tick, on by default, that sends each connected owner a chat line.
+The Admin flag opens the panel and runs every action; the ones that are hard to undo ask for a second press.
+`WFShipAdminPermissions` is the one table: the server checks it on every message and the window greys what the
+viewer may not do. Every action is written to the admin log as `WFShipAdmin`. Ownership and access actions carry
+a "tell the owners" tick, on by default, that sends each connected owner a chat line.
+
+Every dropdown is a `WFShipAdminDropdown`: the engine's option button with its search box on, and a click on it
+while it is open closes it instead of opening it again. Text that could run off the panel is a `WFShipAdminText`,
+which wraps.
 
 ## Ownership
 
@@ -71,10 +82,12 @@ Entry points: `WFShipAdminSystem` (`Open`, `BuildList`, `BuildDetail`, and one p
 
 ### Server
 
+- [`Content.Server/_WF/ShipAdmin/ShipShieldsSystem.WFShipAdmin.cs`](ShipShieldsSystem.WFShipAdmin.cs)
 - [`Content.Server/_WF/ShipAdmin/ShuttleConsoleLockSystem.WFShipAdmin.cs`](ShuttleConsoleLockSystem.WFShipAdmin.cs)
 - [`Content.Server/_WF/ShipAdmin/WFShipAdminCommand.cs`](WFShipAdminCommand.cs)
 - [`Content.Server/_WF/ShipAdmin/WFShipAdminEui.cs`](WFShipAdminEui.cs)
 - [`Content.Server/_WF/ShipAdmin/WFShipAdminSystem.Access.cs`](WFShipAdminSystem.Access.cs)
+- [`Content.Server/_WF/ShipAdmin/WFShipAdminSystem.Action.cs`](WFShipAdminSystem.Action.cs)
 - [`Content.Server/_WF/ShipAdmin/WFShipAdminSystem.cs`](WFShipAdminSystem.cs)
 - [`Content.Server/_WF/ShipAdmin/WFShipAdminSystem.Danger.cs`](WFShipAdminSystem.Danger.cs)
 - [`Content.Server/_WF/ShipAdmin/WFShipAdminSystem.Move.cs`](WFShipAdminSystem.Move.cs)
@@ -101,7 +114,10 @@ Entry points: `WFShipAdminSystem` (`Open`, `BuildList`, `BuildDetail`, and one p
 - [`Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminSystemsTab.cs`](../../../Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminSystemsTab.cs)
 - [`Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminTab.cs`](../../../Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminTab.cs)
 - [`Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminUpgradesTab.cs`](../../../Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminUpgradesTab.cs)
+- [`Content.Client/_WF/ShipAdmin/WFShipAdminCompass.cs`](../../../Content.Client/_WF/ShipAdmin/WFShipAdminCompass.cs)
+- [`Content.Client/_WF/ShipAdmin/WFShipAdminDropdown.cs`](../../../Content.Client/_WF/ShipAdmin/WFShipAdminDropdown.cs)
 - [`Content.Client/_WF/ShipAdmin/WFShipAdminEui.cs`](../../../Content.Client/_WF/ShipAdmin/WFShipAdminEui.cs)
+- [`Content.Client/_WF/ShipAdmin/WFShipAdminText.cs`](../../../Content.Client/_WF/ShipAdmin/WFShipAdminText.cs)
 - [`Content.Client/_WF/ShipAdmin/WFShipAdminWindow.xaml`](../../../Content.Client/_WF/ShipAdmin/WFShipAdminWindow.xaml)
 - [`Content.Client/_WF/ShipAdmin/WFShipAdminWindow.xaml.cs`](../../../Content.Client/_WF/ShipAdmin/WFShipAdminWindow.xaml.cs)
 
@@ -118,6 +134,11 @@ Entry points: `WFShipAdminSystem` (`Open`, `BuildList`, `BuildDetail`, and one p
 ### Unit tests
 
 - [`Content.Tests/_WF/ShipAdmin/ShipAdminPermissionsTest.cs`](../../../Content.Tests/_WF/ShipAdmin/ShipAdminPermissionsTest.cs)
+- [`Content.Tests/_WF/ShipAdmin/ShipAdminSortTest.cs`](../../../Content.Tests/_WF/ShipAdmin/ShipAdminSortTest.cs)
+
+### Prototypes
+
+- [`Resources/Prototypes/_WF/ShipAdmin/actions.yml`](../../../Resources/Prototypes/_WF/ShipAdmin/actions.yml)
 
 ### Localization
 

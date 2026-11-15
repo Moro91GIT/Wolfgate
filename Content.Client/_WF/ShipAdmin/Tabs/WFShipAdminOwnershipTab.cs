@@ -13,13 +13,13 @@ public sealed class WFShipAdminOwnershipTab : WFShipAdminTab
 {
     private readonly BoxContainer _owners;
     private readonly PlayerListControl _players;
-    private readonly Label _picked;
+    private readonly WFShipAdminText _picked;
     private readonly CheckBox _clearAllowList;
     private readonly CheckBox _keepPrevious;
     private readonly CheckBox _dropCompany;
     private readonly CheckBox _leaveCrewMode;
     private readonly CheckBox _detachHangar;
-    private readonly OptionButton _faction;
+    private readonly WFShipAdminDropdown _faction;
     private readonly CheckBox _notify;
     private readonly ConfirmButton _transfer;
     private readonly Button _addOwner;
@@ -51,11 +51,10 @@ public sealed class WFShipAdminOwnershipTab : WFShipAdminTab
         _detachHangar = Check("wf-ship-admin-ownership-detach-hangar", false);
         _notify = Check("wf-ship-admin-notify", true);
 
-        _faction = new OptionButton { HorizontalAlignment = HAlignment.Left };
+        _faction = Dropdown();
         foreach (var choice in Enum.GetValues<WFShipAdminFaction>())
             _faction.AddItem(Loc.GetString($"wf-ship-admin-ownership-faction-{choice.ToString().ToLowerInvariant()}"), (int) choice);
 
-        _faction.OnItemSelected += args => _faction.SelectId(args.Id);
         Body.AddChild(_faction);
 
         _transfer = new ConfirmButton
@@ -124,7 +123,7 @@ public sealed class WFShipAdminOwnershipTab : WFShipAdminTab
     private Control OwnerRow(WFShipAdminOwner owner, AdminFlags flags, bool removable)
     {
         var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, HorizontalExpand = true };
-        row.AddChild(Line(WFShipAdminOverviewTab.OwnerKind(owner.Kind), WFShipAdminOverviewTab.OwnerText(owner)));
+        row.AddChild(Line(WFShipAdminOverviewTab.OwnerKind(owner.Kind), WFShipAdminOverviewTab.OwnerText(owner), false));
 
         var remove = new ConfirmButton
         {

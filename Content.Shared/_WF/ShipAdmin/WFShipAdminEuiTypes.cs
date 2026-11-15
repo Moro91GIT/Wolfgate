@@ -1,17 +1,22 @@
 using System.Numerics;
 using Content.Shared._WF.ShipAccess;
+using Content.Shared.Actions;
 using Content.Shared.Administration;
 using Content.Shared.Eui;
+using Robust.Shared.Map;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared._WF.ShipAdmin;
 
-/// <summary>Console command names for the admin ship panel.</summary>
+/// <summary>Console command names for Shipmaster, the admin ship panel.</summary>
 public static class WFShipAdminCommands
 {
-    public const string Panel = "shipadmin";
+    public const string Panel = "shipmaster";
 }
+
+/// <summary>Raised by the action staff get while they are over a ship: opens Shipmaster on it.</summary>
+public sealed partial class WFShipAdminOpenActionEvent : InstantActionEvent;
 
 /// <summary>Which grids the panel lists.</summary>
 [Serializable, NetSerializable]
@@ -58,6 +63,10 @@ public sealed class WFShipAdminRow
     public string Map = string.Empty;
     public int Occupants;
     public WFShipAdminRowFlags Flags;
+
+    /// <summary>Where the ship was when the list was built, for the client to sort by nearness and point at it.</summary>
+    public MapId MapId;
+    public Vector2 Position;
 }
 
 /// <summary>How someone owns a ship.</summary>
@@ -106,6 +115,7 @@ public sealed class WFShipAdminDetail
     public string Name = string.Empty;
     public string Design = string.Empty;
     public string Map = string.Empty;
+    public MapId MapId;
     public Vector2 Position;
     public float Mass;
     public float Speed;
@@ -155,6 +165,9 @@ public sealed class WFShipAdminDetail
     public bool IffLabelHidden;
 
     public WFShipAdminProtect Protect;
+
+    /// <summary>How much of their strength the ship's shields have left, in percent; null when it has no shield generator.</summary>
+    public int? ShieldPercent;
 
     /// <summary>Every refit line, with the tier the ship owns.</summary>
     public List<WFShipAdminRefit> Refits = new();
@@ -294,7 +307,7 @@ public sealed class WFShipAdminTransferMessage(NetEntity grid, NetUserId user) :
     /// <summary>Takes a crew ship out of Crew mode, so the linked crew's cards stop opening it.</summary>
     public bool LeaveCrewMode = true;
 
-    /// <summary>Takes a company hangar ship away from its company. Needs the elevated flag.</summary>
+    /// <summary>Takes a company hangar ship away from its company.</summary>
     public bool DetachHangar;
     public WFShipAdminFaction Faction;
 
@@ -383,6 +396,14 @@ public sealed class WFShipAdminIffMessage(NetEntity grid, string? color, bool? h
     public readonly string? Color = color;
     public readonly bool? Hidden = hidden;
     public readonly bool? LabelHidden = labelHidden;
+}
+
+/// <summary>Sets the strength the ship's shields have left, in percent. A hundred restores them in full.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminShieldMessage(NetEntity grid, float percent) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly float Percent = percent;
 }
 
 /// <summary>Switches one protection on or off.</summary>

@@ -88,6 +88,32 @@ public sealed partial class WFShipAdminSystem
         return true;
     }
 
+    /// <summary>
+    /// Sets the strength the ship's shields have left, in percent. A hundred restores them in full and ends a
+    /// recharge or overload; anything less wears off as the generators heal.
+    /// </summary>
+    public bool SetShieldStrength(ICommonSession admin, EntityUid grid, float percent, out string result)
+    {
+        if (!float.IsFinite(percent) || percent < 0f || percent > 100f)
+        {
+            result = Loc.GetString("wf-ship-admin-result-bad-strength");
+            return false;
+        }
+
+        if (_shields.SetWolfgateShieldStrength(grid, percent / 100f) == 0)
+        {
+            result = Loc.GetString("wf-ship-admin-result-no-shields");
+            return false;
+        }
+
+        var whole = (int) MathF.Round(percent);
+        Audit(admin, LogImpact.Medium, grid, $"set its shield strength to {whole}%");
+        result = whole >= 100
+            ? Loc.GetString("wf-ship-admin-result-shields-restored", ("ship", Name(grid)))
+            : Loc.GetString("wf-ship-admin-result-shields-strength", ("ship", Name(grid)), ("percent", whole));
+        return true;
+    }
+
     /// <summary>Fills or drains every battery aboard and sets the breakers to match, without an announcement.</summary>
     public bool SetPower(ICommonSession admin, EntityUid grid, bool powered, out string result)
     {

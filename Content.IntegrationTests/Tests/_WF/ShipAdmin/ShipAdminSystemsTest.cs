@@ -12,19 +12,22 @@ using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Tiles;
 using Robust.Shared.GameObjects;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 
 namespace Content.IntegrationTests.Tests._WF.ShipAdmin;
 
 /// <summary>
-/// The panel renames a ship, changes its radar signature, switches protections on and off again, and brings a
-/// refit line up a tier that the ship then owns.
+/// The panel renames a ship, changes its radar signature, switches protections on and off again, sets and restores
+/// its shield strength, and brings a refit line up a tier that the ship then owns.
 /// </summary>
 [TestFixture]
 [TestOf(typeof(WFShipAdminSystem))]
 public sealed class ShipAdminSystemsTest
 {
     private const string VesselProto = "Guppy";
+    private const string ShieldProto = "ShieldGeneratorPOI";
 
     [Test]
     public async Task ShipIsRenamedSignedProtectedAndRefitted()
@@ -84,6 +87,17 @@ public sealed class ShipAdminSystemsTest
             Assert.That(ships.SetProtect(session, grid, WFShipAdminProtect.CleanupImmune, false, out result), Is.True, result);
             Assert.That(ships.Protections(grid).HasFlag(WFShipAdminProtect.CleanupImmune), Is.False);
 
+            // Shield strength: refused without a generator, then set and restored on one.
+            Assert.That(ships.SetShieldStrength(session, map.Grid.Owner, 50f, out result), Is.False, "A grid with no shield generator has none to set.");
+            var gridComp = entMan.GetComponent<MapGridComponent>(grid);
+            var floor = entMan.System<SharedMapSystem>().GetAllTiles(grid, gridComp).First().GridIndices;
+            entMan.SpawnEntity(ShieldProto, new EntityCoordinates(grid, new Vector2(floor.X + 0.5f, floor.Y + 0.5f)));
+            Assert.That(ships.SetShieldStrength(session, grid, 150f, out result), Is.False, "Strength is a percentage.");
+            Assert.That(ships.SetShieldStrength(session, grid, 40f, out result), Is.True, result);
+            Assert.That(ships.BuildDetail(grid)!.ShieldPercent, Is.EqualTo(40));
+            Assert.That(ships.SetShieldStrength(session, grid, 100f, out result), Is.True, result);
+            Assert.That(ships.BuildDetail(grid)!.ShieldPercent, Is.EqualTo(100));
+
             Assert.That(ships.FitBestParts(session, grid, out result), Is.True, result);
             Assert.That(ships.ApplyModifier(session, grid, "NoSuchModifier", out result), Is.False);
             Assert.That(ships.StartRefit(session, grid, "NoSuchRefit", 1, out result), Is.False);
@@ -126,6 +140,8 @@ public sealed class ShipAdminSystemsTest
             window.OpenCentered();
             window.UpdateState(state);
             Assert.That(window.Upgrades.RefitCount, Is.EqualTo(state.Selected!.Refits.Count));
+            Assert.That(state.Selected.ShieldPercent, Is.Not.Null, "The detail carries the shield strength.");
+            Assert.That(window.Systems.ShieldStatus, Does.Contain(state.Selected.ShieldPercent.ToString()));
             window.Close();
         });
 

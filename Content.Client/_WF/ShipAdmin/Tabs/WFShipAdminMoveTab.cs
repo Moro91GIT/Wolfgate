@@ -10,12 +10,12 @@ namespace Content.Client._WF.ShipAdmin.Tabs;
 /// <summary>Rescuing a ship: bring it here, send it somewhere, dock it, stop it, and free its helm and jump drive.</summary>
 public sealed class WFShipAdminMoveTab : WFShipAdminTab
 {
-    private readonly Label _status;
+    private readonly WFShipAdminText _status;
     private readonly ConfirmButton _toMe;
     private readonly LineEdit _x;
     private readonly LineEdit _y;
     private readonly ConfirmButton _toPosition;
-    private readonly OptionButton _targets;
+    private readonly WFShipAdminDropdown _targets;
     private readonly ConfirmButton _nextTo;
     private readonly ConfirmButton _dockAt;
     private readonly Button _undock;
@@ -25,13 +25,14 @@ public sealed class WFShipAdminMoveTab : WFShipAdminTab
     private readonly Button _resetFtl;
 
     private readonly List<NetEntity> _targetGrids = new();
+    private readonly List<string> _targetNames = new();
     private bool _ftlLocked;
 
     public override string Title => Loc.GetString("wf-ship-admin-tab-move");
 
     public WFShipAdminMoveTab()
     {
-        _status = new Label();
+        _status = Status();
         Body.AddChild(_status);
 
         Body.AddChild(Heading(Loc.GetString("wf-ship-admin-move-heading")));
@@ -53,8 +54,7 @@ public sealed class WFShipAdminMoveTab : WFShipAdminTab
         _y.OnTextChanged += args => _toPosition.Disabled = !TryPosition(out var typed);
         Body.AddChild(Row(_x, _y, _toPosition));
 
-        _targets = new OptionButton { MinWidth = 220 };
-        _targets.OnItemSelected += args => _targets.SelectId(args.Id);
+        _targets = Dropdown();
         _nextTo = Confirm("wf-ship-admin-move-next-to");
         _nextTo.OnPressed += _ => SendMove(WFShipAdminMoveKind.NextTo, Target(), Vector2.Zero);
         _dockAt = Confirm("wf-ship-admin-move-dock-at");
@@ -74,9 +74,14 @@ public sealed class WFShipAdminMoveTab : WFShipAdminTab
 
     public override void SetShips(List<WFShipAdminRow> ships)
     {
+        // The list is sent again every few seconds; an open dropdown is only rebuilt when a ship came, went or was renamed.
+        if (SameTargets(ships))
+            return;
+
         var selected = Target();
         _targets.Clear();
         _targetGrids.Clear();
+        _targetNames.Clear();
         foreach (var ship in ships)
         {
             _targets.AddItem(ship.Name, _targetGrids.Count);
@@ -84,7 +89,22 @@ public sealed class WFShipAdminMoveTab : WFShipAdminTab
                 _targets.SelectId(_targetGrids.Count);
 
             _targetGrids.Add(ship.Grid);
+            _targetNames.Add(ship.Name);
         }
+    }
+
+    private bool SameTargets(List<WFShipAdminRow> ships)
+    {
+        if (ships.Count != _targetGrids.Count)
+            return false;
+
+        for (var i = 0; i < ships.Count; i++)
+        {
+            if (ships[i].Grid != _targetGrids[i] || ships[i].Name != _targetNames[i])
+                return false;
+        }
+
+        return true;
     }
 
     protected override void Show(WFShipAdminDetail detail, AdminFlags flags)

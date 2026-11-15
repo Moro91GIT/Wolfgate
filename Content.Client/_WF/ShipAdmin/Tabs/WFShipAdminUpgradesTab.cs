@@ -13,7 +13,7 @@ public sealed class WFShipAdminUpgradesTab : WFShipAdminTab
 {
     private readonly BoxContainer _refits;
     private readonly ConfirmButton _fit;
-    private readonly OptionButton _modifiers;
+    private readonly WFShipAdminDropdown _modifiers;
     private readonly ConfirmButton _modify;
     private readonly List<string> _modifierIds = new();
 
@@ -39,8 +39,7 @@ public sealed class WFShipAdminUpgradesTab : WFShipAdminTab
 
         Body.AddChild(Heading(Loc.GetString("wf-ship-admin-upgrades-modifiers")));
         Body.AddChild(Note(Loc.GetString("wf-ship-admin-upgrades-modifiers-note")));
-        _modifiers = new OptionButton { MinWidth = 220 };
-        _modifiers.OnItemSelected += args => _modifiers.SelectId(args.Id);
+        _modifiers = Dropdown();
         foreach (var modifier in IoCManager.Resolve<IPrototypeManager>().EnumeratePrototypes<GridModificationPrototype>())
             _modifierIds.Add(modifier.ID);
 
@@ -80,7 +79,7 @@ public sealed class WFShipAdminUpgradesTab : WFShipAdminTab
     private Control RefitRow(WFShipAdminRefit refit, AdminFlags flags, bool busy)
     {
         var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, HorizontalExpand = true, SeparationOverride = 4 };
-        row.AddChild(Line(refit.Name, Loc.GetString("wf-ship-admin-upgrades-tier", ("tier", refit.Tier), ("max", refit.MaxTier))));
+        row.AddChild(Line(refit.Name, Loc.GetString("wf-ship-admin-upgrades-tier", ("tier", refit.Tier), ("max", refit.MaxTier)), false));
         for (var tier = refit.Tier + 1; tier <= refit.MaxTier; tier++)
         {
             var button = new ConfirmButton

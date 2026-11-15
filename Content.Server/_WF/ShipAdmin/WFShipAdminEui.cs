@@ -131,6 +131,10 @@ public sealed partial class WFShipAdminEui : BaseEui
                 if (TryTarget(iff.Grid, WFShipAdminAction.Iff, out var signed))
                     Finish(_ships.SetIff(Player, signed, iff, out var iffResult), iffResult);
                 break;
+            case WFShipAdminShieldMessage shield:
+                if (TryTarget(shield.Grid, WFShipAdminAction.Shields, out var shielded))
+                    Finish(_ships.SetShieldStrength(Player, shielded, shield.Percent, out var shieldResult), shieldResult);
+                break;
             case WFShipAdminProtectMessage protect:
                 if (TryTarget(protect.Grid, WFShipAdminAction.Protect, out var guarded))
                     Finish(_ships.SetProtect(Player, guarded, protect.Protect, protect.On, out var protectResult), protectResult);

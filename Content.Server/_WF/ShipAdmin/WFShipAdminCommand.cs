@@ -6,7 +6,7 @@ using Robust.Shared.Map.Components;
 
 namespace Content.Server._WF.ShipAdmin;
 
-/// <summary>Opens the admin ship panel, on a ship when one is named.</summary>
+/// <summary>Opens Shipmaster, on a ship when one is named.</summary>
 [AdminCommand(AdminFlags.Admin)]
 public sealed partial class WFShipAdminCommand : LocalizedEntityCommands
 {
@@ -34,7 +34,7 @@ public sealed partial class WFShipAdminCommand : LocalizedEntityCommands
 
             if (grid == null || !EntityManager.HasComponent<MapGridComponent>(grid))
             {
-                shell.WriteError(Loc.GetString("cmd-shipadmin-not-grid", ("grid", args[0])));
+                shell.WriteError(Loc.GetString("cmd-shipmaster-not-grid", ("grid", args[0])));
                 return;
             }
         }
@@ -45,7 +45,7 @@ public sealed partial class WFShipAdminCommand : LocalizedEntityCommands
     public override CompletionResult GetCompletion(IConsoleShell shell, string[] args)
     {
         return args.Length == 1
-            ? CompletionResult.FromHintOptions(new[] { Here }, Loc.GetString("cmd-shipadmin-hint-grid"))
+            ? CompletionResult.FromHintOptions(new[] { Here }, Loc.GetString("cmd-shipmaster-hint-grid"))
             : CompletionResult.Empty;
     }
 }

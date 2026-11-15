@@ -12,10 +12,10 @@ namespace Content.Client._WF.ShipAdmin.Tabs;
 /// <summary>Who may board: the lock, the mode and the allow list. Per-door rules and codes stay on the ship's own console.</summary>
 public sealed class WFShipAdminAccessTab : WFShipAdminTab
 {
-    private readonly Label _status;
-    private readonly Label _noKey;
+    private readonly WFShipAdminText _status;
+    private readonly WFShipAdminText _noKey;
     private readonly Button _lock;
-    private readonly OptionButton _mode;
+    private readonly WFShipAdminDropdown _mode;
     private readonly Button _setMode;
     private readonly BoxContainer _allowed;
     private readonly PlayerListControl _players;
@@ -32,7 +32,7 @@ public sealed class WFShipAdminAccessTab : WFShipAdminTab
 
     public WFShipAdminAccessTab()
     {
-        _status = new Label();
+        _status = Status();
         Body.AddChild(_status);
         _noKey = Note(Loc.GetString("wf-ship-admin-access-no-key"));
         Body.AddChild(_noKey);
@@ -40,11 +40,10 @@ public sealed class WFShipAdminAccessTab : WFShipAdminTab
         _lock = new Button { StyleClasses = { "ButtonSquare" } };
         _lock.OnPressed += _ => Send(new WFShipAdminActionMessage(Grid, WFShipAdminAction.SetLocked, !_locked, _notify!.Pressed));
 
-        _mode = new OptionButton();
+        _mode = Dropdown(150);
         foreach (var mode in Enum.GetValues<WFShipAccessMode>())
             _mode.AddItem(WFShipAdminOverviewTab.Mode(mode), (int) mode);
 
-        _mode.OnItemSelected += args => _mode.SelectId(args.Id);
         _setMode = new Button
         {
             Text = Loc.GetString("wf-ship-admin-access-set-mode"),
@@ -146,7 +145,7 @@ public sealed class WFShipAdminAccessTab : WFShipAdminTab
     private Control AllowedRow(WFShipAccessEntry entry, AdminFlags flags)
     {
         var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, HorizontalExpand = true };
-        row.AddChild(Line(entry.Name, entry.Label));
+        row.AddChild(Line(entry.Name, entry.Label, false));
 
         var remove = new Button { Text = Loc.GetString("wf-ship-admin-ownership-remove"), StyleClasses = { "ButtonSquare" } };
         Gate(remove, WFShipAdminAction.AllowRemove, flags);

@@ -1,5 +1,6 @@
 #nullable enable
 using System.Linq;
+using System.Numerics;
 using Content.Server._WF.ShipAccess;
 using Content.Server._WF.ShipAdmin;
 using Content.Server.Administration.Managers;
@@ -8,16 +9,20 @@ using Content.Server.Shuttles.Systems;
 using Content.Shared._WF.ShipAccess;
 using Content.Shared._WF.ShipAdmin;
 using Content.Shared._WF.ShipCommand;
+using Content.Shared.Access.Systems;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Verbs;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Localization;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 
 namespace Content.IntegrationTests.Tests._WF.ShipAdmin;
 
 /// <summary>
 /// An active admin manages any ship like its owner, the helm lock included, without becoming a guest; a commanded
-/// ship keeps its own switch and a station is left alone. The panel's access actions lock, list and reset.
+/// ship keeps its own switch and a station is left alone. The panel's access actions lock, list and reset, and
+/// Public mode opens the ship's doors to anyone.
 /// </summary>
 [TestFixture]
 [TestOf(typeof(WFShipAdminManagerSystem))]
@@ -112,6 +117,7 @@ public sealed class ShipAdminAccessTest
         var entMan = server.EntMan;
         var ships = entMan.System<WFShipAdminSystem>();
         var rules = entMan.System<WFShipAccessSystem>();
+        var readers = entMan.System<AccessReaderSystem>();
         var admins = server.ResolveDependency<IAdminManager>();
         var map = await pair.CreateTestMap();
         var session = server.PlayerMan.GetSessionById(pair.Client.Session!.UserId);
@@ -134,6 +140,18 @@ public sealed class ShipAdminAccessTest
             Assert.That(ships.SetMode(session, grid, WFShipAccessMode.Crew, false, out result), Is.False, "The panel links no crew of the admin's.");
             Assert.That(comp.CrewId, Is.Null);
             Assert.That(ships.SetMode(session, grid, WFShipAccessMode.Private, false, out result), Is.True, result);
+
+            // Public lets anyone through a door that follows the ship, locked as it is; Private shuts it again.
+            var floor = entMan.System<SharedMapSystem>().GetAllTiles(grid, entMan.GetComponent<MapGridComponent>(grid)).First().GridIndices;
+            var door = entMan.SpawnEntity("AirlockShuttle", new EntityCoordinates(grid, new Vector2(floor.X + 0.5f, floor.Y + 0.5f)));
+            Assert.That(entMan.GetComponent<TransformComponent>(door).GridUid, Is.EqualTo(grid), "Precondition: the door is aboard.");
+            Assert.That(ships.SetLocked(session, grid, true, false, out result), Is.True, result);
+            Assert.That(readers.IsAllowed(ship.Guest, door), Is.False, "Precondition: a stranger's card does not open a locked ship.");
+            Assert.That(ships.SetMode(session, grid, WFShipAccessMode.Public, false, out result), Is.True, result);
+            Assert.That(comp.Locked, Is.True, "Public leaves the lock as it was.");
+            Assert.That(readers.IsAllowed(ship.Guest, door), Is.True, "A public ship's doors open to anyone.");
+            Assert.That(ships.SetMode(session, grid, WFShipAccessMode.Private, false, out result), Is.True, result);
+            Assert.That(readers.IsAllowed(ship.Guest, door), Is.False);
 
             // The deed holder can't be listed; Ben, with a card and a record of his own, can.
             Assert.That(ships.AllowAdd(session, grid, session.UserId, false, out result), Is.False, "The owner's own card is refused.");

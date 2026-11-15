@@ -77,6 +77,8 @@ public sealed partial class WFShipAdminSystem
                 Map = xform.MapUid is { } map ? Name(map) : string.Empty,
                 Occupants = aboard.GetValueOrDefault(uid),
                 Flags = RowFlags(uid),
+                MapId = xform.MapID,
+                Position = _transform.GetWorldPosition(xform),
             });
         }
 
@@ -97,6 +99,7 @@ public sealed partial class WFShipAdminSystem
             Name = Name(grid),
             Design = Design(grid),
             Map = xform.MapUid is { } map ? Name(map) : string.Empty,
+            MapId = xform.MapID,
             Position = _transform.GetWorldPosition(xform),
             Mass = TryComp<PhysicsComponent>(grid, out var physics) ? physics.Mass : 0f,
             Speed = physics?.LinearVelocity.Length() ?? 0f,
@@ -122,6 +125,10 @@ public sealed partial class WFShipAdminSystem
 
         detail.Protect = Protections(grid);
         detail.Refits = Refits(grid);
+
+        // Whole percents, so a shield that is ticking back up doesn't resend the detail more than it must.
+        if (_shields.TryGetWolfgateShieldStrength(grid, out var strength))
+            detail.ShieldPercent = (int) MathF.Round(strength * 100f);
 
         foreach (var dock in _docking.GetDocks(grid))
         {

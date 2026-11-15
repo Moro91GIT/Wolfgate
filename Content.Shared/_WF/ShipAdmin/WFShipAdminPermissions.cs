@@ -54,21 +54,10 @@ public static class WFShipAdminPermissions
     /// <summary>The flag that opens the panel and that every action needs.</summary>
     public const AdminFlags Base = AdminFlags.Admin;
 
-    /// <summary>The flag the hardest actions to undo need on top.</summary>
-    public const AdminFlags Elevated = AdminFlags.Debug;
-
-    /// <summary>The flags an action needs.</summary>
+    /// <summary>The flags an action needs. Every action runs on the staff flag; the hard ones to undo ask twice instead.</summary>
     public static AdminFlags Required(WFShipAdminAction action)
     {
-        return action switch
-        {
-            WFShipAdminAction.Release
-                or WFShipAdminAction.DetachHangar
-                or WFShipAdminAction.Restore
-                or WFShipAdminAction.Strip
-                or WFShipAdminAction.Delete => Base | Elevated,
-            _ => Base,
-        };
+        return Base;
     }
 
     /// <summary>Whether someone holding these flags may run the action.</summary>

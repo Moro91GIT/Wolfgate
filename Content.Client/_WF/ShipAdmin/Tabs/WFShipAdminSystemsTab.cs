@@ -1,3 +1,4 @@
+using System.Globalization;
 using Content.Client.UserInterface.Controls;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._WF.ShipAdmin;
@@ -15,13 +16,22 @@ public sealed class WFShipAdminSystemsTab : WFShipAdminTab
     private readonly Button _setColour;
     private readonly CheckBox _hidden;
     private readonly CheckBox _labelHidden;
+    private readonly WFShipAdminText _shieldStatus;
     private readonly Button _shieldsOn;
     private readonly Button _shieldsOff;
+    private readonly Button _shieldsRestore;
+    private readonly LineEdit _strength;
+    private readonly Button _setStrength;
     private readonly Button _powerOn;
     private readonly ConfirmButton _powerOff;
     private readonly Dictionary<WFShipAdminProtect, CheckBox> _protect = new();
 
     private NetEntity _shown;
+    private AdminFlags _flags;
+    private bool _hasShields;
+
+    /// <summary>The shield status line, for tests.</summary>
+    public string ShieldStatus => _shieldStatus.Text;
 
     public override string Title => Loc.GetString("wf-ship-admin-tab-systems");
 
@@ -46,9 +56,37 @@ public sealed class WFShipAdminSystemsTab : WFShipAdminTab
         _labelHidden.OnToggled += args => Send(new WFShipAdminIffMessage(Grid, null, null, args.Pressed));
         Body.AddChild(Row(_hidden, _labelHidden));
 
-        Body.AddChild(Heading(Loc.GetString("wf-ship-admin-systems-shields-power")));
+        Body.AddChild(Heading(Loc.GetString("wf-ship-admin-systems-shields")));
+        _shieldStatus = Status();
+        Body.AddChild(_shieldStatus);
         _shieldsOn = Switch("wf-ship-admin-systems-shields-on", WFShipAdminAction.Shields, true);
         _shieldsOff = Switch("wf-ship-admin-systems-shields-off", WFShipAdminAction.Shields, false);
+        _shieldsRestore = new Button
+        {
+            Text = Loc.GetString("wf-ship-admin-systems-shields-restore"),
+            ToolTip = Loc.GetString("wf-ship-admin-systems-shields-restore-tooltip"),
+            StyleClasses = { "ButtonSquare" },
+        };
+        _shieldsRestore.OnPressed += _ => Send(new WFShipAdminShieldMessage(Grid, 100f));
+        Body.AddChild(Row(_shieldsOn, _shieldsOff, _shieldsRestore));
+
+        _strength = new LineEdit { MinWidth = 90, PlaceHolder = Loc.GetString("wf-ship-admin-systems-shields-strength-hint") };
+        _strength.IsValid = text => TryStrength(text, out _);
+        _setStrength = new Button
+        {
+            Text = Loc.GetString("wf-ship-admin-systems-shields-set"),
+            ToolTip = Loc.GetString("wf-ship-admin-systems-shields-set-tooltip"),
+            StyleClasses = { "ButtonSquare" },
+        };
+        _setStrength.OnPressed += _ =>
+        {
+            if (TryStrength(_strength.Text, out var percent))
+                Send(new WFShipAdminShieldMessage(Grid, percent));
+        };
+        _strength.OnTextChanged += _ => GateStrength();
+        Body.AddChild(Row(_strength, _setStrength));
+
+        Body.AddChild(Heading(Loc.GetString("wf-ship-admin-systems-power")));
         _powerOn = Switch("wf-ship-admin-systems-power-on", WFShipAdminAction.Power, true);
         _powerOff = new ConfirmButton
         {
@@ -58,7 +96,7 @@ public sealed class WFShipAdminSystemsTab : WFShipAdminTab
             StyleClasses = { "ButtonSquare" },
         };
         _powerOff.OnPressed += _ => Send(new WFShipAdminActionMessage(Grid, WFShipAdminAction.Power, false));
-        Body.AddChild(Row(_shieldsOn, _shieldsOff, _powerOn, _powerOff));
+        Body.AddChild(Row(_powerOn, _powerOff));
 
         Body.AddChild(Heading(Loc.GetString("wf-ship-admin-systems-protect")));
         foreach (var protect in Enum.GetValues<WFShipAdminProtect>())
@@ -97,10 +135,28 @@ public sealed class WFShipAdminSystemsTab : WFShipAdminTab
         Gate(_setColour, WFShipAdminAction.Iff, flags);
         Gate(_hidden, WFShipAdminAction.Iff, flags);
         Gate(_labelHidden, WFShipAdminAction.Iff, flags);
-        Gate(_shieldsOn, WFShipAdminAction.Shields, flags);
-        Gate(_shieldsOff, WFShipAdminAction.Shields, flags);
+        _flags = flags;
+        _hasShields = detail.ShieldPercent != null;
+        _shieldStatus.Text = detail.ShieldPercent is { } percent
+            ? Loc.GetString("wf-ship-admin-systems-shields-status", ("percent", percent))
+            : Loc.GetString("wf-ship-admin-systems-shields-none");
+        Gate(_shieldsOn, WFShipAdminAction.Shields, flags, _hasShields);
+        Gate(_shieldsOff, WFShipAdminAction.Shields, flags, _hasShields);
+        Gate(_shieldsRestore, WFShipAdminAction.Shields, flags, _hasShields);
+        GateStrength();
         Gate(_powerOn, WFShipAdminAction.Power, flags);
         Gate(_powerOff, WFShipAdminAction.Power, flags);
+    }
+
+    private void GateStrength()
+    {
+        Gate(_setStrength, WFShipAdminAction.Shields, _flags, _hasShields && TryStrength(_strength.Text, out _));
+    }
+
+    private static bool TryStrength(string text, out float percent)
+    {
+        return float.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out percent)
+               && percent >= 0f && percent <= 100f;
     }
 
     private Button Switch(string key, WFShipAdminAction action, bool value)

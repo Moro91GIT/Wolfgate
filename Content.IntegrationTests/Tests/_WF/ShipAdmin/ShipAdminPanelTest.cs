@@ -14,12 +14,15 @@ using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Administration;
 using Robust.Client.UserInterface;
 using Robust.Shared.GameObjects;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 
 namespace Content.IntegrationTests.Tests._WF.ShipAdmin;
 
 /// <summary>
 /// The admin ship panel lists a deeded ship with its owner, shows its detail, runs a scan and drops it and any
 /// pending confirmation when another ship is selected, keeps one panel per admin and closes when the admin flag goes.
+/// Staff over a ship hold the Shipmaster action, and a panel opened with no ship named starts on that ship.
 /// </summary>
 [TestFixture]
 [TestOf(typeof(WFShipAdminSystem))]
@@ -27,6 +30,7 @@ public sealed class ShipAdminPanelTest
 {
     private const string VesselProto = "Guppy";
     private const string IdProto = "PassengerIDCard";
+    private const string HumanProto = "MobHuman";
 
     [Test]
     public async Task PanelListsShowsAndCloses()
@@ -142,6 +146,70 @@ public sealed class ShipAdminPanelTest
             entMan.DeleteEntity(card);
             entMan.DeleteEntity(grid);
             entMan.DeleteEntity(host);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task StaffOverAShipGetTheActionAndStartOnIt()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Connected = true });
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var ships = entMan.System<WFShipAdminSystem>();
+        var spawner = entMan.System<AdminVesselSpawnSystem>();
+        var xforms = entMan.System<SharedTransformSystem>();
+        var admins = server.ResolveDependency<IAdminManager>();
+        var map = await pair.CreateTestMap();
+        var session = server.PlayerMan.GetSessionById(pair.Client.Session!.UserId);
+
+        EntityUid grid = default, body = default;
+        var wasAdmin = false;
+
+        await server.WaitAssertion(() =>
+        {
+            wasAdmin = admins.IsAdmin(session);
+            if (!wasAdmin)
+                admins.PromoteHost(session);
+
+            var vessel = server.ProtoMan.Index<VesselPrototype>(VesselProto);
+            Assert.That(spawner.TrySpawnVessel(vessel, map.MapId, new Vector2(80, 0), null, out var spawned), Is.True);
+            grid = spawned!.Value;
+            var floor = entMan.System<SharedMapSystem>().GetAllTiles(grid, entMan.GetComponent<MapGridComponent>(grid)).First().GridIndices;
+            body = entMan.SpawnEntity(HumanProto, new EntityCoordinates(grid, new Vector2(floor.X + 0.5f, floor.Y + 0.5f)));
+            server.PlayerMan.SetAttachedEntity(session, body);
+            Assert.That(ships.ShipUnder(session), Is.EqualTo(grid));
+            Assert.That(ships.HasOpenAction(session), Is.False, "Precondition: the action is given on the next check.");
+        });
+
+        await pair.RunTicksSync(60);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(ships.HasOpenAction(session), Is.True, "Staff over a ship get the Shipmaster action.");
+
+            ships.Open(session, null);
+            var panel = ships.Panels.Single();
+            Assert.That(panel.Selected, Is.EqualTo(grid), "A panel opened with no ship named starts on the one the admin is over.");
+            panel.Close();
+
+            // Out in open space there is no ship to act on.
+            xforms.SetCoordinates(body, new EntityCoordinates(map.MapUid, new Vector2(600, 600)));
+            Assert.That(ships.ShipUnder(session), Is.Null);
+        });
+
+        await pair.RunTicksSync(60);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(ships.HasOpenAction(session), Is.False, "The action goes once the admin has left the ship.");
+
+            server.PlayerMan.SetAttachedEntity(session, null);
+            entMan.DeleteEntity(body);
+            entMan.DeleteEntity(grid);
+            if (!wasAdmin)
+                admins.DeAdmin(session);
         });
 
         await pair.CleanReturnAsync();

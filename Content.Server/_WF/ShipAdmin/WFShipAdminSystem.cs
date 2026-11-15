@@ -38,12 +38,14 @@ public sealed partial class WFShipAdminSystem : EntitySystem
     {
         base.Initialize();
         SubscribeLocalEvent<GetVerbsEvent<Verb>>(OnGetVerbs);
+        SubscribeLocalEvent<WFShipAdminOpenActionEvent>(OnOpenAction);
     }
 
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
         UpdateFixes();
+        UpdateActions(frameTime);
         if (_panels.Count == 0)
             return;
 
@@ -68,7 +70,10 @@ public sealed partial class WFShipAdminSystem : EntitySystem
         }
     }
 
-    /// <summary>Opens the panel for an admin, or reselects in the one they have open.</summary>
+    /// <summary>
+    /// Opens the panel for an admin, or reselects in the one they have open. A new panel with no ship named starts
+    /// on the ship the admin is over.
+    /// </summary>
     public void Open(ICommonSession admin, EntityUid? grid)
     {
         if (_panels.TryGetValue(admin, out var open))
@@ -80,7 +85,7 @@ public sealed partial class WFShipAdminSystem : EntitySystem
             return;
         }
 
-        _eui.OpenEui(new WFShipAdminEui(grid), admin);
+        _eui.OpenEui(new WFShipAdminEui(grid ?? ShipUnder(admin)), admin);
     }
 
     public void PanelOpened(WFShipAdminEui panel)
@@ -196,6 +201,6 @@ public sealed partial class WFShipAdminSystem : EntitySystem
     /// <summary>Writes one panel action to the admin log.</summary>
     private void Audit(ICommonSession admin, LogImpact impact, EntityUid grid, string what)
     {
-        _adminLog.Add(LogType.WFShipAdmin, impact, $"{admin.Name:actor} used the ship panel on {ToPrettyString(grid):grid}: {what}");
+        _adminLog.Add(LogType.WFShipAdmin, impact, $"{admin.Name:actor} used Shipmaster on {ToPrettyString(grid):grid}: {what}");
     }
 }

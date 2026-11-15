@@ -8,12 +8,12 @@ namespace Content.Client._WF.ShipAdmin.Tabs;
 /// <summary>Putting a ship right: a fix that keeps what players built, and the snapshot it rebuilds from.</summary>
 public sealed class WFShipAdminRepairTab : WFShipAdminTab
 {
-    private readonly Label _damage;
-    private readonly Label _progress;
+    private readonly WFShipAdminText _damage;
+    private readonly WFShipAdminText _progress;
     private readonly Dictionary<WFShipAdminFixParts, CheckBox> _parts = new();
     private readonly Button _scan;
     private readonly Button _fix;
-    private readonly Label _snapshot;
+    private readonly WFShipAdminText _snapshot;
     private readonly ConfirmButton _retake;
     private readonly ConfirmButton _restore;
 
@@ -24,7 +24,7 @@ public sealed class WFShipAdminRepairTab : WFShipAdminTab
         Body.AddChild(Heading(Loc.GetString("wf-ship-admin-repair-fix-heading")));
         Body.AddChild(Note(Loc.GetString("wf-ship-admin-repair-fix-note")));
 
-        _damage = new Label();
+        _damage = Status();
         Body.AddChild(_damage);
         _progress = Note(string.Empty);
         Body.AddChild(_progress);

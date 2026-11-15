@@ -169,6 +169,14 @@ public sealed partial class WFShipAdminEui : BaseEui
     /// <summary>Selects a ship, or none, and sends its detail.</summary>
     public void Select(EntityUid? grid)
     {
+        // A scan's findings go stale once the admin looks away from the ship.
+        if (Selected != grid)
+        {
+            _scanned = null;
+            _value = null;
+            _damage = null;
+        }
+
         Selected = grid;
         StateDirty();
     }

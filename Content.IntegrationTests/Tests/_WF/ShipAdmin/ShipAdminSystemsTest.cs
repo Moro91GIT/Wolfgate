@@ -101,6 +101,8 @@ public sealed class ShipAdminSystemsTest
                 break;
             }
 
+            Assert.That(refitting, Is.True, $"No refit line starts on a {VesselProto}: {result}");
+
             state = new WFShipAdminEuiState
             {
                 Ships = ships.BuildList(WFShipAdminFilter.PlayerShips, out _),
@@ -113,12 +115,9 @@ public sealed class ShipAdminSystemsTest
 
         await server.WaitAssertion(() =>
         {
-            if (refitting)
-            {
-                Assert.That(ships.TryGetFix(grid, out _, out _), Is.False, "The refit has finished.");
-                Assert.That(refits.GetRefit(grid, refitId).Tier, Is.EqualTo(1), "The ship owns the tier it was brought up to.");
-                Assert.That(ships.Refits(grid).Single(line => line.Id == refitId).Tier, Is.EqualTo(1));
-            }
+            Assert.That(ships.TryGetFix(grid, out _, out _), Is.False, "The refit has finished.");
+            Assert.That(refits.GetRefit(grid, refitId).Tier, Is.EqualTo(1), "The ship owns the tier it was brought up to.");
+            Assert.That(ships.Refits(grid).Single(line => line.Id == refitId).Tier, Is.EqualTo(1));
         });
 
         await pair.Client.WaitAssertion(() =>

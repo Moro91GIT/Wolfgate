@@ -16,6 +16,32 @@ public sealed partial class ShuttleConsoleLockSystem
 
     private static readonly SoundSpecifier WfSwipeSound = new SoundPathSpecifier("/Audio/Machines/id_swipe.ogg");
 
+    /// <summary>
+    /// Locks a ship's helm to its deed and takes its pilots off, for a ship left with nobody to lock it.
+    /// </summary>
+    /// <returns>False when the ship has no deed to lock to.</returns>
+    public bool WfLockHelm(EntityUid grid)
+    {
+        if (!TryComp<ShipGridLockComponent>(grid, out var gridLock) || string.IsNullOrEmpty(gridLock.ShuttleId))
+            return false;
+
+        if (gridLock.Locked)
+            return true;
+
+        SetGridLockState(grid, true);
+        var consoles = EntityQueryEnumerator<ShuttleConsoleComponent, TransformComponent>();
+        while (consoles.MoveNext(out _, out var console, out var xform))
+        {
+            if (xform.GridUid != grid)
+                continue;
+
+            foreach (var pilot in console.SubscribedPilots.ToList())
+                _consoleSystem.RemovePilot(pilot);
+        }
+
+        return true;
+    }
+
     /// <summary>Whether the user manages the ship this console is on.</summary>
     private bool WfIsManager(EntityUid console, EntityUid user)
     {

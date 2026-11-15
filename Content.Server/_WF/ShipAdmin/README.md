@@ -32,7 +32,9 @@ it and unregisters every account, then gives the new owner the deed on their ID 
 carries one free of deeds, and registers their account either way; a ghost, a player with no card or one whose
 card already holds a deed gets the account alone. The lock, mode, allow list and door rules stay unless an option
 changes them. A locked ship whose new owner has no keyed card yet is unlocked and locks itself again once it
-can. A ship nobody ever owned goes through `ShipyardSystem.TryAssignDeed` instead, as a purchase would.
+can. A ship nobody ever owned goes through `ShipyardSystem.TryAssignDeed` instead, as a purchase would. Either
+way the hull's faction follows the option: kept, taken from the ID the new owner carries (deed on it or not), or
+cleared. `Release` leaves the doors unlocked and locks the helm, so only staff fly the ship until it is transferred.
 
 Stations and a planet's own surface can't be given an owner or moved (`CanBeOwned`); a ship's own late-join
 station doesn't count. Access actions need a grid that already has a deed or ship access, since setting access
@@ -42,7 +44,8 @@ up rewrites every door reader aboard.
 
 A fix never deletes what players moved or built. It uses drydock's own list (`WFDrydockSystem.BuildFreeRepairItems`):
 hull tiles and parts come back only where the repair snapshot says something is missing, and damaged parts are
-healed. The list is worked through a budget of items a tick (`FixItemsPerTick`), then air, fires, power, fuel,
+healed. A hull tile counts as missing when it is gone or down to one of its base turfs (pried up or blown to
+plating or lattice); a different floor laid in its place stays. The list is worked through a budget of items a tick (`FixItemsPerTick`), then air, fires, power, fuel,
 door bolts and consoles are done in one pass. Restore to snapshot is Mono's `repairgrid`: it also deletes and
 rebuilds every part that moved. Free refits run through the same queue and record the tier on the ship when done.
 
@@ -85,6 +88,7 @@ Entry points: `WFShipAdminSystem` (`Open`, `BuildList`, `BuildDetail`, and one p
 
 ### Client
 
+- [`Content.Client/_WF/ShipAdmin/ConfirmButton.WFShipAdmin.cs`](../../../Content.Client/_WF/ShipAdmin/ConfirmButton.WFShipAdmin.cs)
 - [`Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminAccessTab.cs`](../../../Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminAccessTab.cs)
 - [`Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminDangerTab.cs`](../../../Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminDangerTab.cs)
 - [`Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminMoveTab.cs`](../../../Content.Client/_WF/ShipAdmin/Tabs/WFShipAdminMoveTab.cs)

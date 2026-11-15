@@ -1,3 +1,4 @@
+using Content.Client.UserInterface.Controls;
 using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Administration;
 using Content.Shared.Eui;
@@ -38,8 +39,23 @@ public abstract class WFShipAdminTab : ScrollContainer
     /// <summary>Shows a ship, greying what the viewer's flags don't allow.</summary>
     public void Update(WFShipAdminDetail detail, AdminFlags flags)
     {
+        // A confirmation asked for the last ship must not be given for this one.
+        if (Grid != detail.Grid)
+            CancelConfirmations(Body);
+
         Grid = detail.Grid;
         Show(detail, flags);
+    }
+
+    private static void CancelConfirmations(Control parent)
+    {
+        foreach (var child in parent.Children)
+        {
+            if (child is ConfirmButton confirm)
+                confirm.WfCancel();
+            else
+                CancelConfirmations(child);
+        }
     }
 
     protected abstract void Show(WFShipAdminDetail detail, AdminFlags flags);

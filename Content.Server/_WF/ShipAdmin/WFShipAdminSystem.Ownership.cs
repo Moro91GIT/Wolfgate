@@ -19,12 +19,14 @@ using Content.Shared.Ghost;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
+using Robust.Shared.Prototypes;
 
 namespace Content.Server._WF.ShipAdmin;
 
 public sealed partial class WFShipAdminSystem
 {
     [Dependency] private AdminVesselSpawnSystem _vesselSpawn = default!;
+    [Dependency] private Content.Server.Shuttles.Systems.ShuttleConsoleLockSystem _consoleLocks = default!;
     [Dependency] private IChatManager _chat = default!;
     [Dependency] private IdCardOwnerSystem _cardOwner = default!;
     [Dependency] private Content.Server._NF.Shipyard.Systems.ShipOwnershipSystem _shipOwnership = default!;
@@ -76,6 +78,9 @@ public sealed partial class WFShipAdminSystem
         if (!_vesselSpawn.TryGetDeedCard(target, out var card, out var cardError))
             notes.Add(Loc.GetString("wf-ship-admin-note-account-only", ("reason", Loc.GetString(cardError, ("name", target.Name)))));
 
+        // The ID they carry names their faction even when it holds another ship's deed and can't take this one.
+        EntityUid? carried = body != null && _accessRules.TryGetCard(body.Value, out var worn) ? worn : null;
+
         if (fresh && card != null)
         {
             // Nobody ever owned it, so the whole purchase path is right: station, records, locks and access setup.
@@ -83,6 +88,8 @@ public sealed partial class WFShipAdminSystem
             if (TryComp<VesselComponent>(grid, out var design) && !string.IsNullOrEmpty(design.VesselId.Id))
                 _proto.TryIndex(design.VesselId, out vessel);
 
+            // A purchase puts the card's faction on the hull; here the faction option decides.
+            var factionBefore = CompOrNull<CompanyComponent>(grid)?.CompanyName;
             if (!_shipyard.TryAssignDeed(grid, card.Value, target, vessel, Name(grid)))
             {
                 result = Loc.GetString("wf-ship-admin-result-transfer-failed");
@@ -90,6 +97,7 @@ public sealed partial class WFShipAdminSystem
             }
 
             _shipAccess.AddOwnerUser(grid, options.User);
+            SetFaction(grid, options.Faction == WFShipAdminFaction.Keep ? factionBefore : PickFaction(carried, options.Faction));
         }
         else
         {
@@ -112,7 +120,7 @@ public sealed partial class WFShipAdminSystem
             _shipAccess.SetOwnerName(access, ownerName);
             _shipAccess.AddOwnerUser(grid, options.User);
 
-            ApplyCompany(grid, access, card, options);
+            ApplyCompany(grid, access, card, carried, options);
             if (access.Comp.CrewId != null)
             {
                 notes.Add(Loc.GetString("wf-ship-admin-note-crew", ("crew", access.Comp.CrewName ?? string.Empty)));
@@ -248,7 +256,7 @@ public sealed partial class WFShipAdminSystem
     }
 
     /// <summary>
-    /// Leaves a ship with no owner: every deed and account comes off and its doors unlock. Its helm stays locked to
+    /// Leaves a ship with no owner: every deed and account comes off and its doors unlock. Its helm is locked to
     /// the deed, so only staff fly it until it is transferred to someone.
     /// </summary>
     public bool Release(ICommonSession admin, EntityUid grid, bool notify, out string result)
@@ -274,6 +282,9 @@ public sealed partial class WFShipAdminSystem
             _shipAccess.SetOwnerName(access, unclaimed);
             _shipAccess.SetLocked(access, false);
         }
+
+        // The owner may have left the helm unlocked to fly, and nobody is left to lock it again.
+        _consoleLocks.WfLockHelm(grid);
 
         var notes = new List<string>();
         Audit(admin, LogImpact.High, grid, $"released from '{previousName}' ({string.Join(", ", previous.Select(Username))}); it has no owner now");
@@ -319,7 +330,11 @@ public sealed partial class WFShipAdminSystem
         return users;
     }
 
-    private void ApplyCompany(EntityUid grid, Entity<WFShipAccessComponent> access, EntityUid? card, WFShipAdminTransferMessage options)
+    /// <summary>
+    /// Settles the player company and hull faction of a ship that changed hands. <paramref name="card"/> is the ID
+    /// that took the deed, if one did; <paramref name="carried"/> is the ID the new owner carries either way.
+    /// </summary>
+    private void ApplyCompany(EntityUid grid, Entity<WFShipAccessComponent> access, EntityUid? card, EntityUid? carried, WFShipAdminTransferMessage options)
     {
         if (card != null && HasComp<WFCompanyIdComponent>(card))
         {
@@ -331,27 +346,34 @@ public sealed partial class WFShipAdminSystem
             _shipAccess.SetCompany(access, null, null, Array.Empty<WFShipAccessKey>());
         }
 
-        switch (options.Faction)
-        {
-            case WFShipAdminFaction.Clear:
-                RemComp<CompanyComponent>(grid);
-                break;
-            case WFShipAdminFaction.FromCard:
-                var faction = card != null && TryComp<IdCardComponent>(card, out var id) ? id.CompanyName.Id : null;
-                if (string.IsNullOrEmpty(faction))
-                {
-                    RemComp<CompanyComponent>(grid);
-                    break;
-                }
-
-                var hull = EnsureComp<CompanyComponent>(grid);
-                hull.CompanyName = faction;
-                Dirty(grid, hull);
-                break;
-        }
+        if (options.Faction != WFShipAdminFaction.Keep)
+            SetFaction(grid, PickFaction(carried, options.Faction));
 
         if (access.Comp.Mode == WFShipAccessMode.Faction && !_accessRules.IsFactionGrid(grid, out _))
             _shipAccess.SetMode(access, WFShipAccessMode.Private);
+    }
+
+    /// <summary>The faction a transfer puts on the hull when it isn't kept: the one on the new owner's ID, or none.</summary>
+    private ProtoId<CompanyPrototype>? PickFaction(EntityUid? id, WFShipAdminFaction option)
+    {
+        if (option != WFShipAdminFaction.FromCard || !TryComp<IdCardComponent>(id, out var idCard) || string.IsNullOrEmpty(idCard.CompanyName.Id))
+            return null;
+
+        return idCard.CompanyName;
+    }
+
+    /// <summary>Sets the hull's faction, or takes it off.</summary>
+    private void SetFaction(EntityUid grid, ProtoId<CompanyPrototype>? faction)
+    {
+        if (faction is not { } name)
+        {
+            RemComp<CompanyComponent>(grid);
+            return;
+        }
+
+        var hull = EnsureComp<CompanyComponent>(grid);
+        hull.CompanyName = name;
+        Dirty(grid, hull);
     }
 
     /// <summary>Sends a chat line to each account that is connected, and returns the names of those that are not.</summary>

@@ -19,6 +19,7 @@ using Content.Shared._WF.Drydock;
 using Content.Shared._WF.ShipRepair;
 using Content.Shared.Damage;
 using Content.Shared.FixedPoint;
+using Content.Shared.Maps;
 using Content.Shared.Materials;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Preferences;
@@ -61,6 +62,7 @@ public sealed partial class WFDrydockSystem : EntitySystem
     [Dependency] private DestructibleSystem _destructible = default!;
     [Dependency] private WFTradeMarketSystem _tradeMarket = default!;
     [Dependency] private WFShipServiceSystem _shipServices = default!;
+    [Dependency] private ITileDefinitionManager _tileDefs = default!;
 
     /// <summary>Upper bound on ship tiles kept for ambient sparks.</summary>
     private const int MaxSparkTiles = 512;
@@ -324,7 +326,10 @@ public sealed partial class WFDrydockSystem : EntitySystem
                     continue;
 
                 var index = new Vector2i(chunkPos.X * size + i % size, chunkPos.Y * size + i / size);
-                if (_map.GetTileRef(ship, grid, index).Tile.TypeId == stored)
+                var current = _map.GetTileRef(ship, grid, index).Tile.TypeId;
+
+                // Free work only re-lays hull that is gone or stripped to its sub-floor; a floor laid in its place stays.
+                if (current == stored || (comp == null && !IsRemnant(current, stored)))
                     continue;
 
                 items.Add(new WFDrydockWorkItem
@@ -337,6 +342,24 @@ public sealed partial class WFDrydockSystem : EntitySystem
                 });
             }
         }
+    }
+
+    /// <summary>Whether a tile is what is left of another once it is pried up or blown down: nothing, or one of its base turfs.</summary>
+    private bool IsRemnant(int current, int stored)
+    {
+        if (current == Tile.Empty.TypeId)
+            return true;
+
+        // Base turfs end at space within a few steps; the cap only guards against a looping definition.
+        var def = _tileDefs[stored] as ContentTileDefinition;
+        for (var depth = 0; depth < 8 && def != null && !string.IsNullOrEmpty(def.BaseTurf); depth++)
+        {
+            def = _tileDefs[def.BaseTurf] as ContentTileDefinition;
+            if (def?.TileId == current)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>Adds a rebuild item for each snapshot entity the ship is missing.</summary>
@@ -357,7 +380,7 @@ public sealed partial class WFDrydockSystem : EntitySystem
                     SpecId = specId,
                     Cost = comp != null ? RebuildPrice(comp, proto) : 0,
                     Prototype = proto.ID,
-                    Mounted =proto.TryComp<HardpointAnchorableOnlyComponent>(out _, Factory),
+                    Mounted = proto.TryComp<HardpointAnchorableOnlyComponent>(out _, Factory),
                     LocalPos = spec.LocalPosition,
                 });
             }

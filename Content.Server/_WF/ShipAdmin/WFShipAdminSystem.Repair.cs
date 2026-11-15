@@ -148,6 +148,13 @@ public sealed partial class WFShipAdminSystem
     /// <summary>Replaces the ship's repair snapshot with how it stands now.</summary>
     public bool Snapshot(ICommonSession admin, EntityUid grid, out string result)
     {
+        // A running fix holds keys into the snapshot it was built from; a new one would point them at other parts.
+        if (_fixes.ContainsKey(grid))
+        {
+            result = Loc.GetString("wf-ship-admin-result-fix-running");
+            return false;
+        }
+
         _shipRepair.GenerateRepairData(grid);
         Audit(admin, LogImpact.Medium, grid, "re-took its repair snapshot");
         result = Loc.GetString("wf-ship-admin-result-snapshot", ("ship", Name(grid)));
@@ -196,6 +203,11 @@ public sealed partial class WFShipAdminSystem
 
             for (var i = 0; i < FixItemsPerTick && job.Items.TryDequeue(out var item); i++)
             {
+                // A part that left the ship since it was queued, as on a piece that broke off, is no longer this ship's.
+                if (item.Kind is WFDrydockWorkKind.Heal or WFDrydockWorkKind.Upgrade
+                    && (!TryComp(item.Target, out TransformComponent? xform) || xform.GridUid != grid))
+                    continue;
+
                 _drydock.ApplyItem(grid, item);
                 switch (item.Kind)
                 {

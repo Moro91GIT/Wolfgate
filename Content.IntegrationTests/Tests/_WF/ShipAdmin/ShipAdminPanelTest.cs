@@ -1,7 +1,9 @@
 #nullable enable
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Content.Client._WF.ShipAdmin;
+using Content.Client.UserInterface.Controls;
 using Content.Server._NF.SectorServices;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server._WF.Administration.Systems;
@@ -10,13 +12,14 @@ using Content.Server.Administration.Managers;
 using Content.Shared._NF.Shipyard.Prototypes;
 using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Administration;
+using Robust.Client.UserInterface;
 using Robust.Shared.GameObjects;
 
 namespace Content.IntegrationTests.Tests._WF.ShipAdmin;
 
 /// <summary>
-/// The admin ship panel lists a deeded ship with its owner, shows its detail, runs a scan, keeps one panel per
-/// admin and closes when the admin flag goes.
+/// The admin ship panel lists a deeded ship with its owner, shows its detail, runs a scan and drops it and any
+/// pending confirmation when another ship is selected, keeps one panel per admin and closes when the admin flag goes.
 /// </summary>
 [TestFixture]
 [TestOf(typeof(WFShipAdminSystem))]
@@ -41,6 +44,7 @@ public sealed class ShipAdminPanelTest
         EntityUid grid = default, card = default, host = default;
         var wasAdmin = false;
         WFShipAdminEuiState state = default!;
+        WFShipAdminDetail other = default!;
 
         await server.WaitAssertion(() =>
         {
@@ -92,7 +96,12 @@ public sealed class ShipAdminPanelTest
                 Assert.That(state.ViewerFlags.HasFlag(AdminFlags.Admin), Is.True);
             });
 
+            panel.Select(map.Grid.Owner);
+            panel.Select(grid);
+            Assert.That(((WFShipAdminEuiState) panel.GetNewState()).Selected?.Value, Is.Null, "A scan is dropped once another ship is selected.");
+
             state.Ships = rows;
+            other = ships.BuildDetail(map.Grid.Owner)!;
         });
 
         await pair.RunTicksSync(10);
@@ -109,6 +118,15 @@ public sealed class ShipAdminPanelTest
                 Assert.That(window.Overview.LineCount, Is.GreaterThan(5));
                 Assert.That(window.ResultLabel.Text, Is.EqualTo(state.Result));
             });
+
+            // A confirmation asked for one ship is kept while it stays selected, and dropped when another is.
+            var confirm = Confirms(window.Danger).First();
+            confirm.IsConfirming = true;
+            window.UpdateState(state);
+            Assert.That(confirm.IsConfirming, Is.True);
+            state.Selected = other;
+            window.UpdateState(state);
+            Assert.That(confirm.IsConfirming, Is.False, "A second press must not act on the newly selected ship.");
             window.Close();
         });
 
@@ -127,5 +145,10 @@ public sealed class ShipAdminPanelTest
         });
 
         await pair.CleanReturnAsync();
+    }
+
+    private static IEnumerable<ConfirmButton> Confirms(Control parent)
+    {
+        return parent.Children.SelectMany(child => child is ConfirmButton confirm ? new[] { confirm } : Confirms(child));
     }
 }

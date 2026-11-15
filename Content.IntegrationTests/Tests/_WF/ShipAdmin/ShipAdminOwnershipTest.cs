@@ -13,15 +13,20 @@ using Content.Server._WF.Companies;
 using Content.Server._WF.ShipAccess;
 using Content.Server._WF.ShipAdmin;
 using Content.Server.Administration.Managers;
+using Content.Server.Shuttles.Components;
+using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
 using Content.Server.StationRecords;
 using Content.Server.StationRecords.Systems;
+using Content.Shared.Access.Components;
 using Content.Shared.StationRecords;
+using Content.Shared._Mono.Company;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._NF.Shipyard.Prototypes;
 using Content.Shared._WF.ShipAccess;
 using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Hands.EntitySystems;
+using Content.Shared.Shuttles.Components;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
@@ -31,7 +36,7 @@ namespace Content.IntegrationTests.Tests._WF.ShipAdmin;
 /// <summary>
 /// The ship panel's ownership actions: a transfer moves the deed and every owner record without touching the lock,
 /// mode or allow list; a target with no usable card is registered by account; hangar ships and offline players are
-/// refused; owners can be added, removed and released.
+/// refused; owners can be added, removed and released, which locks the helm; the hull's faction follows the option.
 /// </summary>
 [TestFixture]
 [TestOf(typeof(WFShipAdminSystem))]
@@ -39,6 +44,8 @@ public sealed class ShipAdminOwnershipTest
 {
     private const string VesselProto = "Guppy";
     private const string GhostProto = "MobObserver";
+    private const string HullFaction = "TSF";
+    private const string CardFaction = "PDV";
 
     [Test]
     public async Task TransferMovesEveryOwnerRecord()
@@ -177,6 +184,7 @@ public sealed class ShipAdminOwnershipTest
         var entMan = server.EntMan;
         var ships = entMan.System<WFShipAdminSystem>();
         var shipyard = entMan.System<ShipyardSystem>();
+        var locks = entMan.System<ShuttleConsoleLockSystem>();
         var admins = server.ResolveDependency<IAdminManager>();
         var map = await pair.CreateTestMap();
         var session = server.PlayerMan.GetSessionById(pair.Client.Session!.UserId);
@@ -205,9 +213,24 @@ public sealed class ShipAdminOwnershipTest
             Assert.That(ships.RemoveOwner(session, grid, null, ship.AdaCard, false, out result), Is.False, "The last owner is not removed.");
             Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.AdaCard), Is.True);
 
+            // The owner leaves the helm unlocked, as they would while flying.
+            EntityUid helm = default;
+            var consoles = entMan.EntityQueryEnumerator<ShuttleConsoleLockComponent, TransformComponent>();
+            while (consoles.MoveNext(out var uid, out _, out var xform))
+            {
+                if (xform.GridUid == grid)
+                    helm = uid;
+            }
+
+            Assert.That(helm.IsValid(), Is.True, "Precondition: the ship has a helm.");
+            var helmLock = entMan.GetComponent<ShuttleConsoleLockComponent>(helm);
+            Assert.That(locks.TryUnlock(helm, ship.AdaCard, helmLock), Is.True, "Precondition: the owner's card unlocks the helm.");
+            Assert.That(locks.GetEffectiveLockState(helm, helmLock), Is.False);
+
             Assert.That(ships.Release(session, grid, false, out result), Is.True, result);
             Assert.Multiple(() =>
             {
+                Assert.That(locks.GetEffectiveLockState(helm, helmLock), Is.True, "Nobody is left to lock the helm, so the release does.");
                 Assert.That(shipyard.DeedHolders(grid), Is.Empty);
                 Assert.That(entMan.HasComponent<ShipOwnershipComponent>(grid), Is.False);
                 Assert.That(comp.OwnerUsers, Is.Empty);
@@ -221,6 +244,91 @@ public sealed class ShipAdminOwnershipTest
             Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.BenCard), Is.True);
 
             server.PlayerMan.SetAttachedEntity(session, null);
+            ship.Delete(entMan);
+            if (!wasAdmin)
+                admins.DeAdmin(session);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TransferSetsTheHullFactionAsAsked()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Connected = true });
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var ships = entMan.System<WFShipAdminSystem>();
+        var spawner = entMan.System<AdminVesselSpawnSystem>();
+        var stations = entMan.System<StationSystem>();
+        var admins = server.ResolveDependency<IAdminManager>();
+        var map = await pair.CreateTestMap();
+        var session = server.PlayerMan.GetSessionById(pair.Client.Session!.UserId);
+
+        await server.WaitAssertion(() =>
+        {
+            var wasAdmin = admins.IsAdmin(session);
+            if (!wasAdmin)
+                admins.PromoteHost(session);
+
+            string? Faction(EntityUid hull)
+            {
+                return entMan.TryGetComponent<CompanyComponent>(hull, out var company) ? company.CompanyName.Id : null;
+            }
+
+            WFShipAdminTransferMessage Give(EntityUid hull, WFShipAdminFaction faction)
+            {
+                return new WFShipAdminTransferMessage(entMan.GetNetEntity(hull), session.UserId) { Faction = faction };
+            }
+
+            var ship = SpawnOwnedShip(pair, map, session);
+            var grid = ship.Grid;
+            entMan.EnsureComponent<CompanyComponent>(grid).CompanyName = HullFaction;
+            foreach (var card in new[] { ship.AdaCard, ship.BenCard, ship.GuestCard })
+                entMan.GetComponent<IdCardComponent>(card).CompanyName = CardFaction;
+
+            // Ben's card already holds a deed, so it can't take this one. It still names his faction.
+            entMan.AddComponent<ShuttleDeedComponent>(ship.BenCard);
+            server.PlayerMan.SetAttachedEntity(session, ship.Ben);
+
+            Assert.That(ships.Transfer(session, grid, Give(grid, WFShipAdminFaction.Keep), out var result), Is.True, result);
+            Assert.That(Faction(grid), Is.EqualTo(HullFaction), "Keep leaves the hull's faction.");
+
+            Assert.That(ships.Transfer(session, grid, Give(grid, WFShipAdminFaction.FromCard), out result), Is.True, result);
+            Assert.That(Faction(grid), Is.EqualTo(CardFaction), "The faction is read from the ID he carries, though the deed could not go on it.");
+
+            Assert.That(ships.Transfer(session, grid, Give(grid, WFShipAdminFaction.Clear), out result), Is.True, result);
+            Assert.That(Faction(grid), Is.Null);
+
+            // Ships nobody owned take the purchase path, which on its own puts the card's faction on the hull.
+            var vessel = server.ProtoMan.Index<VesselPrototype>(VesselProto);
+            Assert.That(spawner.TrySpawnVessel(vessel, map.MapId, new Vector2(160, 0), null, out var keptHull), Is.True);
+            Assert.That(spawner.TrySpawnVessel(vessel, map.MapId, new Vector2(240, 0), null, out var clearedHull), Is.True);
+            var kept = keptHull!.Value;
+            var cleared = clearedHull!.Value;
+            Assert.That(entMan.HasComponent<WFShipAccessComponent>(kept) || entMan.HasComponent<ShuttleDeedComponent>(kept), Is.False, "Precondition: nobody owns it.");
+            entMan.EnsureComponent<CompanyComponent>(cleared).CompanyName = HullFaction;
+            var before = Faction(kept);
+
+            server.PlayerMan.SetAttachedEntity(session, ship.Guest);
+            Assert.That(ships.Transfer(session, kept, Give(kept, WFShipAdminFaction.Keep), out result), Is.True, result);
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.GuestCard), Is.True, "Precondition: the purchase path ran.");
+            Assert.That(Faction(kept), Is.EqualTo(before), "Keep leaves a new ship's hull as it was.");
+
+            server.PlayerMan.SetAttachedEntity(session, ship.Ada);
+            Assert.That(ships.Transfer(session, cleared, Give(cleared, WFShipAdminFaction.Clear), out result), Is.True, result);
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.AdaCard), Is.True, "Precondition: the purchase path ran.");
+            Assert.That(Faction(cleared), Is.Null, "Clear takes the faction off a new ship too.");
+
+            server.PlayerMan.SetAttachedEntity(session, null);
+            foreach (var hull in new[] { kept, cleared })
+            {
+                var station = stations.GetOwningStation(hull);
+                entMan.DeleteEntity(hull);
+                if (station != null)
+                    entMan.DeleteEntity(station.Value);
+            }
+
             ship.Delete(entMan);
             if (!wasAdmin)
                 admins.DeAdmin(session);

@@ -3,17 +3,18 @@
 Keeps the mass scanner's tags readable at any zoom. Every tag the scope draws (ship and station IFF labels, beacons
 and worlds, encounter names, dock names, waypoints, planet signals and map sites, Lattice phantoms and the admin NPC
 crew tags) goes to one layout pass instead of being drawn on the spot. A tag sits by its contact while it has room.
-Tags that would overlap share one stacked list on a dark backing, each row with a faint line to its contact, and the
+Tags that would overlap share one plain stacked list, its rows in the order of their contacts top to bottom, and the
 list splits back into separate tags as zooming in makes room. A stack shows only each tag's first line; past ten
 rows it keeps the highest priorities (hovered contact, player ships, encounters and waypoints) and sums up the rest.
 
 The scope is quiet by default. Only tags marked `always` show their name anywhere on it: ships within 750 m, the
 hovered contact, encounters, waypoints, beacons, your expedition, cities and depots, Lattice phantoms and admin crew
 tags. Every other contact is a blip, with a `×N` count where several crowd together. Round the cursor a faint lens
-(100 px) shows every tag, stacking as above, and the tag nearest the cursor alone shows its detail lines (company,
+(32 px) shows every tag, stacking as above, and the tag nearest the cursor alone shows its detail lines (company,
 coordinates, track ID, a world's signals). Tags fade in and out over 0.15 s. Only contacts on the scope get a tag:
-one pinned to the rim keeps its blip. The `wf.radar_smart_tags` option (Options, Wolfgate) turns all of this off, so
-every tag sits whole by its contact as before.
+one pinned to the rim keeps its blip. The mass scanner, which has no docks toggle, marks no docks. The
+`wf.radar_smart_tags` option (Options, Wolfgate) turns all of this off, so every tag sits whole by its contact as
+before.
 
 Entry points: `WFRadarTagLayout` (the grouping, pure geometry) and `ShuttleNavControl.RadarLabels.cs`, whose
 `WfBeginTag`, `WfTagLine`, `WfTagAbove` and `WfTagHeadExtra` a label source calls in place of `DrawString`.

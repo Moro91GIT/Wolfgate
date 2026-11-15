@@ -15,12 +15,11 @@ namespace Content.Client.Shuttles.UI;
 /// </summary>
 public partial class ShuttleNavControl
 {
-    private static readonly Color WfStackBacking = Color.Black.WithAlpha(0.55f);
     private static readonly Color WfStackMoreColor = Color.FromHex("#9aa4ad");
     private static readonly Color WfLensColor = Color.White.WithAlpha(0.06f);
 
     /// <summary>Radius round the cursor, in virtual pixels, inside which every tag shows.</summary>
-    private const float WfLensRadius = 100f;
+    private const float WfLensRadius = 32f;
 
     /// <summary>How close, in virtual pixels, untagged blips are to count as one crowd.</summary>
     private const float WfCrowdRadius = 24f;
@@ -307,12 +306,11 @@ public partial class ShuttleNavControl
             }
 
             var box = group.Box;
-            var pad = 2f * UIScale;
             var backing = 0f;
             foreach (var row in group.Rows)
                 backing = MathF.Max(backing, _wfTagDraws[_wfShownIndex[row]].Alpha);
 
-            handle.DrawRect(new UIBox2(box.Left - pad, box.Bottom - pad, box.Right + pad, box.Top + pad), Fade(WfStackBacking, backing));
+            // A plain list, no backing or lines: the rows read top to bottom in the order of their contacts.
             var y = box.Bottom;
             foreach (var row in group.Rows)
             {
@@ -320,13 +318,6 @@ public partial class ShuttleNavControl
                 var tag = _wfTags[index];
                 var draw = _wfTagDraws[index];
                 var line = _wfTagLines[draw.FirstLine];
-                var middle = y + tag.HeadSize.Y / 2f;
-                var from = tag.Anchor.X > box.Right
-                    ? new Vector2(box.Right + pad, middle)
-                    : new Vector2(box.Left - pad, middle);
-                if ((tag.Anchor - from).LengthSquared() > 16f * UIScale * UIScale)
-                    handle.DrawLine(from, tag.Anchor, Fade(line.Color.WithAlpha(0.35f), draw.Alpha));
-
                 var at = new Vector2(box.Left, y);
                 handle.DrawString(Font, at, line.Text, line.Scale, Fade(line.Color, draw.Alpha));
                 draw.DrawHeadExtra?.Invoke(handle, at + new Vector2(draw.HeadTextWidth, 0f));

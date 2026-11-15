@@ -28,11 +28,11 @@ public partial class ShuttleNavControl
         };
     }
 
-    /// <summary>For a radar screen with no docks toggle: docks always show and its state is never saved.</summary>
-    public void WfPinDocks()
+    /// <summary>For a radar screen with no docks toggle: docks always show, or never, and its state is never saved.</summary>
+    public void WfPinDocks(bool show = true)
     {
         _wfDocksPinned = true;
-        ShowDocks = true;
+        ShowDocks = show;
     }
 
     /// <summary>Saves a display choice when the player changes it.</summary>

@@ -63,6 +63,11 @@ at once.
 
 - [`Resources/Locale/en-US/_WF/Ordnance/ordnance.ftl`](../../../Resources/Locale/en-US/_WF/Ordnance/ordnance.ftl)
 
+### Audio
+
+- [`Resources/Audio/_WF/Ordnance/attributions.yml`](../../../Resources/Audio/_WF/Ordnance/attributions.yml)
+- [`Resources/Audio/_WF/Ordnance/nukeklaxon.ogg`](../../../Resources/Audio/_WF/Ordnance/nukeklaxon.ogg)
+
 ## Non-modular edits
 
 - [`Resources/Prototypes/_Mono/PointsOfInterest/hokkaido.yml`](../../../Resources/Prototypes/_Mono/PointsOfInterest/hokkaido.yml): the faction's ordnance terminal

@@ -107,7 +107,7 @@ public sealed partial class WFOrdnanceBeaconComponent : Component
 public sealed partial class WFOrdnanceKlaxonComponent : Component
 {
     [DataField]
-    public SoundSpecifier Sound = new SoundPathSpecifier("/Audio/Machines/alarm.ogg");
+    public SoundSpecifier Sound = new SoundPathSpecifier("/Audio/_WF/Ordnance/nukeklaxon.ogg");
 
     /// <summary>How far it carries, in metres.</summary>
     [DataField]

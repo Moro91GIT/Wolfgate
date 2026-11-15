@@ -114,6 +114,9 @@ public sealed partial class WFShipAdminSystem : EntitySystem
                 panel.Scanned(grid, Appraise(grid));
                 panel.SetResult(Loc.GetString("wf-ship-admin-result-scanned", ("ship", Name(grid))));
                 break;
+            case WFShipAdminAction.Release:
+                panel.Finish(Release(panel.Player, grid, notify, out var released), released);
+                break;
             default:
                 panel.SetResult(Loc.GetString("wf-ship-admin-result-unknown"), true);
                 break;

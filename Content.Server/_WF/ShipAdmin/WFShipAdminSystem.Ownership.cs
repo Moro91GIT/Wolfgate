@@ -1,0 +1,362 @@
+using System.Linq;
+using Content.Server._WF.Administration.Systems;
+using Content.Server._WF.Companies;
+using Content.Server._WF.Traders;
+using Content.Server.Chat.Managers;
+using Content.Server.Shuttles.Components;
+using Content.Shared._Mono.Company;
+using Content.Shared._Mono.Ships.Components;
+using Content.Shared._NF.Shipyard.Components;
+using Content.Shared._NF.Shipyard.Prototypes;
+using Content.Shared._WF.Companies;
+using Content.Shared._WF.ShipAccess;
+using Content.Shared._WF.ShipAdmin;
+using Content.Shared._WF.Traders;
+using Content.Shared.Access.Components;
+using Content.Shared.Database;
+using Content.Shared.Ghost;
+using Robust.Shared.Network;
+using Robust.Shared.Player;
+
+namespace Content.Server._WF.ShipAdmin;
+
+public sealed partial class WFShipAdminSystem
+{
+    [Dependency] private AdminVesselSpawnSystem _vesselSpawn = default!;
+    [Dependency] private IChatManager _chat = default!;
+    [Dependency] private IdCardOwnerSystem _cardOwner = default!;
+    [Dependency] private Content.Server._NF.Shipyard.Systems.ShipOwnershipSystem _shipOwnership = default!;
+    [Dependency] private WFCompanySystem _companies = default!;
+    [Dependency] private WFShipAccessSystem _accessRules = default!;
+
+    /// <summary>
+    /// Hands a ship to a player. Every earlier owner loses it: deeds come off their cards and their accounts are
+    /// unregistered. The new owner gets the deed on their ID card when they carry one free of deeds, and their
+    /// account is registered either way. The ship's lock, mode, allow list and door rules stay as they were unless
+    /// an option says otherwise.
+    /// </summary>
+    /// <returns>False when the transfer was refused; <paramref name="result"/> says what happened either way.</returns>
+    public bool Transfer(ICommonSession admin, EntityUid grid, WFShipAdminTransferMessage options, out string result)
+    {
+        if (!HasComp<ShuttleComponent>(grid))
+        {
+            result = Loc.GetString("wf-ship-admin-result-not-ship");
+            return false;
+        }
+
+        if (!_player.TryGetSessionById(options.User, out var target) || !IsOnline(options.User))
+        {
+            result = Loc.GetString("wf-ship-admin-result-offline");
+            return false;
+        }
+
+        if (HasComp<WFCompanyHangarShipComponent>(grid))
+        {
+            if (!options.DetachHangar || !Allowed(admin, WFShipAdminAction.DetachHangar))
+            {
+                result = Loc.GetString("wf-ship-admin-result-hangar");
+                return false;
+            }
+
+            RemComp<WFCompanyHangarShipComponent>(grid);
+        }
+
+        var notes = new List<string>();
+        var previous = OwnerAccounts(grid);
+        var previousName = OwnerName(grid);
+        var body = target.AttachedEntity is { Valid: true } attached && !HasComp<GhostComponent>(attached) ? attached : (EntityUid?) null;
+        var ownerName = body != null ? Name(body.Value).Trim() : target.Name;
+
+        if (!_vesselSpawn.TryGetDeedCard(target, out var card, out var cardError))
+            notes.Add(Loc.GetString("wf-ship-admin-note-account-only", ("reason", Loc.GetString(cardError, ("name", target.Name)))));
+
+        var fresh = !HasComp<ShuttleDeedComponent>(grid) && !HasComp<ShipOwnershipComponent>(grid) && !HasComp<WFShipAccessComponent>(grid);
+        if (fresh && card != null)
+        {
+            // Nobody ever owned it, so the whole purchase path is right: station, records, locks and access setup.
+            VesselPrototype? vessel = null;
+            if (TryComp<VesselComponent>(grid, out var design) && !string.IsNullOrEmpty(design.VesselId.Id))
+                _proto.TryIndex(design.VesselId, out vessel);
+
+            if (!_shipyard.TryAssignDeed(grid, card.Value, target, vessel, Name(grid)))
+            {
+                result = Loc.GetString("wf-ship-admin-result-transfer-failed");
+                return false;
+            }
+
+            _shipAccess.AddOwnerUser(grid, options.User);
+        }
+        else
+        {
+            var revoked = _shipyard.RevokeDeeds(grid);
+            var access = _shipAccess.EnsureAccess(grid);
+            _shipAccess.ClearOwners(access);
+            if (options.ClearAllowList)
+                _shipAccess.ClearAllowList(access);
+
+            _shipyard.SetShipOwnerName(grid, ownerName);
+            if (card != null)
+            {
+                _shipyard.GrantDeed(grid, card.Value, ownerName);
+                if (body != null)
+                    _cardOwner.Stamp(card.Value, body.Value);
+
+                _shipyard.CopyOwnerRecord(grid, card.Value, body, target);
+            }
+
+            _shipOwnership.RegisterShipOwnership(grid, target);
+            _shipAccess.SetOwnerName(access, ownerName);
+            _shipAccess.AddOwnerUser(grid, options.User);
+
+            ApplyCompany(grid, access, card, options);
+            if (access.Comp.CrewId != null)
+            {
+                notes.Add(Loc.GetString("wf-ship-admin-note-crew", ("crew", access.Comp.CrewName ?? string.Empty)));
+                if (options.LeaveCrewMode && access.Comp.Mode == WFShipAccessMode.Crew)
+                    _shipAccess.SetMode(access, WFShipAccessMode.Private);
+            }
+
+            if (options.KeepPrevious)
+            {
+                foreach (var old in revoked)
+                {
+                    if (HasComp<IdCardComponent>(old))
+                        _shipAccess.TryAddCard(access, old, CardName(old), Loc.GetString("wf-ship-admin-label-previous-owner"));
+                }
+            }
+
+            if (_shipAccess.OwnersChanged(access))
+                notes.Add(Loc.GetString("wf-ship-admin-note-unlocked"));
+        }
+
+        Audit(admin, LogImpact.High, grid,
+            $"transferred from '{previousName}' ({string.Join(", ", previous.Select(Username))}) to '{ownerName}' ({target.Name}); deed card: {card != null}, allow list cleared: {options.ClearAllowList}, previous owners kept as crew: {options.KeepPrevious}");
+
+        if (options.Notify)
+        {
+            previous.Remove(options.User);
+            NoteUntold(notes, Tell(previous, Loc.GetString("wf-ship-admin-notice-lost", ("ship", Name(grid)))));
+            Tell(new[] { options.User }, Loc.GetString("wf-ship-admin-notice-gained", ("ship", Name(grid))));
+        }
+
+        result = Loc.GetString("wf-ship-admin-result-transferred",
+            ("ship", Name(grid)),
+            ("from", previousName.Length > 0 ? previousName : Loc.GetString("wf-ship-admin-unowned")),
+            ("to", ownerName));
+        result = WithNotes(result, notes);
+        return true;
+    }
+
+    /// <summary>Registers one more player's account as an owner. They keep the ship in any body; no deed is handed out.</summary>
+    public bool AddOwner(ICommonSession admin, EntityUid grid, NetUserId user, bool notify, out string result)
+    {
+        if (!HasComp<ShuttleComponent>(grid))
+        {
+            result = Loc.GetString("wf-ship-admin-result-not-ship");
+            return false;
+        }
+
+        var access = _shipAccess.EnsureAccess(grid);
+        if (!_shipAccess.AddOwnerUser(grid, user))
+        {
+            result = Loc.GetString("wf-ship-admin-result-already-owner", ("name", Username(user)));
+            return false;
+        }
+
+        var notes = new List<string>();
+        _shipAccess.OwnersChanged(access);
+        Audit(admin, LogImpact.Medium, grid, $"registered {Username(user)} as a co-owner");
+        if (notify)
+            NoteUntold(notes, Tell(new[] { user }, Loc.GetString("wf-ship-admin-notice-gained", ("ship", Name(grid)))));
+
+        result = WithNotes(Loc.GetString("wf-ship-admin-result-owner-added", ("name", Username(user)), ("ship", Name(grid))), notes);
+        return true;
+    }
+
+    /// <summary>
+    /// Takes one owner off a ship: an account, or a card or voucher holding the deed. The last owner can't be
+    /// removed this way; that is a release.
+    /// </summary>
+    public bool RemoveOwner(ICommonSession admin, EntityUid grid, NetUserId? user, EntityUid? card, bool notify, out string result)
+    {
+        if (!TryComp<WFShipAccessComponent>(grid, out var comp))
+            comp = _shipAccess.EnsureAccess(grid).Comp;
+
+        var access = new Entity<WFShipAccessComponent>(grid, comp);
+        var holders = _shipyard.DeedHolders(grid);
+        var remaining = holders.Count + comp.OwnerUsers.Count - 1;
+        var isAccount = card == null && user is { } account && comp.OwnerUsers.Contains(account);
+        var isCard = card is { } held && holders.Contains(held);
+        if (!isAccount && !isCard)
+        {
+            result = Loc.GetString("wf-ship-admin-result-not-owner");
+            return false;
+        }
+
+        if (remaining <= 0)
+        {
+            result = Loc.GetString("wf-ship-admin-result-last-owner");
+            return false;
+        }
+
+        string removedName;
+        NetUserId? removed;
+        if (isCard)
+        {
+            removedName = CardName(card!.Value);
+            removed = CompOrNull<IdCardOwnerComponent>(card.Value)?.UserId;
+            _shipyard.RevokeDeed(card.Value, grid);
+        }
+        else
+        {
+            removedName = Username(user!.Value);
+            removed = user;
+            _shipAccess.RemoveOwnerUser(access, user.Value);
+        }
+
+        // The shipyard's own record names one account; it can't keep naming someone who no longer owns the ship.
+        if (removed != null && TryComp<ShipOwnershipComponent>(grid, out var ownership) && ownership.OwnerUserId == removed
+            && !OwnerAccounts(grid, false).Contains(removed.Value))
+        {
+            ICommonSession? heir = null;
+            foreach (var other in OwnerAccounts(grid, false))
+            {
+                if (IsOnline(other) && _player.TryGetSessionById(other, out heir))
+                    break;
+            }
+
+            if (heir != null)
+                _shipOwnership.RegisterShipOwnership(grid, heir);
+            else
+                RemComp<ShipOwnershipComponent>(grid);
+        }
+
+        var notes = new List<string>();
+        if (_shipAccess.OwnersChanged(access))
+            notes.Add(Loc.GetString("wf-ship-admin-note-unlocked"));
+
+        Audit(admin, LogImpact.Medium, grid, $"removed owner '{removedName}'");
+        if (notify && removed != null)
+            NoteUntold(notes, Tell(new[] { removed.Value }, Loc.GetString("wf-ship-admin-notice-lost", ("ship", Name(grid)))));
+
+        result = WithNotes(Loc.GetString("wf-ship-admin-result-owner-removed", ("name", removedName), ("ship", Name(grid))), notes);
+        return true;
+    }
+
+    /// <summary>
+    /// Leaves a ship with no owner: every deed and account comes off and its doors unlock. Its helm stays locked to
+    /// the deed, so only staff fly it until it is transferred to someone.
+    /// </summary>
+    public bool Release(ICommonSession admin, EntityUid grid, bool notify, out string result)
+    {
+        var previous = OwnerAccounts(grid);
+        var previousName = OwnerName(grid);
+        if (previous.Count == 0 && _shipyard.DeedHolders(grid).Count == 0 && !HasComp<ShuttleDeedComponent>(grid))
+        {
+            result = Loc.GetString("wf-ship-admin-result-no-owner");
+            return false;
+        }
+
+        _shipyard.RevokeDeeds(grid);
+        RemComp<ShipOwnershipComponent>(grid);
+        var unclaimed = Loc.GetString("wf-ship-admin-unclaimed");
+        if (HasComp<ShuttleDeedComponent>(grid))
+            _shipyard.SetShipOwnerName(grid, unclaimed);
+
+        if (TryComp<WFShipAccessComponent>(grid, out var comp))
+        {
+            var access = new Entity<WFShipAccessComponent>(grid, comp);
+            _shipAccess.ClearOwners(access);
+            _shipAccess.SetOwnerName(access, unclaimed);
+            _shipAccess.SetLocked(access, false);
+        }
+
+        var notes = new List<string>();
+        Audit(admin, LogImpact.High, grid, $"released from '{previousName}' ({string.Join(", ", previous.Select(Username))}); it has no owner now");
+        if (notify)
+            NoteUntold(notes, Tell(previous, Loc.GetString("wf-ship-admin-notice-lost", ("ship", Name(grid)))));
+
+        result = WithNotes(Loc.GetString("wf-ship-admin-result-released", ("ship", Name(grid))), notes);
+        return true;
+    }
+
+    /// <summary>Every account that owns the ship: the shipyard's, the registered ones and those the deed cards were issued to.</summary>
+    public HashSet<NetUserId> OwnerAccounts(EntityUid grid, bool includeShipyard = true)
+    {
+        var users = new HashSet<NetUserId>();
+        if (includeShipyard && TryComp<ShipOwnershipComponent>(grid, out var ownership))
+            users.Add(ownership.OwnerUserId);
+
+        if (TryComp<WFShipAccessComponent>(grid, out var access))
+            users.UnionWith(access.OwnerUsers);
+
+        foreach (var card in _shipyard.DeedHolders(grid))
+        {
+            if (TryComp<IdCardOwnerComponent>(card, out var stamp))
+                users.Add(stamp.UserId);
+        }
+
+        return users;
+    }
+
+    private void ApplyCompany(EntityUid grid, Entity<WFShipAccessComponent> access, EntityUid? card, WFShipAdminTransferMessage options)
+    {
+        if (card != null && HasComp<WFCompanyIdComponent>(card))
+        {
+            _companies.MarkBoughtShip(grid, card.Value);
+        }
+        else if (options.DropCompany)
+        {
+            RemComp<WFCompanyShipComponent>(grid);
+            _shipAccess.SetCompany(access, null, null, Array.Empty<WFShipAccessKey>());
+        }
+
+        switch (options.Faction)
+        {
+            case WFShipAdminFaction.Clear:
+                RemComp<CompanyComponent>(grid);
+                break;
+            case WFShipAdminFaction.FromCard:
+                var faction = card != null && TryComp<IdCardComponent>(card, out var id) ? id.CompanyName.Id : null;
+                if (string.IsNullOrEmpty(faction))
+                {
+                    RemComp<CompanyComponent>(grid);
+                    break;
+                }
+
+                var hull = EnsureComp<CompanyComponent>(grid);
+                hull.CompanyName = faction;
+                Dirty(grid, hull);
+                break;
+        }
+
+        if (access.Comp.Mode == WFShipAccessMode.Faction && !_accessRules.IsFactionGrid(grid, out _))
+            _shipAccess.SetMode(access, WFShipAccessMode.Private);
+    }
+
+    /// <summary>Sends a chat line to each account that is connected, and returns the names of those that are not.</summary>
+    private List<string> Tell(IEnumerable<NetUserId> users, string message)
+    {
+        var untold = new List<string>();
+        foreach (var user in users)
+        {
+            if (IsOnline(user) && _player.TryGetSessionById(user, out var session))
+                _chat.DispatchServerMessage(session, message);
+            else
+                untold.Add(Username(user));
+        }
+
+        return untold;
+    }
+
+    private void NoteUntold(List<string> notes, List<string> untold)
+    {
+        if (untold.Count > 0)
+            notes.Add(Loc.GetString("wf-ship-admin-note-untold", ("names", string.Join(", ", untold))));
+    }
+
+    private static string WithNotes(string result, List<string> notes)
+    {
+        return notes.Count == 0 ? result : $"{result} {string.Join(' ', notes)}";
+    }
+}

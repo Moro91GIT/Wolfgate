@@ -94,7 +94,27 @@ public sealed partial class WFShipAdminEui : BaseEui
                 if (TryTarget(action.Grid, action.Action, out var grid))
                     _ships.Run(this, grid, action.Action, action.Value, action.Notify);
                 break;
+            case WFShipAdminTransferMessage transfer when Enum.IsDefined(transfer.Faction):
+                if (TryTarget(transfer.Grid, WFShipAdminAction.Transfer, out var given))
+                    Finish(_ships.Transfer(Player, given, transfer, out var transferred), transferred);
+                break;
+            case WFShipAdminOwnerMessage owner:
+                if (!TryTarget(owner.Grid, owner.Add ? WFShipAdminAction.AddOwner : WFShipAdminAction.RemoveOwner, out var owned))
+                    break;
+
+                if (owner.Add && owner.User is { } added)
+                    Finish(_ships.AddOwner(Player, owned, added, owner.Notify, out var addResult), addResult);
+                else if (!owner.Add)
+                    Finish(_ships.RemoveOwner(Player, owned, owner.User, _entMan.GetEntity(owner.Card), owner.Notify, out var removeResult), removeResult);
+                break;
         }
+    }
+
+    /// <summary>Shows an action's outcome and sends the list again, since most actions change a row.</summary>
+    public void Finish(bool done, string result)
+    {
+        _sendList = true;
+        SetResult(result, !done);
     }
 
     /// <summary>Selects a ship, or none, and sends its detail.</summary>

@@ -166,6 +166,55 @@ public sealed class WFShipAdminListMessage(WFShipAdminFilter filter) : EuiMessag
     public readonly WFShipAdminFilter Filter = filter;
 }
 
+/// <summary>What a transfer does with the faction the hull flies for.</summary>
+[Serializable, NetSerializable]
+public enum WFShipAdminFaction : byte
+{
+    Keep,
+
+    /// <summary>The faction on the new owner's ID card, or none when the card has none.</summary>
+    FromCard,
+    Clear,
+}
+
+/// <summary>Hands a ship to a player: every earlier owner loses it.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminTransferMessage(NetEntity grid, NetUserId user) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly NetUserId User = user;
+
+    /// <summary>Empties the allow list, so the old owner's guests lose their access too.</summary>
+    public bool ClearAllowList;
+
+    /// <summary>Puts each card that held the deed on the allow list, so earlier owners stay aboard as crew.</summary>
+    public bool KeepPrevious;
+
+    /// <summary>Stops the ship flying for the old owner's player company.</summary>
+    public bool DropCompany = true;
+
+    /// <summary>Takes a crew ship out of Crew mode, so the linked crew's cards stop opening it.</summary>
+    public bool LeaveCrewMode = true;
+
+    /// <summary>Takes a company hangar ship away from its company. Needs the elevated flag.</summary>
+    public bool DetachHangar;
+    public WFShipAdminFaction Faction;
+
+    /// <summary>Tells the old and new owners in chat.</summary>
+    public bool Notify = true;
+}
+
+/// <summary>Adds an account as a co-owner, or removes one owner: an account, or a card or voucher holding the deed.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminOwnerMessage(NetEntity grid, bool add, NetUserId? user, NetEntity? card, bool notify) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly bool Add = add;
+    public readonly NetUserId? User = user;
+    public readonly NetEntity? Card = card;
+    public readonly bool Notify = notify;
+}
+
 /// <summary>An action on a ship that needs no more than a switch.</summary>
 [Serializable, NetSerializable]
 public sealed class WFShipAdminActionMessage(NetEntity grid, WFShipAdminAction action, bool value = false, bool notify = false) : EuiMessageBase

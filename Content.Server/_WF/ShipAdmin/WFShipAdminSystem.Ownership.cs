@@ -70,10 +70,12 @@ public sealed partial class WFShipAdminSystem
         var body = target.AttachedEntity is { Valid: true } attached && !HasComp<GhostComponent>(attached) ? attached : (EntityUid?) null;
         var ownerName = body != null ? Name(body.Value).Trim() : target.Name;
 
+        // The old deeds come off first: the new owner may be one of the old ones, whose card is free again after this.
+        var fresh = !HasComp<ShuttleDeedComponent>(grid) && !HasComp<ShipOwnershipComponent>(grid) && !HasComp<WFShipAccessComponent>(grid);
+        var revoked = _shipyard.RevokeDeeds(grid);
         if (!_vesselSpawn.TryGetDeedCard(target, out var card, out var cardError))
             notes.Add(Loc.GetString("wf-ship-admin-note-account-only", ("reason", Loc.GetString(cardError, ("name", target.Name)))));
 
-        var fresh = !HasComp<ShuttleDeedComponent>(grid) && !HasComp<ShipOwnershipComponent>(grid) && !HasComp<WFShipAccessComponent>(grid);
         if (fresh && card != null)
         {
             // Nobody ever owned it, so the whole purchase path is right: station, records, locks and access setup.
@@ -91,7 +93,6 @@ public sealed partial class WFShipAdminSystem
         }
         else
         {
-            var revoked = _shipyard.RevokeDeeds(grid);
             var access = _shipAccess.EnsureAccess(grid);
             _shipAccess.ClearOwners(access);
             if (options.ClearAllowList)

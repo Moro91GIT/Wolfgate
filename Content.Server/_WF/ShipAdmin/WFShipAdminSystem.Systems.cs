@@ -128,7 +128,8 @@ public sealed partial class WFShipAdminSystem
         }
 
         Audit(admin, LogImpact.Medium, grid, $"set {protect} to {on}");
-        result = Loc.GetString(on ? "wf-ship-admin-result-protect-on" : "wf-ship-admin-result-protect-off", ("ship", Name(grid)), ("protect", protect.ToString()));
+        var protectName = Loc.GetString($"wf-ship-admin-systems-protect-{protect.ToString().ToLowerInvariant()}");
+        result = Loc.GetString(on ? "wf-ship-admin-result-protect-on" : "wf-ship-admin-result-protect-off", ("ship", Name(grid)), ("protect", protectName));
         return true;
     }
 

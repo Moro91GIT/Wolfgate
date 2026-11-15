@@ -36,14 +36,15 @@ public sealed partial class WFShipAdminSystem
         if (!TryAccess(grid, out var access, out result))
             return false;
 
+        var modeName = Loc.GetString($"wf-ship-admin-mode-{mode.ToString().ToLowerInvariant()}");
         if (!_shipAccess.SetMode(access, mode))
         {
-            result = Loc.GetString("wf-ship-admin-result-mode-unavailable", ("mode", mode.ToString()));
+            result = Loc.GetString("wf-ship-admin-result-mode-unavailable", ("mode", modeName));
             return false;
         }
 
         Audit(admin, LogImpact.Medium, grid, $"set its access mode to {mode}");
-        result = Told(grid, notify, Loc.GetString("wf-ship-admin-result-mode", ("ship", Name(grid)), ("mode", mode.ToString())));
+        result = Told(grid, notify, Loc.GetString("wf-ship-admin-result-mode", ("ship", Name(grid)), ("mode", modeName)));
         return true;
     }
 

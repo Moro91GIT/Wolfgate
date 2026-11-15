@@ -95,7 +95,7 @@ public sealed class WFShipAdminMoveTab : WFShipAdminTab
             ("x", detail.Position.X.ToString("0", CultureInfo.InvariantCulture)),
             ("y", detail.Position.Y.ToString("0", CultureInfo.InvariantCulture)),
             ("speed", detail.Speed.ToString("0.#", CultureInfo.InvariantCulture)),
-            ("ftl", detail.Ftl.Length > 0 ? detail.Ftl : Loc.GetString("wf-ship-admin-move-ftl-ready")));
+            ("ftl", Loc.GetString(detail.Ftl.Length > 0 ? $"wf-ship-admin-move-ftl-{detail.Ftl.ToLowerInvariant()}" : "wf-ship-admin-move-ftl-ready")));
         _ftlLock.Text = Loc.GetString(detail.FtlLock ? "wf-ship-admin-move-ftl-lock-off" : "wf-ship-admin-move-ftl-lock-on");
 
         var hasTarget = _targetGrids.Count > 0;

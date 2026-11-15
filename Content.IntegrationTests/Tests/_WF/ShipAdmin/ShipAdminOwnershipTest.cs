@@ -114,6 +114,10 @@ public sealed class ShipAdminOwnershipTest
                 Assert.That(comp.AllowList[0].Name, Is.EqualTo("Ben Ortiz"));
             });
 
+            // Handing it to the owner it already has leaves the deed on their card.
+            Assert.That(ships.Transfer(session, grid, new WFShipAdminTransferMessage(netGrid, session.UserId), out result), Is.True, result);
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.AdaCard), Is.True, "The owner's own card is free to take the deed back.");
+
             // A ghost has no card to hold a deed: the ship is registered to the account and unlocks.
             ghost = entMan.SpawnEntity(GhostProto, map.GridCoords);
             server.PlayerMan.SetAttachedEntity(session, ghost);

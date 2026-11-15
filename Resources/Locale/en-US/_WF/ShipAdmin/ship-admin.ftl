@@ -187,6 +187,12 @@ wf-ship-admin-repair-restore-tooltip = Deletes and rebuilds every part that move
 ## Move tab
 wf-ship-admin-move-status = { $map } ({ $x }, { $y }) | speed: { $speed } | jump drive: { $ftl }
 wf-ship-admin-move-ftl-ready = ready
+wf-ship-admin-move-ftl-available = ready
+wf-ship-admin-move-ftl-invalid = unknown
+wf-ship-admin-move-ftl-starting = spooling up
+wf-ship-admin-move-ftl-travelling = in transit
+wf-ship-admin-move-ftl-arriving = arriving
+wf-ship-admin-move-ftl-cooldown = cooling down
 wf-ship-admin-move-heading = Move the ship
 wf-ship-admin-move-note = A move is instant. The ship is undocked first, lands in the nearest clear spot and comes to rest. Stations and planets can't be moved from here.
 wf-ship-admin-move-to-me = Bring it to me

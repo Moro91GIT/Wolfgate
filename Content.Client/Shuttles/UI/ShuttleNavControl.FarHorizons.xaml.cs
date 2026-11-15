@@ -101,7 +101,7 @@ public partial class ShuttleNavControl
             // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
             // handle.DrawString(Font, (uiPosition + labelOffset) * UIScale, mainLabel, UIScale * 0.9f, color);
             // WfDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
-            WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale);
+            WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, always: true); // beacons are landmarks
             WfTagLine(handle, mainLabel, UIScale * 0.9f, color);
             WfDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
             // WOLFGATE END

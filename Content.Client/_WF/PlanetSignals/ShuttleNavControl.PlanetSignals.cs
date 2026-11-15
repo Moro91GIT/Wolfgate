@@ -115,7 +115,7 @@ public partial class ShuttleNavControl
                 : Loc.GetString("wf-planet-signals-marker-vessel", ("name", WFPlanetSignalsWindow.NameOf(signal)),
                     ("layer", WFPlanetSignalsWindow.LayerOf(signal)));
             var labelSize = handle.GetDimensions(Font, label, UIScale * 0.8f);
-            WfBeginTag(point, point + new Vector2(size * 2f, -labelSize.Y / 2f), mine ? 2 : 0);
+            WfBeginTag(point, point + new Vector2(size * 2f, -labelSize.Y / 2f), mine ? 2 : 0, always: mine);
             WfTagLine(handle, label, UIScale * 0.8f, color);
         }
     }

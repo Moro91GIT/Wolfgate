@@ -7,6 +7,14 @@ Tags that would overlap share one stacked list on a dark backing, each row with 
 list splits back into separate tags as zooming in makes room. A stack shows only each tag's first line; past ten
 rows it keeps the highest priorities (hovered contact, player ships, encounters and waypoints) and sums up the rest.
 
+The scope is quiet by default. Only tags marked `always` show their name anywhere on it: ships within 750 m, the
+hovered contact, encounters, waypoints, beacons, your expedition, cities and depots, Lattice phantoms and admin crew
+tags. Every other contact is a blip, with a `×N` count where several crowd together. Round the cursor a faint lens
+(100 px) shows every tag, stacking as above, and the tag nearest the cursor alone shows its detail lines (company,
+coordinates, track ID, a world's signals). Tags fade in and out over 0.15 s. Only contacts on the scope get a tag:
+one pinned to the rim keeps its blip. The `wf.radar_smart_tags` option (Options, Wolfgate) turns all of this off, so
+every tag sits whole by its contact as before.
+
 Entry points: `WFRadarTagLayout` (the grouping, pure geometry) and `ShuttleNavControl.RadarLabels.cs`, whose
 `WfBeginTag`, `WfTagLine`, `WfTagAbove` and `WfTagHeadExtra` a label source calls in place of `DrawString`.
 `WfDrawTags` draws them all at the end of the scope's `Draw`.

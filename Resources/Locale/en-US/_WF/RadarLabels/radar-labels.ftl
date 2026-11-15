@@ -1,2 +1,3 @@
 wf-radar-tags-more = +{ $count } more
-ui-options-wf-radar-tag-stacking = Stack overlapping radar tags
+wf-radar-tags-crowd = ×{ $count }
+ui-options-wf-radar-smart-tags = Smart radar tags: names only for what matters, the rest under the cursor

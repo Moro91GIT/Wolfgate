@@ -41,7 +41,8 @@ public sealed class RadarDisplaySettingsTest
                 scanner.OpenCentered();
                 var radar = scanner.FindControl<ShuttleNavControl>("RadarScreen");
                 var detailed = scanner.FindControl<Button>("IFFDetailedToggle");
-                Assert.That((radar.ShowIFF, radar.ShowIFFDetailed, radar.ShowDocks), Is.EqualTo((true, true, true)));
+                // The mass scanner marks no docks, whatever the saved choice.
+                Assert.That((radar.ShowIFF, radar.ShowIFFDetailed, radar.ShowDocks), Is.EqualTo((true, true, false)));
                 Assert.That(detailed.Pressed, Is.True);
 
                 // The mass scanner's own handler, as a click on the toggle runs it.
@@ -73,18 +74,18 @@ public sealed class RadarDisplaySettingsTest
                     "The gunnery console shares the choice.");
                 Assert.That(gunnery.FindControl<Button>("IFFDetailedToggle").Pressed, Is.False);
 
-                // A screen with no docks toggle always shows docks and leaves the saved choice alone.
-                cfg.SetCVar(WolfgateCVars.RadarShowDocks, false);
+                // The mass scanner has no docks toggle: it marks no docks and leaves the saved choice alone.
+                cfg.SetCVar(WolfgateCVars.RadarShowDocks, true);
                 scanner = new RadarConsoleWindow();
                 scanner.OpenCentered();
-                Assert.That(scanner.FindControl<ShuttleNavControl>("RadarScreen").ShowDocks, Is.True);
-                using var docksOff = new NavScreen();
-                Assert.That(docksOff.FindControl<ShuttleNavControl>("NavRadar").ShowDocks, Is.False);
-                Assert.That(docksOff.FindControl<Button>("DockToggle").Pressed, Is.False);
+                Assert.That(scanner.FindControl<ShuttleNavControl>("RadarScreen").ShowDocks, Is.False);
+                using var docksOn = new NavScreen();
+                Assert.That(docksOn.FindControl<ShuttleNavControl>("NavRadar").ShowDocks, Is.True);
+                Assert.That(docksOn.FindControl<Button>("DockToggle").Pressed, Is.True);
             });
             await pair.RunTicksSync(5);
             await client.WaitAssertion(() =>
-                Assert.That(cfg.GetCVar(WolfgateCVars.RadarShowDocks), Is.False,
+                Assert.That(cfg.GetCVar(WolfgateCVars.RadarShowDocks), Is.True,
                     "A radar with no docks toggle must not overwrite the saved docks choice."));
         }
         finally

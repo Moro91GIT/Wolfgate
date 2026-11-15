@@ -28,10 +28,10 @@ public sealed partial class WFWarheadSystem
 
     private void OnSetTimerMessage(Entity<WFWarheadComponent> ent, ref WFWarheadSetTimerMessage args)
     {
-        if (!HasComp<WFTimerFuzeComponent>(ent) || ent.Comp.State != WFWarheadState.Safe || !float.IsFinite(args.Seconds))
+        if (!TryComp<WFTimerFuzeComponent>(ent, out var fuze) || ent.Comp.State != WFWarheadState.Safe || !float.IsFinite(args.Seconds))
             return;
 
-        ent.Comp.Timer = Math.Clamp(args.Seconds, ent.Comp.FinalPhase, MaxTimer);
+        ent.Comp.Timer = Math.Clamp(args.Seconds, Math.Max(ent.Comp.FinalPhase, fuze.MinTimer), MaxTimer);
         Dirty(ent);
         UpdateUi(ent);
     }
@@ -98,6 +98,7 @@ public sealed partial class WFWarheadSystem
         {
             state.HasTimerFuze = true;
             state.TimerOptions = new List<float>(timer.Options);
+            state.MinTimer = Math.Max(comp.FinalPhase, timer.MinTimer);
         }
 
         if (TryComp<WFTwoPersonArmingComponent>(uid, out var keys))

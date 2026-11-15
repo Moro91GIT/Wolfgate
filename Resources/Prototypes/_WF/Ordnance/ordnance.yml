@@ -25,6 +25,7 @@
     disarmQuality: null
   - type: WFTimerFuze
     options: [ 90, 120, 300, 600 ]
+    minTimer: 90
   - type: WFRemoteFuze
     signalTimer: 90
   - type: WFOrdnanceKlaxon

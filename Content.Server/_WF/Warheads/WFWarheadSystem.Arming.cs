@@ -131,7 +131,7 @@ public sealed partial class WFWarheadSystem
             return;
 
         args.Handled = true;
-        StartCountdown((ent, warhead), args.User);
+        StartCountdown((ent, warhead), args.User, Math.Max(warhead.Timer, ent.Comp.MinTimer));
         _popup.PopupEntity(Loc.GetString("wf-warhead-armed", ("seconds", (int) warhead.Timer)), ent, args.User);
     }
 

@@ -46,6 +46,11 @@ public sealed class WFOrdnanceWiresTest
             Assert.That(entMan.GetComponent<WFOrdnanceBeaconComponent>(beacon).TimerOptions.Min(), Is.GreaterThanOrEqualTo(90f));
             Assert.That(entMan.GetComponent<WFWarheadComponent>(warhead).DisarmQuality, Is.Null,
                 "a multitool still disarms the warhead around its wires.");
+
+            // The panel's nudge buttons can't take it under 90 s either.
+            entMan.EventBus.RaiseLocalEvent(warhead, new WFWarheadSetTimerMessage(30f));
+            Assert.That(entMan.GetComponent<WFWarheadComponent>(warhead).Timer, Is.EqualTo(90f),
+                "the control panel set the timer under 90 s.");
         });
 
         await pair.CleanReturnAsync();

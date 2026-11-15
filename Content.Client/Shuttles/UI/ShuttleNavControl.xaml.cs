@@ -304,6 +304,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         _radarModeButtons.AddChild(_radarAnchorButton);
         _radarModeButtons.AddChild(_radarResetButton);
         AddWfZoomToMouseButton(_radarModeButtons); // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        AddWfAllNamesButton(_radarModeButtons); // WOLFGATE(RadarLabels): every contact named toggle.
 
         parent.AddChild(_radarModeButtons);
         AddWfTerrainButton(parent); // WOLFGATE(Planets): terrain toggle overlays the radar, not the settings column.
@@ -346,7 +347,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         Rotation,
         Anchor,
         Reset,
-        WfZoomToMouse // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        WfZoomToMouse, // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        WfAllNames // WOLFGATE(RadarLabels): every contact named toggle.
     }
 
     public sealed partial class RadarModeButton : BaseButton // WOLFGATE(CombatConsole): theme the original radar mode controls.
@@ -452,6 +454,9 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                 // WOLFGATE(Shuttles) START: zoom toward the cursor toggle.
                 case RadarModeButtonIcon.WfZoomToMouse:
                     WfDrawZoomToMouse(handle, center, radius, Color.Lime.WithAlpha(0.95f));
+                    break;
+                case RadarModeButtonIcon.WfAllNames: // WOLFGATE(RadarLabels): every contact named toggle
+                    WfDrawAllNames(handle, center, radius, Color.Lime.WithAlpha(0.95f));
                     break;
                 // WOLFGATE END
                 default:
@@ -742,6 +747,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
         // Mono edited: Frontier - collect blip location data outside foreach - more changes ahead
         _tempBlipDataList.Clear();
+        WfGatherEncounterGrids(); // WOLFGATE(RadarLabels): encounter ships draw as ships
 
         _visibleGridsSet.Clear();
 
@@ -1107,7 +1113,9 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                         // WOLFGATE END
                     }
 
-                    NfAddBlipToList(_tempBlipDataList, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, labelColor, hideLabel ? default : gUid); // Frontier code
+                    // WOLFGATE(RadarLabels): a contact on the scope is drawn as what it is; at the rim, or unknown, it keeps the triangle
+                    if (isOutsideRadarCircle || !WfQueueContactIcon(gUid, uiPosition, curGridToView, labelColor, hideLabel || blipOnly))
+                        NfAddBlipToList(_tempBlipDataList, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, labelColor, hideLabel ? default : gUid); // Frontier code
                                                                                                                                                         // End Frontier: IFF drawing functions
                 }
 
@@ -1152,6 +1160,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         WfFlushGrids(handle);
         if (!renderFill)
             NfDrawBlips(handle, _tempBlipDataList);
+        WfDrawContactIcons(handle, !renderFill); // WOLFGATE(RadarLabels): contacts on the scope, by what they are
 
         // If we've set the controlling console, and it's on a different grid
         // to the shuttle itself, then draw an additional marker to help the

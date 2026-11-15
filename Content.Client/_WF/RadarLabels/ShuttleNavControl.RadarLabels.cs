@@ -155,6 +155,7 @@ public partial class ShuttleNavControl
         }
 
         WfKeyTags();
+        var allNames = _wfAllNames;
 
         // The lens: every tag inside it shows, and the one nearest the cursor shows its details.
         Vector2? cursor = _isMouseInside ? (UserInterfaceManager.MousePositionScaled.Position - GlobalPosition) * UIScale : null;
@@ -183,7 +184,7 @@ public partial class ShuttleNavControl
         {
             var tag = _wfTags[i];
             var draw = _wfTagDraws[i];
-            var shown = draw.Always || cursor is { } at && (tag.Anchor - at).LengthSquared() <= lens * lens;
+            var shown = draw.Always || allNames || cursor is { } at && (tag.Anchor - at).LengthSquared() <= lens * lens;
             draw.Full = i == focus;
             if (!draw.Full)
             {

@@ -16,6 +16,12 @@ one pinned to the rim keeps its blip. The mass scanner, which has no docks toggl
 `wf.radar_smart_tags` option (Options, Wolfgate) turns all of this off, so every tag sits whole by its contact as
 before.
 
+The radar mode buttons carry an all-names toggle (`wf.radar_all_names`): every contact on the scope shows its name, and
+the lens only adds details. Contacts on the scope are drawn as what they are (`ShuttleNavControl.RadarIcons.cs`): a ship
+as a chevron pointing its heading, a station as a square with a dot, an asteroid as a rough hexagon, a wreck as a cross.
+Unknown contacts and those pinned to the rim keep the old triangle. Encounter markers and NPC crew tags follow the IFF
+toggle like any other contact.
+
 Entry points: `WFRadarTagLayout` (the grouping, pure geometry) and `ShuttleNavControl.RadarLabels.cs`, whose
 `WfBeginTag`, `WfTagLine`, `WfTagAbove` and `WfTagHeadExtra` a label source calls in place of `DrawString`.
 `WfDrawTags` draws them all at the end of the scope's `Draw`.
@@ -27,6 +33,7 @@ Entry points: `WFRadarTagLayout` (the grouping, pure geometry) and `ShuttleNavCo
 
 ### Client
 
+- [`Content.Client/_WF/RadarLabels/ShuttleNavControl.RadarIcons.cs`](ShuttleNavControl.RadarIcons.cs)
 - [`Content.Client/_WF/RadarLabels/ShuttleNavControl.RadarLabels.cs`](ShuttleNavControl.RadarLabels.cs)
 - [`Content.Client/_WF/RadarLabels/WFRadarTagLayout.cs`](WFRadarTagLayout.cs)
 
@@ -44,9 +51,14 @@ Entry points: `WFRadarTagLayout` (the grouping, pure geometry) and `ShuttleNavCo
   - a beacon pinned to the rim keeps its blip, still clickable for a world, but no tag
   - lines go to the scope's shared tag layout, which stacks overlapping tags.
 - [`Content.Client/Shuttles/UI/ShuttleNavControl.xaml.cs`](../../Shuttles/UI/ShuttleNavControl.xaml.cs)
+  - every contact named toggle.
+  - every contact named toggle
+  - encounter ships draw as ships
   - every contact's tag, laid out together over the scope.
   - only contacts on the scope get a tag; one pinned to the rim keeps just its blip unless hovered
   - lines go to the scope's shared tag layout, which stacks overlapping tags.
+  - a contact on the scope is drawn as what it is; at the rim, or unknown, it keeps the triangle
+  - contacts on the scope, by what they are
   - dock names join the scope's shared tag layout.
 
 <!-- WOLFGATE-GENERATED END -->

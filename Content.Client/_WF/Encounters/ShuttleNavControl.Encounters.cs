@@ -9,9 +9,6 @@ namespace Content.Client.Shuttles.UI;
 
 public partial class ShuttleNavControl
 {
-    /// <summary>Whether encounter markers, zones and NPC crew tags are drawn. The admin scanner can turn them off.</summary>
-    public bool WfShowEncounters = true;
-
     /// <summary>The ships of one side of one encounter, gathered for a frame.</summary>
     private readonly Dictionary<(NetEntity Encounter, string Side), (Vector2 Sum, int Count, bool Named, bool OnScope, Color Color, WFEncounterIcon Icon, WFEncounterCategory Category, float Warn, float Attack)> _encounterGroups = new();
 
@@ -48,7 +45,8 @@ public partial class ShuttleNavControl
     private void DrawEncounterMarkers(DrawingHandleScreen handle, TransformComponent consoleXform, Matrix3x2 worldToView)
     {
         var system = EntManager.System<WFEncounterMarkerClientSystem>();
-        if (!WfShowEncounters || system.Markers.Count == 0)
+        // Encounters are radar contacts like any other: the IFF toggle hides them too.
+        if (!ShowIFF || system.Markers.Count == 0)
             return;
 
         var centre = MidPointVector;

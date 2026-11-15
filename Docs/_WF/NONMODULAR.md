@@ -556,6 +556,7 @@ Standalone edits outside `_WF` that serve no module: files with an untagged `WOL
 - [`Resources/Prototypes/_Obelisk/Species/hydrakin.yml`](../../Resources/Prototypes/_Obelisk/Species/hydrakin.yml): hydrakin is not selectable in character creation
 - [`Resources/Prototypes/_Shitmed/Entities/Objects/Devices/Circuitboards/Machine/production.yml`](../../Resources/Prototypes/_Shitmed/Entities/Objects/Devices/Circuitboards/Machine/production.yml): a machine part under stackRequirements can't be inserted; the frame reads parts from requirements
 - [`Resources/Prototypes/_StarLight/Entities/Mobs/Species/felionoid.yml`](../../Resources/Prototypes/_StarLight/Entities/Mobs/Species/felionoid.yml): OwO accent removed
+- [`Resources/Prototypes/Catalog/Fills/Crates/engines.yml`](../../Resources/Prototypes/Catalog/Fills/Crates/engines.yml): the IRE rebrand missed this crate
 - [`Resources/Prototypes/Catalog/VendingMachines/Inventories/engivend.yml`](../../Resources/Prototypes/Catalog/VendingMachines/Inventories/engivend.yml): radiation suits buyable from the EngiVend
 - [`Resources/Prototypes/Damage/modifier_sets.yml`](../../Resources/Prototypes/Damage/modifier_sets.yml): restore the licence header removed by Kill Spdx
 - [`Resources/Prototypes/Entities/Clothing/Back/specific.yml`](../../Resources/Prototypes/Entities/Clothing/Back/specific.yml): Frontier hid ClothingBackpack, so it was never a valid chameleon pick and the menu got no state

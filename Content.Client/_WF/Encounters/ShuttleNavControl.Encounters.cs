@@ -18,6 +18,9 @@ public partial class ShuttleNavControl
     /// <summary>Where each side's ships were drawn this frame, for the spread of its zone envelope.</summary>
     private readonly Dictionary<(NetEntity Encounter, string Side), List<Vector2>> _encounterPoints = new();
 
+    /// <summary>The ship each side's name hangs on this frame: its on-scope ship with the lowest grid id, whatever order the markers came in.</summary>
+    private readonly Dictionary<(NetEntity Encounter, string Side), NetEntity> _encounterNamers = new();
+
     private static readonly ResPath MarkerGlyphs = new("/Textures/_WF/Encounters/markers.rsi");
     private readonly Dictionary<WFEncounterIcon, Texture> _encounterGlyphs = new();
     private WFEncounterRanks? _encounterRanks;
@@ -53,6 +56,18 @@ public partial class ShuttleNavControl
         var size = 6f * UIScale;
         _encounterGroups.Clear();
         _encounterPoints.Clear();
+        _encounterNamers.Clear();
+        foreach (var marker in system.Markers)
+        {
+            if (marker.Map != consoleXform.MapID
+                || (Vector2.Transform(system.GetPosition(marker), worldToView) - centre).Length() > rim)
+                continue;
+
+            var key = (marker.Encounter, marker.Side);
+            if (!_encounterNamers.TryGetValue(key, out var namer) || marker.Grid.Id < namer.Id)
+                _encounterNamers[key] = marker.Grid;
+        }
+
         foreach (var marker in system.Markers)
         {
             if (marker.Map != consoleXform.MapID)
@@ -78,7 +93,7 @@ public partial class ShuttleNavControl
                 handle.DrawLine(point + new Vector2(size, 0f), point + new Vector2(0f, size), color);
                 handle.DrawLine(point + new Vector2(0f, size), point + new Vector2(-size, 0f), color);
                 handle.DrawLine(point + new Vector2(-size, 0f), point + new Vector2(0f, -size), color);
-                if (!group.Named)
+                if (!group.Named && _encounterNamers.GetValueOrDefault(key) == marker.Grid)
                 {
                     // Above the ship: its own IFF label hangs below and to the right, and the admin crew tag sits between.
                     // The threat rank follows the name on the same line, in a stack too.
@@ -97,7 +112,8 @@ public partial class ShuttleNavControl
 
             // Any ship of the side with a glyph of its own names the side's; the category's glyph is only a fallback at drawing.
             var icon = group.Icon != WFEncounterIcon.Category ? group.Icon : marker.Icon;
-            _encounterGroups[key] = (group.Sum + point, group.Count + 1, group.Named || onScope, group.OnScope || onScope, color, icon, group.Category,
+            var named = onScope && _encounterNamers.GetValueOrDefault(key) == marker.Grid;
+            _encounterGroups[key] = (group.Sum + point, group.Count + 1, group.Named || named, group.OnScope || onScope, color, icon, group.Category,
                 MathF.Max(group.Warn, marker.WarnRange), MathF.Max(group.Attack, marker.AttackRange));
         }
 

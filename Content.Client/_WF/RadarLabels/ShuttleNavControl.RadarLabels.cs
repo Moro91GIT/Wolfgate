@@ -19,6 +19,7 @@ public partial class ShuttleNavControl
     private readonly List<WfTagDraw> _wfTagDraws = new();
     private readonly List<WfTagText> _wfTagLines = new();
     private readonly List<WfTagText> _wfTagAbove = new();
+    private readonly Dictionary<string, int> _wfTagKeyCounts = new();
 
     private readonly record struct WfTagText(string Text, float Scale, Color Color, Vector2 Size);
 
@@ -107,8 +108,23 @@ public partial class ShuttleNavControl
         if (_wfTags.Count == 0)
             return;
 
+        // A tag is known from frame to frame by its name, numbered when names repeat.
+        _wfTagKeyCounts.Clear();
+        for (var i = 0; i < _wfTags.Count; i++)
+        {
+            var draw = _wfTagDraws[i];
+            var name = draw.LineCount > 0 ? _wfTagLines[draw.FirstLine].Text : string.Empty;
+            var seen = _wfTagKeyCounts.GetValueOrDefault(name);
+            _wfTagKeyCounts[name] = seen + 1;
+            var tag = _wfTags[i];
+            tag.Key = HashCode.Combine(name, seen);
+            _wfTags[i] = tag;
+        }
+
         var moreScale = UIScale * 0.7f;
         _wfTagLayout.Gap = 3f * UIScale;
+        _wfTagLayout.StickyGap = 10f * UIScale;
+        _wfTagLayout.SwapMargin = 8f * UIScale;
         _wfTagLayout.MoreHeight = handle.GetDimensions(Font, "+", moreScale).Y;
         _wfTagLayout.Solve(_wfTags, PixelSize);
 

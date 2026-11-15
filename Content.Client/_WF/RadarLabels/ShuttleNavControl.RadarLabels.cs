@@ -56,6 +56,7 @@ public partial class ShuttleNavControl
         public int AboveCount;
         public float HeadTextWidth;
         public bool Always;
+        public bool Keyed;
         public bool Full;
         public float Alpha;
         public Action<DrawingHandleScreen, Vector2>? DrawHeadExtra;
@@ -66,11 +67,12 @@ public partial class ShuttleNavControl
     /// Starts a tag for a contact at <paramref name="anchor"/>, sitting with its top-left at <paramref name="position"/>
     /// while it has room. Both are in pixels. Add its lines with <see cref="WfTagLine"/>, the first being its name.
     /// An <paramref name="always"/> tag shows its name anywhere on the scope; the rest show only under the cursor.
+    /// <paramref name="key"/> names the contact from frame to frame, an entity id say; without one, the tag's name does.
     /// </summary>
-    private void WfBeginTag(Vector2 anchor, Vector2 position, int priority = 0, bool always = false)
+    private void WfBeginTag(Vector2 anchor, Vector2 position, int priority = 0, bool always = false, int? key = null)
     {
-        _wfTags.Add(new WFRadarTagLayout.Tag { Anchor = anchor, Position = position, Priority = priority });
-        _wfTagDraws.Add(new WfTagDraw { FirstLine = _wfTagLines.Count, FirstAbove = _wfTagAbove.Count, Always = always, Full = true, Alpha = 1f });
+        _wfTags.Add(new WFRadarTagLayout.Tag { Anchor = anchor, Position = position, Priority = priority, Key = HashCode.Combine(1, key ?? 0) });
+        _wfTagDraws.Add(new WfTagDraw { FirstLine = _wfTagLines.Count, FirstAbove = _wfTagAbove.Count, Always = always, Keyed = key != null, Full = true, Alpha = 1f });
     }
 
     /// <summary>Adds a line over the current tag's first line, each one higher than the last; shown only with its details.</summary>
@@ -228,13 +230,18 @@ public partial class ShuttleNavControl
         WfClearTags();
     }
 
-    /// <summary>Gives each tag a key it keeps from frame to frame: its name, numbered when names repeat.</summary>
+    /// <summary>
+    /// Gives each tag without a contact key one it keeps from frame to frame: its name, numbered when names repeat.
+    /// </summary>
     private void WfKeyTags()
     {
         _wfTagKeyCounts.Clear();
         for (var i = 0; i < _wfTags.Count; i++)
         {
             var draw = _wfTagDraws[i];
+            if (draw.Keyed)
+                continue;
+
             var name = draw.LineCount > 0 ? _wfTagLines[draw.FirstLine].Text : string.Empty;
             var seen = _wfTagKeyCounts.GetValueOrDefault(name);
             _wfTagKeyCounts[name] = seen + 1;

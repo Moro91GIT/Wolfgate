@@ -70,7 +70,10 @@ public partial class ShuttleNavControl
             var uiX = uiXCentre * uiXOffset / uiDistance;
             var uiY = uiYCentre * uiYOffset / uiDistance;
 
-            var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+            // WOLFGATE(RadarLabels) START: the old test called beacons on the scope's diagonals outside it
+            // var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+            var isOutsideRadarCircle = !WfOnScope(uiPosition * UIScale);
+            // WOLFGATE END
             if (isOutsideRadarCircle)
             {
                 uiPosition = new Vector2(
@@ -101,7 +104,7 @@ public partial class ShuttleNavControl
             // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
             // handle.DrawString(Font, (uiPosition + labelOffset) * UIScale, mainLabel, UIScale * 0.9f, color);
             // WfDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
-            WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, always: true); // beacons are landmarks
+            WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, always: true, key: uid.Id); // beacons are landmarks
             WfTagLine(handle, mainLabel, UIScale * 0.9f, color);
             WfDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
             // WOLFGATE END

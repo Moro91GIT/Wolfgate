@@ -77,12 +77,6 @@ public sealed class WolfgateCVars
         CVarDef.Create("wf.radar_show_iff_detailed", true, CVar.CLIENTONLY | CVar.ARCHIVE);
 
     /// <summary>
-    /// Whether radar screens with a docks toggle mark docking ports. Off by default: they crowd the scope.
-    /// </summary>
-    public static readonly CVarDef<bool> RadarShowDocks =
-        CVarDef.Create("wf.radar_show_docks", false, CVar.CLIENTONLY | CVar.ARCHIVE);
-
-    /// <summary>
     /// The radar's bearing marks: 0 at the edge, 1 as a ring, 2 off.
     /// </summary>
     public static readonly CVarDef<int> RadarAzimuth =

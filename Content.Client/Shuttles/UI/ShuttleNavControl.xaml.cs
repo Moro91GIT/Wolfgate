@@ -976,7 +976,10 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                     var uiX = uiXCentre * uiXOffset / uiDistance;
                     var uiY = uiYCentre * uiYOffset / uiDistance;
 
-                    var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+                    // WOLFGATE(RadarLabels) START: the old test called contacts on the scope's diagonals outside it
+                    // var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+                    var isOutsideRadarCircle = !WfOnScope(uiPosition * UIScale);
+                    // WOLFGATE END
                     if (isOutsideRadarCircle)
                     {
                         // 0.95f for offsetting the icons slightly away from edge of radar so it doesnt clip.
@@ -1070,7 +1073,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
                         // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
                         WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, isMouseOver ? 3 : isPlayerShuttle ? 2 : 1,
-                            always: isMouseOver || distance <= WfTagCloseRange); // a ship this close keeps its name: it could be shooting
+                            always: isMouseOver || distance <= WfTagCloseRange, key: gUid.Id); // a ship this close keeps its name: it could be shooting
                         WfTagLine(handle, mainLabel, UIScale * 0.9f, displayColor);
                         if (shouldDrawDetailedIFF)
                         {

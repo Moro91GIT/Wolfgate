@@ -46,7 +46,7 @@ public partial class ShuttleNavControl
             if (!setup.Tags.TryGetValue((crew.Grid, crew.Group), out var tag))
                 continue;
 
-            WfBeginTag(point, point + new Vector2(10f, -38f) * UIScale, always: true);
+            WfBeginTag(point, point + new Vector2(10f, -38f) * UIScale, always: true, key: HashCode.Combine(crew.Grid, crew.Group));
             WfTagLine(handle, tag, UIScale * 0.8f, color);
         }
     }

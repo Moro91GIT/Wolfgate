@@ -55,6 +55,7 @@ public partial class ShuttleNavControl
         _encounterGroups.Clear();
         _encounterPoints.Clear();
         _encounterNamers.Clear();
+        var here = _transform.GetWorldPosition(consoleXform);
         foreach (var marker in system.Markers)
         {
             if (marker.Map != consoleXform.MapID
@@ -95,7 +96,9 @@ public partial class ShuttleNavControl
                 {
                     // Above the ship: its own IFF label hangs below and to the right, and the admin crew tag sits between.
                     // The threat rank follows the name on the same line, in a stack too.
-                    WfBeginTag(point, point + new Vector2(10f, -54f) * UIScale, 2, always: true);
+                    // Named anywhere only when close enough to matter, like any other ship; else under the cursor.
+                    var close = (system.GetPosition(marker) - here).Length() <= WfTagCloseRange;
+                    WfBeginTag(point, point + new Vector2(10f, -54f) * UIScale, 2, always: close, key: HashCode.Combine(marker.Encounter, marker.Side));
                     WfTagLine(handle, marker.Name, UIScale * 0.8f, color);
                     var rank = handle.GetDimensions(Font, marker.Name, UIScale * 0.8f).Y;
                     var width = WFEncounterRanks.Width(marker.Threat, rank);

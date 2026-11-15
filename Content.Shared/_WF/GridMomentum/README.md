@@ -23,6 +23,8 @@ turned beside them, and mispredicted on the client.
 
 ## Non-modular edits
 
-- [`Content.Shared/Movement/Systems/SharedMoverController.cs`](../../Movement/Systems/SharedMoverController.cs): off a grid, slow down and push off relative to the grid the mob left, not the map
+- [`Content.Shared/Movement/Systems/SharedMoverController.cs`](../../Movement/Systems/SharedMoverController.cs)
+  - before the returns below, so a mob pulled off a ship keeps its speed
+  - off a grid, slow down and push off relative to the grid the mob left, not the map
 
 <!-- WOLFGATE-GENERATED END -->

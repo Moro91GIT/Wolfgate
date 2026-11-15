@@ -188,6 +188,8 @@ public abstract partial class SharedMoverController : VirtualController
         if (!XformQuery.TryComp(entity.Owner, out var xform))
             return;
 
+        WfTrackGrid(uid, xform); // WOLFGATE(GridMomentum): before the returns below, so a mob pulled off a ship keeps its speed
+
         RelayTargetQuery.TryComp(uid, out var relayTarget);
         var relaySource = relayTarget?.Source;
 

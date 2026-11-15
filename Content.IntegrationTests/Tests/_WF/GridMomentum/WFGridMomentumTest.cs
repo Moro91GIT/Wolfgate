@@ -44,7 +44,9 @@ public sealed class WFGridMomentumTest
             var origin = xforms.GetWorldPosition(grid);
             xforms.SetMapCoordinates(mob, new MapCoordinates(origin + new Vector2(2.5f, 0.5f), map.MapId));
         });
-        await HoldShip(server, physics, grid, shipVelocity, 60);
+        await HoldShip(server, physics, grid, shipVelocity, 10);
+        // The ship turns back once the mob is off it: the mob keeps the speed it left with.
+        await HoldShip(server, physics, grid, -shipVelocity, 50);
 
         await server.WaitAssertion(() =>
         {

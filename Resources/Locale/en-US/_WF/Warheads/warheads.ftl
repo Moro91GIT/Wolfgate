@@ -65,7 +65,6 @@ wf-warhead-ui-spec-grid-value = DESTROYED OUTRIGHT
 wf-warhead-ui-spec-tiles = ~{$tiles} tiles
 wf-warhead-ui-spec-fallout-value = {$sources} sources over ~{$tiles} tiles
 wf-warhead-ui-spec-none = none
-wf-warhead-ui-footer = To abort, use a multitool on the device. Not possible in the last 10 seconds.
 
 wf-warhead-armed = Countdown started: {$seconds} seconds.
 wf-warhead-key-denied = Your key doesn't fit.

@@ -59,7 +59,6 @@ public sealed class WFWarheadWindow : FancyWindow
     private readonly BoxContainer _impactSection = Section();
 
     private readonly GridContainer _specs = new() { Columns = 2, HorizontalExpand = true };
-    private readonly Label _footer = new() { HorizontalAlignment = HAlignment.Center };
 
     public WFWarheadWindow()
     {
@@ -69,8 +68,6 @@ public sealed class WFWarheadWindow : FancyWindow
 
         _classLabel.FontColorOverride = WFWarheadPalette.Hazard;
         _displayCaption.FontColorOverride = Color.Gray;
-        _footer.FontColorOverride = Color.Gray;
-        _footer.Text = Loc.GetString("wf-warhead-ui-footer");
 
         BuildTimerSection();
         BuildKeySection();
@@ -126,7 +123,6 @@ public sealed class WFWarheadWindow : FancyWindow
                 _impactSection,
                 Heading("wf-warhead-ui-specs-heading"),
                 _specs,
-                _footer,
             },
         };
 

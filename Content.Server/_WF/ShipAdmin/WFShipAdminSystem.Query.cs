@@ -84,7 +84,7 @@ public sealed partial class WFShipAdminSystem
     }
 
     /// <summary>Everything the panel shows about one ship; null when it is gone.</summary>
-    public WFShipAdminDetail? BuildDetail(EntityUid grid, int? value)
+    public WFShipAdminDetail? BuildDetail(EntityUid grid, int? value = null, WFShipAdminDamage? damage = null)
     {
         if (TerminatingOrDeleted(grid) || !HasComp<MapGridComponent>(grid))
             return null;
@@ -100,7 +100,14 @@ public sealed partial class WFShipAdminSystem
             Mass = TryComp<PhysicsComponent>(grid, out var physics) ? physics.Mass : 0f,
             Flags = RowFlags(grid),
             Value = value,
+            Damage = damage,
         };
+
+        if (TryGetFix(grid, out var done, out var total))
+        {
+            detail.FixDone = done;
+            detail.FixTotal = total;
+        }
 
         foreach (var dock in _docking.GetDocks(grid))
         {
@@ -311,6 +318,9 @@ public sealed partial class WFShipAdminSystem
 
         if (HasComp<WFCompanyHangarShipComponent>(grid))
             flags |= WFShipAdminRowFlags.Hangar;
+
+        if (_fixes.ContainsKey(grid))
+            flags |= WFShipAdminRowFlags.Fixing;
 
         return flags;
     }

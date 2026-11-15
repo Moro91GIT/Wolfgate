@@ -30,12 +30,16 @@ public sealed partial class WFShipAccessServerSystem
     {
         if (!TryGetEditableShip(console, args.Actor, out var ship))
             return;
-        if (args.Mode == WFShipAccessMode.Crew && !TryLinkCrew(ship, args.Actor))
+
+        // Someone who manages the ship without owning it, an admin or an officer, must not bind it to a crew or
+        // company of their own: they may only switch to one it is already linked to.
+        var owner = _access.IsOwner(args.Actor, ship);
+        if (args.Mode == WFShipAccessMode.Crew && !(owner ? TryLinkCrew(ship, args.Actor) : ship.Comp.CrewId != null))
         {
             Popup(console, args.Actor, "ship-access-no-crew");
             return;
         }
-        if (args.Mode == WFShipAccessMode.Company && !TryLinkCompany(ship, args.Actor))
+        if (args.Mode == WFShipAccessMode.Company && !(owner ? TryLinkCompany(ship, args.Actor) : ship.Comp.CompanyId != null))
         {
             Popup(console, args.Actor, "ship-access-no-company");
             return;

@@ -1,4 +1,5 @@
 using System.Linq;
+using Content.Server._NF.Station.Components;
 using Content.Server._WF.Administration.Systems;
 using Content.Server._WF.Companies;
 using Content.Server._WF.Traders;
@@ -15,6 +16,7 @@ using Content.Shared._WF.Traders;
 using Content.Shared.Access.Components;
 using Content.Shared.Database;
 using Content.Shared.Ghost;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
 
@@ -28,6 +30,7 @@ public sealed partial class WFShipAdminSystem
     [Dependency] private Content.Server._NF.Shipyard.Systems.ShipOwnershipSystem _shipOwnership = default!;
     [Dependency] private WFCompanySystem _companies = default!;
     [Dependency] private WFShipAccessSystem _accessRules = default!;
+    [Dependency] private Content.Server.Station.Systems.StationSystem _station = default!;
 
     /// <summary>
     /// Hands a ship to a player. Every earlier owner loses it: deeds come off their cards and their accounts are
@@ -38,7 +41,7 @@ public sealed partial class WFShipAdminSystem
     /// <returns>False when the transfer was refused; <paramref name="result"/> says what happened either way.</returns>
     public bool Transfer(ICommonSession admin, EntityUid grid, WFShipAdminTransferMessage options, out string result)
     {
-        if (!HasComp<ShuttleComponent>(grid))
+        if (!CanBeOwned(grid))
         {
             result = Loc.GetString("wf-ship-admin-result-not-ship");
             return false;
@@ -150,7 +153,7 @@ public sealed partial class WFShipAdminSystem
     /// <summary>Registers one more player's account as an owner. They keep the ship in any body; no deed is handed out.</summary>
     public bool AddOwner(ICommonSession admin, EntityUid grid, NetUserId user, bool notify, out string result)
     {
-        if (!HasComp<ShuttleComponent>(grid))
+        if (!CanBeOwned(grid))
         {
             result = Loc.GetString("wf-ship-admin-result-not-ship");
             return false;
@@ -278,6 +281,22 @@ public sealed partial class WFShipAdminSystem
 
         result = WithNotes(Loc.GetString("wf-ship-admin-result-released", ("ship", Name(grid))), notes);
         return true;
+    }
+
+    /// <summary>
+    /// Whether a grid can be given an owner. Every grid is a shuttle to the engine, so this only rules out a planet's
+    /// own surface and a station's grid; handing a wreck or an encounter ship to a player is what the panel is for.
+    /// A ship's own late-join station doesn't count as a station here.
+    /// </summary>
+    public bool CanBeOwned(EntityUid grid)
+    {
+        if (HasComp<MapComponent>(grid))
+            return false;
+
+        if (IsPlayerShip(grid) || _station.GetOwningStation(grid) is not { } station)
+            return true;
+
+        return CompOrNull<ExtraShuttleInformationComponent>(station)?.Vessel != null;
     }
 
     /// <summary>Every account that owns the ship: the shipyard's, the registered ones and those the deed cards were issued to.</summary>

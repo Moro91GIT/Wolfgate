@@ -231,6 +231,26 @@ public sealed partial class WFDrydockSystem : EntitySystem
     }
 
     /// <summary>
+    /// The same work unpriced and uncapped, for staff: hull tiles and missing entities when the ship has a repair
+    /// snapshot, and heals either way. Owned refits are reapplied as each entity is rebuilt.
+    /// </summary>
+    public List<WFDrydockWorkItem> BuildFreeRepairItems(EntityUid ship)
+    {
+        var items = new List<WFDrydockWorkItem>();
+        if (!TryComp<MapGridComponent>(ship, out var grid))
+            return items;
+
+        if (TryComp<ShipRepairDataComponent>(ship, out var data))
+        {
+            AddMissingTiles(ship, grid, data, null, items);
+            AddMissingEntities(ship, data, null, items);
+        }
+
+        AddHeals(ship, grid, null, items);
+        return items;
+    }
+
+    /// <summary>
     /// The ship's value for fees and caps: its shipyard price when it was bought at one, else the price of rebuilding
     /// it whole from its repair snapshot. Vessel is false for the rebuild price; (0, false) without a snapshot.
     /// </summary>
@@ -292,7 +312,7 @@ public sealed partial class WFDrydockSystem : EntitySystem
     }
 
     /// <summary>Adds a tile item for each stored hull tile the ship no longer has.</summary>
-    private void AddMissingTiles(EntityUid ship, MapGridComponent grid, ShipRepairDataComponent data, WFDrydockConsoleComponent comp, List<WFDrydockWorkItem> items)
+    private void AddMissingTiles(EntityUid ship, MapGridComponent grid, ShipRepairDataComponent data, WFDrydockConsoleComponent? comp, List<WFDrydockWorkItem> items)
     {
         var size = data.ChunkSize;
         foreach (var (chunkPos, chunk) in data.Chunks)
@@ -312,7 +332,7 @@ public sealed partial class WFDrydockSystem : EntitySystem
                     Kind = WFDrydockWorkKind.Tile,
                     TileIndex = index,
                     TileType = stored,
-                    Cost = comp.TilePrice,
+                    Cost = comp?.TilePrice ?? 0,
                     LocalPos = new Vector2(index.X + 0.5f, index.Y + 0.5f),
                 });
             }
@@ -320,7 +340,7 @@ public sealed partial class WFDrydockSystem : EntitySystem
     }
 
     /// <summary>Adds a rebuild item for each snapshot entity the ship is missing.</summary>
-    private void AddMissingEntities(EntityUid ship, ShipRepairDataComponent data, WFDrydockConsoleComponent comp, List<WFDrydockWorkItem> items)
+    private void AddMissingEntities(EntityUid ship, ShipRepairDataComponent data, WFDrydockConsoleComponent? comp, List<WFDrydockWorkItem> items)
     {
         foreach (var (chunkPos, chunk) in data.Chunks)
         {
@@ -335,9 +355,9 @@ public sealed partial class WFDrydockSystem : EntitySystem
                     Kind = WFDrydockWorkKind.Entity,
                     ChunkPos = chunkPos,
                     SpecId = specId,
-                    Cost = RebuildPrice(comp, proto),
+                    Cost = comp != null ? RebuildPrice(comp, proto) : 0,
                     Prototype = proto.ID,
-                    Mounted = proto.TryComp<HardpointAnchorableOnlyComponent>(out _, Factory),
+                    Mounted =proto.TryComp<HardpointAnchorableOnlyComponent>(out _, Factory),
                     LocalPos = spec.LocalPosition,
                 });
             }
@@ -345,7 +365,7 @@ public sealed partial class WFDrydockSystem : EntitySystem
     }
 
     /// <summary>Adds a heal item for each anchored part of the ship that has damage.</summary>
-    private void AddHeals(EntityUid ship, MapGridComponent grid, WFDrydockConsoleComponent comp, List<WFDrydockWorkItem> items)
+    private void AddHeals(EntityUid ship, MapGridComponent grid, WFDrydockConsoleComponent? comp, List<WFDrydockWorkItem> items)
     {
         var damaged = new HashSet<Entity<DamageableComponent>>();
         _lookup.GetLocalEntitiesIntersecting(ship, grid.LocalAABB, damaged);
@@ -365,13 +385,14 @@ public sealed partial class WFDrydockSystem : EntitySystem
 
             // Patching a part costs its rebuild price times the share of its health lost, never more than rebuilding it.
             var proto = MetaData(ent).EntityPrototype;
-            int? rebuild = proto != null ? RebuildPrice(comp, proto) : null;
+            int? rebuild = proto != null && comp != null ? RebuildPrice(comp, proto) : null;
             int cost;
-            if (rebuild is { } full && _destructible.TryGetDestroyedAt(ent.Owner, out var destroyedAt) && destroyedAt > FixedPoint2.Zero)
-                cost = (int) Math.Ceiling(full * Math.Min(1f, total.Float() / destroyedAt.Value.Float()));
+            if (comp == null)
+                cost = 0;
+            else if (rebuild is { } full && _destructible.TryGetDestroyedAt(ent.Owner, out var destroyedAt) && destroyedAt > FixedPoint2.Zero)
+                cost = Math.Max(1, (int) Math.Ceiling(full * Math.Min(1f, total.Float() / destroyedAt.Value.Float())));
             else
-                cost = Math.Min((int) Math.Ceiling(total.Float() * comp.DamagePrice), rebuild ?? int.MaxValue);
-            cost = Math.Max(1, cost);
+                cost = Math.Max(1, Math.Min((int) Math.Ceiling(total.Float() * comp.DamagePrice), rebuild ?? int.MaxValue));
 
             items.Add(new WFDrydockWorkItem
             {

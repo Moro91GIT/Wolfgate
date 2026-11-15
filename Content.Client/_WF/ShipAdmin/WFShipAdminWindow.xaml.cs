@@ -30,12 +30,20 @@ public sealed partial class WFShipAdminWindow : DefaultWindow
     /// <summary>The ownership tab, for tests.</summary>
     public readonly WFShipAdminOwnershipTab Ownership = new();
 
+    /// <summary>The access tab, for tests.</summary>
+    public readonly WFShipAdminAccessTab Access = new();
+
+    /// <summary>The repair tab, for tests.</summary>
+    public readonly WFShipAdminRepairTab Repair = new();
+
     public WFShipAdminWindow()
     {
         RobustXamlLoader.Load(this);
 
         AddTab(Overview);
         AddTab(Ownership);
+        AddTab(Access);
+        AddTab(Repair);
 
         SearchBar.OnTextChanged += _ => Populate();
         RefreshButton.OnPressed += _ => OnMessage?.Invoke(new WFShipAdminListMessage(_filter));

@@ -43,6 +43,7 @@ public sealed partial class WFShipAdminSystem : EntitySystem
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
+        UpdateFixes();
         if (_panels.Count == 0)
             return;
 
@@ -111,11 +112,26 @@ public sealed partial class WFShipAdminSystem : EntitySystem
         switch (action)
         {
             case WFShipAdminAction.Scan:
-                panel.Scanned(grid, Appraise(grid));
+                panel.Scanned(grid, Appraise(grid), Survey(grid));
                 panel.SetResult(Loc.GetString("wf-ship-admin-result-scanned", ("ship", Name(grid))));
+                break;
+            case WFShipAdminAction.Snapshot:
+                panel.Finish(Snapshot(panel.Player, grid, out var snapped), snapped);
+                break;
+            case WFShipAdminAction.Restore:
+                panel.Finish(Restore(panel.Player, grid, out var restored), restored);
                 break;
             case WFShipAdminAction.Release:
                 panel.Finish(Release(panel.Player, grid, notify, out var released), released);
+                break;
+            case WFShipAdminAction.SetLocked:
+                panel.Finish(SetLocked(panel.Player, grid, value, notify, out var locked), locked);
+                break;
+            case WFShipAdminAction.AllowClear:
+                panel.Finish(AllowClear(panel.Player, grid, notify, out var cleared), cleared);
+                break;
+            case WFShipAdminAction.ResetDoors:
+                panel.Finish(ResetDoors(panel.Player, grid, notify, out var reset), reset);
                 break;
             default:
                 panel.SetResult(Loc.GetString("wf-ship-admin-result-unknown"), true);

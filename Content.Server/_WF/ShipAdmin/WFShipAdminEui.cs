@@ -4,6 +4,7 @@ using Content.Server.Administration.Managers;
 using Content.Server.EUI;
 using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Eui;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Serialization;
 
 namespace Content.Server._WF.ShipAdmin;
@@ -25,6 +26,7 @@ public sealed partial class WFShipAdminEui : BaseEui
     private int _resultSeq;
     private EntityUid? _scanned;
     private int? _value;
+    private WFShipAdminDamage? _damage;
 
     public WFShipAdminFilter Filter { get; private set; }
     public EntityUid? Selected { get; private set; }
@@ -107,6 +109,23 @@ public sealed partial class WFShipAdminEui : BaseEui
                 else if (!owner.Add)
                     Finish(_ships.RemoveOwner(Player, owned, owner.User, _entMan.GetEntity(owner.Card), owner.Notify, out var removeResult), removeResult);
                 break;
+            case WFShipAdminFixMessage fix:
+                if (TryTarget(fix.Grid, WFShipAdminAction.Fix, out var fixedShip))
+                    Finish(_ships.StartFix(Player, fixedShip, fix.Parts, out var fixResult), fixResult);
+                break;
+            case WFShipAdminModeMessage mode when Enum.IsDefined(mode.Mode):
+                if (TryTarget(mode.Grid, WFShipAdminAction.SetMode, out var moded))
+                    Finish(_ships.SetMode(Player, moded, mode.Mode, mode.Notify, out var modeResult), modeResult);
+                break;
+            case WFShipAdminAllowMessage allow:
+                if (!TryTarget(allow.Grid, allow.Add != null ? WFShipAdminAction.AllowAdd : WFShipAdminAction.AllowRemove, out var listed))
+                    break;
+
+                if (allow.Add is { } allowed)
+                    Finish(_ships.AllowAdd(Player, listed, allowed, allow.Notify, out var allowResult), allowResult);
+                else if (allow.Remove is { } key)
+                    Finish(_ships.AllowRemove(Player, listed, key, allow.Notify, out var denyResult), denyResult);
+                break;
         }
     }
 
@@ -147,11 +166,12 @@ public sealed partial class WFShipAdminEui : BaseEui
         StateDirty();
     }
 
-    /// <summary>Keeps a scan's value for as long as the ship stays selected.</summary>
-    public void Scanned(EntityUid grid, int value)
+    /// <summary>Keeps a scan's findings for as long as the ship stays selected.</summary>
+    public void Scanned(EntityUid grid, int value, WFShipAdminDamage damage)
     {
         _scanned = grid;
         _value = value;
+        _damage = damage;
     }
 
     /// <summary>
@@ -167,7 +187,7 @@ public sealed partial class WFShipAdminEui : BaseEui
             return false;
         }
 
-        if (!_entMan.TryGetEntity(target, out var found) || _ships.BuildDetail(found.Value, null) == null)
+        if (!_entMan.TryGetEntity(target, out var found) || !_entMan.HasComponent<MapGridComponent>(found))
         {
             SetResult(Loc.GetString("wf-ship-admin-result-gone"), true);
             return false;
@@ -182,7 +202,8 @@ public sealed partial class WFShipAdminEui : BaseEui
         if (Selected is not { } grid)
             return null;
 
-        var detail = _ships.BuildDetail(grid, _scanned == grid ? _value : null);
+        var scanned = _scanned == grid;
+        var detail = _ships.BuildDetail(grid, scanned ? _value : null, scanned ? _damage : null);
         if (detail == null)
             Selected = null;
 

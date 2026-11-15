@@ -39,6 +39,8 @@ wf-ship-admin-unclaimed = Unclaimed
 ## Tabs
 wf-ship-admin-tab-overview = Overview
 wf-ship-admin-tab-ownership = Ownership
+wf-ship-admin-tab-access = Access
+wf-ship-admin-tab-repair = Repair
 
 ## Tags
 wf-ship-admin-tag-locked = locked
@@ -125,16 +127,71 @@ wf-ship-admin-ownership-release-note = Every owner loses the ship and its doors 
 wf-ship-admin-ownership-release = Release ownership
 wf-ship-admin-label-previous-owner = Previous owner
 
+## Access tab
+wf-ship-admin-access-status = Mode: { $mode } | { $locked ->
+        [true] Locked
+       *[false] Unlocked
+    }
+wf-ship-admin-access-no-key = No owner's card can open it, so it can't be locked.
+wf-ship-admin-access-lock = Lock the ship
+wf-ship-admin-access-unlock = Unlock the ship
+wf-ship-admin-access-set-mode = Set mode
+wf-ship-admin-access-set-mode-tooltip = Crew and Company only work on a ship already linked to one. Faction needs a hull faction.
+wf-ship-admin-access-nobody = Nobody is on the allow list.
+wf-ship-admin-access-add-heading = Let a player aboard
+wf-ship-admin-access-add-note = Adds the ID card the player carries right now. They need a living body and a card with a crew record.
+wf-ship-admin-access-add = Add to the allow list
+wf-ship-admin-access-clear = Clear the allow list
+wf-ship-admin-access-reset-doors = Reset door rules and code
+wf-ship-admin-access-reset-doors-tooltip = Puts every door back on the default rule and clears the ship's door code. Doors in a zone are left alone.
+wf-ship-admin-access-console-note = For one door's rule, its list or its code, use the Access tab on the ship's own console. Staff can open it on any ship, and unlock any helm with the console's Unlock verb.
+wf-ship-admin-label-staff = Added by staff
+
+## Repair tab
+wf-ship-admin-repair-fix-heading = Fix
+wf-ship-admin-repair-fix-note = A fix never deletes what players moved or built. Hull and parts come back only where the repair snapshot says something is missing.
+wf-ship-admin-repair-not-scanned = Not scanned. Scan to count what is missing or damaged.
+wf-ship-admin-repair-damage = Missing hull tiles: { $tiles } | missing parts: { $parts } | damaged parts: { $damaged }
+wf-ship-admin-repair-progress = Fixing: { $done } of { $total } hull and damage items done.
+wf-ship-admin-repair-scan = Scan damage
+wf-ship-admin-repair-fix = Fix the ticked parts
+wf-ship-admin-repair-part-structures = Damaged parts
+wf-ship-admin-repair-part-structures-tooltip = Heals every damaged wall, machine and fitting, and clears crash faults on APCs.
+wf-ship-admin-repair-part-hull = Missing hull and parts
+wf-ship-admin-repair-part-hull-tooltip = Re-lays hull tiles that are gone and rebuilds parts that are gone, from the repair snapshot. Needs a snapshot.
+wf-ship-admin-repair-part-air = Air
+wf-ship-admin-repair-part-air-tooltip = Rebuilds the ship's atmosphere, which also puts out fires on the floor.
+wf-ship-admin-repair-part-fires = Burning objects
+wf-ship-admin-repair-part-fires-tooltip = Puts out everything and everyone on fire aboard.
+wf-ship-admin-repair-part-power = Power
+wf-ship-admin-repair-part-power-tooltip = Fills every SMES, substation and APC and switches the breakers on.
+wf-ship-admin-repair-part-fuel = Fuel
+wf-ship-admin-repair-part-fuel-tooltip = Fills and lights generators, swaps spent AME jars and fuel rods, and trims reactors.
+wf-ship-admin-repair-part-bolts = Door bolts
+wf-ship-admin-repair-part-bolts-tooltip = Raises the bolts on every door, except doors the owner sealed.
+wf-ship-admin-repair-part-consoles = Consoles
+wf-ship-admin-repair-part-consoles-tooltip = Clears stuck pilots and reconnects the helm, gunnery and hardpoints.
+wf-ship-admin-repair-snapshot-heading = Repair snapshot
+wf-ship-admin-repair-has-snapshot = This ship has a repair snapshot.
+wf-ship-admin-repair-no-snapshot = This ship has no repair snapshot, so missing hull and parts can't be rebuilt.
+wf-ship-admin-repair-snapshot-note = The snapshot is what the ship is rebuilt from: taken when it was bought or spawned.
+wf-ship-admin-repair-retake = Re-take snapshot
+wf-ship-admin-repair-retake-tooltip = Replaces the snapshot with the ship as it stands now. Do this after a player rebuilt it on purpose; the old snapshot is gone for good.
+wf-ship-admin-repair-restore = Restore to snapshot
+wf-ship-admin-repair-restore-tooltip = Deletes and rebuilds every part that moved since the snapshot and re-lays every hull tile. Player changes are lost. Needs the Debug permission.
+
 ## Chat lines to players
 wf-ship-admin-notice-lost = Staff have taken { $ship } out of your ownership.
 wf-ship-admin-notice-gained = Staff have made you an owner of { $ship }.
+wf-ship-admin-notice-access = Staff have changed who can board { $ship }.
 
 ## Results
 wf-ship-admin-result-no-permission = You don't have the permission for that.
 wf-ship-admin-result-gone = That ship no longer exists.
 wf-ship-admin-result-unknown = The panel can't do that yet.
 wf-ship-admin-result-scanned = Appraised { $ship }.
-wf-ship-admin-result-not-ship = That grid isn't a ship, so it can't have an owner.
+wf-ship-admin-result-not-ship = That grid is a station or a planet's surface, so it can't have an owner.
+wf-ship-admin-result-no-access = That grid has no ship access. Give it an owner first.
 wf-ship-admin-result-offline = That player isn't connected. A ship can only be handed to someone who is.
 wf-ship-admin-result-hangar = That is a company hangar ship. Tick "Detach from the company hangar", which needs the Debug permission.
 wf-ship-admin-result-transfer-failed = The deed could not be assigned.
@@ -146,6 +203,28 @@ wf-ship-admin-result-last-owner = That is the last owner. Release the ship inste
 wf-ship-admin-result-owner-removed = Removed { $name } as an owner of { $ship }.
 wf-ship-admin-result-no-owner = That ship has no owner to release it from.
 wf-ship-admin-result-released = Released { $ship }. It has no owner now.
+wf-ship-admin-result-lock-refused = No owner's card can open it, so locking would shut them out. Give it an owner with an ID card first.
+wf-ship-admin-result-locked = Locked { $ship }.
+wf-ship-admin-result-unlocked = Unlocked { $ship }.
+wf-ship-admin-result-mode-unavailable = { $mode } mode isn't available: the ship has no linked crew, company or hull faction for it.
+wf-ship-admin-result-mode = Set { $ship } to { $mode } mode.
+wf-ship-admin-result-allow-no-body = That player has no living body to carry an ID card.
+wf-ship-admin-result-allow-no-card = { $name } carries no ID card.
+wf-ship-admin-result-allow-no-record = { $name }'s ID card has no crew record, so no door can be keyed to it.
+wf-ship-admin-result-allow-already = { $name } is already on the list, or their card holds the deed.
+wf-ship-admin-result-allow-added = Added { $name } to the allow list of { $ship }.
+wf-ship-admin-result-allow-missing = That entry is no longer on the list.
+wf-ship-admin-result-allow-removed = Removed { $name } from the allow list of { $ship }.
+wf-ship-admin-result-allow-cleared = Cleared { $count } from the allow list of { $ship }.
+wf-ship-admin-result-doors-reset = Reset { $count } doors on { $ship } and cleared its code.
+wf-ship-admin-result-fix-nothing = Nothing is ticked to fix.
+wf-ship-admin-result-fix-running = A fix is already running on that ship.
+wf-ship-admin-result-fix-started = Fixing { $ship }: { $count } hull and damage items queued.
+wf-ship-admin-result-fixed = Fixed { $ship }: { $tiles } hull tiles, { $parts } parts rebuilt, { $healed } parts healed.
+wf-ship-admin-result-snapshot = Re-took the repair snapshot of { $ship }.
+wf-ship-admin-result-no-snapshot = That ship has no repair snapshot to restore.
+wf-ship-admin-result-restored = Restored { $ship } to its repair snapshot.
+wf-ship-admin-note-no-snapshot = It has no repair snapshot, so missing hull and parts were left out.
 wf-ship-admin-note-account-only = Registered to their account only: { $reason }
 wf-ship-admin-note-crew = It is the ship of crew "{ $crew }", which keeps spawning aboard.
 wf-ship-admin-note-unlocked = It was unlocked, as no owner's card could open it yet; it locks itself once one can.

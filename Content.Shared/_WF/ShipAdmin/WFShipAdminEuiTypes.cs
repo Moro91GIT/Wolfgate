@@ -134,6 +134,55 @@ public sealed class WFShipAdminDetail
 
     /// <summary>Appraised value, filled by a scan.</summary>
     public int? Value;
+
+    /// <summary>What a fix would restore, filled by a scan: hull tiles gone, parts gone and parts damaged.</summary>
+    public WFShipAdminDamage? Damage;
+
+    /// <summary>The fix running on the ship, if any: items done and in all.</summary>
+    public int FixDone;
+    public int FixTotal;
+}
+
+/// <summary>What a scan found wrong with a ship.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminDamage(int tiles, int parts, int damaged)
+{
+    public readonly int Tiles = tiles;
+    public readonly int Parts = parts;
+    public readonly int Damaged = damaged;
+}
+
+/// <summary>What a fix puts right.</summary>
+[Flags, Serializable, NetSerializable]
+public enum WFShipAdminFixParts : ushort
+{
+    None = 0,
+
+    /// <summary>Heals every damaged structure and machine.</summary>
+    Structures = 1 << 0,
+
+    /// <summary>Re-lays missing hull tiles and rebuilds missing parts from the repair snapshot.</summary>
+    Hull = 1 << 1,
+
+    /// <summary>Rebuilds the atmosphere, which also puts tile fires out.</summary>
+    Air = 1 << 2,
+
+    /// <summary>Puts burning objects and people out.</summary>
+    Fires = 1 << 3,
+
+    /// <summary>Fills batteries and switches breakers on.</summary>
+    Power = 1 << 4,
+
+    /// <summary>Refuels generators and reactors.</summary>
+    Fuel = 1 << 5,
+
+    /// <summary>Raises door bolts, except on doors the owner sealed.</summary>
+    Bolts = 1 << 6,
+
+    /// <summary>Clears stuck pilots and reconnects consoles and gunnery.</summary>
+    Consoles = 1 << 7,
+
+    All = Structures | Hull | Air | Fires | Power | Fuel | Bolts | Consoles,
 }
 
 /// <summary>The panel's state. The list is only sent when it was rebuilt; null keeps the client's copy.</summary>
@@ -213,6 +262,33 @@ public sealed class WFShipAdminOwnerMessage(NetEntity grid, bool add, NetUserId?
     public readonly NetUserId? User = user;
     public readonly NetEntity? Card = card;
     public readonly bool Notify = notify;
+}
+
+/// <summary>Sets who besides the owners and the allow list may board.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminModeMessage(NetEntity grid, WFShipAccessMode mode, bool notify) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly WFShipAccessMode Mode = mode;
+    public readonly bool Notify = notify;
+}
+
+/// <summary>Adds a player's ID card to the allow list, or takes one entry off it.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminAllowMessage(NetEntity grid, NetUserId? add, WFShipAccessKey? remove, bool notify) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly NetUserId? Add = add;
+    public readonly WFShipAccessKey? Remove = remove;
+    public readonly bool Notify = notify;
+}
+
+/// <summary>Starts a fix of the chosen parts.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminFixMessage(NetEntity grid, WFShipAdminFixParts parts) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly WFShipAdminFixParts Parts = parts;
 }
 
 /// <summary>An action on a ship that needs no more than a switch.</summary>

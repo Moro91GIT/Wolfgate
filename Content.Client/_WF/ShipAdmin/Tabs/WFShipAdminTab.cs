@@ -44,6 +44,11 @@ public abstract class WFShipAdminTab : ScrollContainer
 
     protected abstract void Show(WFShipAdminDetail detail, AdminFlags flags);
 
+    /// <summary>Called with the ship list each time it changes, for tabs that pick another ship from it.</summary>
+    public virtual void SetShips(List<WFShipAdminRow> ships)
+    {
+    }
+
     protected void Send(EuiMessageBase message)
     {
         OnMessage?.Invoke(message);
@@ -70,6 +75,23 @@ public abstract class WFShipAdminTab : ScrollContainer
         row.AddChild(new Label { Text = key, StyleClasses = { "LabelKeyText" }, MinWidth = 130 });
         row.AddChild(new Label { Text = value, HorizontalExpand = true, ClipText = true });
         return row;
+    }
+
+    /// <summary>Controls side by side.</summary>
+    protected static BoxContainer Row(params Control[] controls)
+    {
+        var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, SeparationOverride = 4 };
+        foreach (var control in controls)
+            row.AddChild(control);
+
+        return row;
+    }
+
+    /// <summary>Keeps a control at its own width on the left.</summary>
+    protected static Control Left(Control control)
+    {
+        control.HorizontalAlignment = HAlignment.Left;
+        return control;
     }
 
     protected static Label Note(string text)

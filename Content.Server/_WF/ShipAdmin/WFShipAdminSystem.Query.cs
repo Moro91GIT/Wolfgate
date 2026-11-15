@@ -1,6 +1,7 @@
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server._WF.Companies;
 using Content.Server._WF.ShipAccess;
+using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._Mono.Company;
 using Content.Shared._Mono.ShipRepair.Components;
@@ -98,6 +99,9 @@ public sealed partial class WFShipAdminSystem
             Map = xform.MapUid is { } map ? Name(map) : string.Empty,
             Position = _transform.GetWorldPosition(xform),
             Mass = TryComp<PhysicsComponent>(grid, out var physics) ? physics.Mass : 0f,
+            Speed = physics?.LinearVelocity.Length() ?? 0f,
+            FtlLock = CompOrNull<FTLLockComponent>(grid)?.Enabled ?? false,
+            Ftl = CompOrNull<FTLComponent>(grid)?.State.ToString() ?? string.Empty,
             Flags = RowFlags(grid),
             Value = value,
             Damage = damage,

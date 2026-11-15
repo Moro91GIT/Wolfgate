@@ -41,6 +41,7 @@ wf-ship-admin-tab-overview = Overview
 wf-ship-admin-tab-ownership = Ownership
 wf-ship-admin-tab-access = Access
 wf-ship-admin-tab-repair = Repair
+wf-ship-admin-tab-move = Move
 
 ## Tags
 wf-ship-admin-tag-locked = locked
@@ -180,6 +181,31 @@ wf-ship-admin-repair-retake-tooltip = Replaces the snapshot with the ship as it 
 wf-ship-admin-repair-restore = Restore to snapshot
 wf-ship-admin-repair-restore-tooltip = Deletes and rebuilds every part that moved since the snapshot and re-lays every hull tile. Player changes are lost. Needs the Debug permission.
 
+## Move tab
+wf-ship-admin-move-status = { $map } ({ $x }, { $y }) | speed: { $speed } | jump drive: { $ftl }
+wf-ship-admin-move-ftl-ready = ready
+wf-ship-admin-move-heading = Move the ship
+wf-ship-admin-move-note = A move is instant. The ship is undocked first, lands in the nearest clear spot and comes to rest. Stations and planets can't be moved from here.
+wf-ship-admin-move-to-me = Bring it to me
+wf-ship-admin-move-x = X
+wf-ship-admin-move-y = Y
+wf-ship-admin-move-to-position = Send to this position
+wf-ship-admin-move-next-to = Send next to
+wf-ship-admin-move-dock-at = Dock at
+wf-ship-admin-move-spot = a spot on { $map }
+wf-ship-admin-move-free-heading = Free a stuck ship
+wf-ship-admin-move-undock = Undock
+wf-ship-admin-move-undock-tooltip = Releases every dock on the ship.
+wf-ship-admin-move-halt = Halt
+wf-ship-admin-move-halt-tooltip = Stops a ship that is drifting or spinning.
+wf-ship-admin-move-clear-pilots = Clear pilots
+wf-ship-admin-move-clear-pilots-tooltip = Takes everyone off the helms, including pilots who are stuck on one.
+wf-ship-admin-move-reset-ftl = Reset jump cooldown
+wf-ship-admin-move-reset-ftl-tooltip = Ends the wait after a jump so the ship can jump again at once.
+wf-ship-admin-move-ftl-lock-on = Travel with docked ships: turn on
+wf-ship-admin-move-ftl-lock-off = Travel with docked ships: turn off
+wf-ship-admin-move-ftl-lock-tooltip = While on, the ship is carried along when a ship it is docked to jumps.
+
 ## Chat lines to players
 wf-ship-admin-notice-lost = Staff have taken { $ship } out of your ownership.
 wf-ship-admin-notice-gained = Staff have made you an owner of { $ship }.
@@ -224,6 +250,21 @@ wf-ship-admin-result-fixed = Fixed { $ship }: { $tiles } hull tiles, { $parts } 
 wf-ship-admin-result-snapshot = Re-took the repair snapshot of { $ship }.
 wf-ship-admin-result-no-snapshot = That ship has no repair snapshot to restore.
 wf-ship-admin-result-restored = Restored { $ship } to its repair snapshot.
+wf-ship-admin-result-move-station = That grid is a station or a planet's surface. The panel only moves ships.
+wf-ship-admin-result-move-no-body = You have no body on a map to bring it to.
+wf-ship-admin-result-move-bad-position = That position isn't valid.
+wf-ship-admin-result-move-bad-target = Pick another grid to send it to.
+wf-ship-admin-result-move-failed = No clear spot was found there.
+wf-ship-admin-result-moved = Moved { $ship } to { $where }.
+wf-ship-admin-result-docked = Docked { $ship } at { $where }.
+wf-ship-admin-result-undocked = Undocked { $ship }.
+wf-ship-admin-result-halted = Halted { $ship }.
+wf-ship-admin-result-pilots-cleared = Cleared the pilots of { $ship }.
+wf-ship-admin-result-ftl-lock-on = { $ship } now travels with ships it is docked to.
+wf-ship-admin-result-ftl-lock-off = { $ship } no longer travels with ships it is docked to.
+wf-ship-admin-result-ftl-ready = Its jump drive is ready already.
+wf-ship-admin-result-ftl-jumping = It is in the middle of a jump. Wait for it to arrive.
+wf-ship-admin-result-ftl-reset = Reset the jump cooldown of { $ship }.
 wf-ship-admin-note-no-snapshot = It has no repair snapshot, so missing hull and parts were left out.
 wf-ship-admin-note-account-only = Registered to their account only: { $reason }
 wf-ship-admin-note-crew = It is the ship of crew "{ $crew }", which keeps spawning aboard.

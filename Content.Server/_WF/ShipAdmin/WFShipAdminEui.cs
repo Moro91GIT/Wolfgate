@@ -113,6 +113,16 @@ public sealed partial class WFShipAdminEui : BaseEui
                 if (TryTarget(fix.Grid, WFShipAdminAction.Fix, out var fixedShip))
                     Finish(_ships.StartFix(Player, fixedShip, fix.Parts, out var fixResult), fixResult);
                 break;
+            case WFShipAdminMoveMessage move when Enum.IsDefined(move.Kind):
+                var moveAction = move.Kind switch
+                {
+                    WFShipAdminMoveKind.ToMe => WFShipAdminAction.BringToMe,
+                    WFShipAdminMoveKind.DockAt => WFShipAdminAction.DockAt,
+                    _ => WFShipAdminAction.SendTo,
+                };
+                if (TryTarget(move.Grid, moveAction, out var movedShip))
+                    Finish(_ships.Move(Player, movedShip, move, out var moveResult), moveResult);
+                break;
             case WFShipAdminModeMessage mode when Enum.IsDefined(mode.Mode):
                 if (TryTarget(mode.Grid, WFShipAdminAction.SetMode, out var moded))
                     Finish(_ships.SetMode(Player, moded, mode.Mode, mode.Notify, out var modeResult), modeResult);

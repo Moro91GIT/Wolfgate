@@ -36,6 +36,9 @@ public sealed partial class WFShipAdminWindow : DefaultWindow
     /// <summary>The repair tab, for tests.</summary>
     public readonly WFShipAdminRepairTab Repair = new();
 
+    /// <summary>The move tab, for tests.</summary>
+    public readonly WFShipAdminMoveTab Move = new();
+
     public WFShipAdminWindow()
     {
         RobustXamlLoader.Load(this);
@@ -44,6 +47,7 @@ public sealed partial class WFShipAdminWindow : DefaultWindow
         AddTab(Ownership);
         AddTab(Access);
         AddTab(Repair);
+        AddTab(Move);
 
         SearchBar.OnTextChanged += _ => Populate();
         RefreshButton.OnPressed += _ => OnMessage?.Invoke(new WFShipAdminListMessage(_filter));
@@ -72,6 +76,8 @@ public sealed partial class WFShipAdminWindow : DefaultWindow
             {
                 _ships = state.Ships;
                 _truncated = state.Truncated;
+                foreach (var tab in _tabs)
+                    tab.SetShips(_ships);
             }
 
             _selected = selected;

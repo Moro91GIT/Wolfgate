@@ -108,6 +108,13 @@ public sealed class WFShipAdminDetail
     public string Map = string.Empty;
     public Vector2 Position;
     public float Mass;
+    public float Speed;
+
+    /// <summary>Whether the ship travels along when a ship it is docked to jumps.</summary>
+    public bool FtlLock;
+
+    /// <summary>Where the ship is in a jump, or empty when it is not in one.</summary>
+    public string Ftl = string.Empty;
     public WFShipAdminRowFlags Flags;
     public List<string> DockedTo = new();
 
@@ -289,6 +296,33 @@ public sealed class WFShipAdminFixMessage(NetEntity grid, WFShipAdminFixParts pa
 {
     public readonly NetEntity Grid = grid;
     public readonly WFShipAdminFixParts Parts = parts;
+}
+
+/// <summary>Where a move puts the ship.</summary>
+[Serializable, NetSerializable]
+public enum WFShipAdminMoveKind : byte
+{
+    /// <summary>Next to the admin.</summary>
+    ToMe,
+
+    /// <summary>A position on the map the ship is on.</summary>
+    ToPosition,
+
+    /// <summary>Next to another grid.</summary>
+    NextTo,
+
+    /// <summary>Docked to another grid, or next to it when no dock fits.</summary>
+    DockAt,
+}
+
+/// <summary>Moves a ship at once, undocking it first.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminMoveMessage(NetEntity grid, WFShipAdminMoveKind kind, NetEntity? target, Vector2 position) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly WFShipAdminMoveKind Kind = kind;
+    public readonly NetEntity? Target = target;
+    public readonly Vector2 Position = position;
 }
 
 /// <summary>An action on a ship that needs no more than a switch.</summary>

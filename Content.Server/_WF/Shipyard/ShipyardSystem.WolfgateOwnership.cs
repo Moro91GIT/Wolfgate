@@ -35,6 +35,7 @@ public sealed partial class ShipyardSystem
         foreach (var holder in holders)
             RemComp<ShuttleDeedComponent>(holder);
 
+        ForgetVoucher(shuttleUid, null);
         return holders;
     }
 
@@ -45,7 +46,25 @@ public sealed partial class ShipyardSystem
             return false;
 
         RemComp<ShuttleDeedComponent>(holder);
+        ForgetVoucher(shuttleUid, holder);
         return true;
+    }
+
+    /// <summary>
+    /// Stops the voucher a ship was bought with from working its helm: the helm lock matches a voucher against the
+    /// ship's own deed, not the voucher's. With a holder, only when that holder is the voucher. The ship stays
+    /// marked as bought with a voucher.
+    /// </summary>
+    private void ForgetVoucher(EntityUid shuttleUid, EntityUid? holder)
+    {
+        if (!TryComp<ShuttleDeedComponent>(shuttleUid, out var deed) || deed.PurchaseVoucherUid == null)
+            return;
+
+        if (holder != null && deed.PurchaseVoucherUid != holder.Value.ToString())
+            return;
+
+        deed.PurchaseVoucherUid = null;
+        Dirty(shuttleUid, deed);
     }
 
     /// <summary>
@@ -64,6 +83,9 @@ public sealed partial class ShipyardSystem
         deed.ShuttleNameSuffix = shipDeed.ShuttleNameSuffix;
         deed.ShuttleOwner = ownerName;
         deed.DeedHolder = idCard;
+
+        // A shipyard reads this off the card at a sale: a voucher ship stays one, whoever holds it.
+        deed.PurchasedWithVoucher = shipDeed.PurchasedWithVoucher;
         Dirty(idCard, deed);
         return true;
     }

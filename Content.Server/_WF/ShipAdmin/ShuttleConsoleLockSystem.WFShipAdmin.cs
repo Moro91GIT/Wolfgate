@@ -25,10 +25,10 @@ public sealed partial class ShuttleConsoleLockSystem
         if (!TryComp<ShipGridLockComponent>(grid, out var gridLock) || string.IsNullOrEmpty(gridLock.ShuttleId))
             return false;
 
-        if (gridLock.Locked)
-            return true;
+        if (!gridLock.Locked)
+            SetGridLockState(grid, true);
 
-        SetGridLockState(grid, true);
+        // A lock only seats nobody new; whoever was flying, at any console, is still at the controls.
         var consoles = EntityQueryEnumerator<ShuttleConsoleComponent, TransformComponent>();
         while (consoles.MoveNext(out _, out var console, out var xform))
         {

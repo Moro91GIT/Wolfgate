@@ -35,6 +35,8 @@ changes them. A locked ship whose new owner has no keyed card yet is unlocked an
 can. A ship nobody ever owned goes through `ShipyardSystem.TryAssignDeed` instead, as a purchase would. Either
 way the hull's faction follows the option: kept, taken from the ID the new owner carries (deed on it or not), or
 cleared. `Release` leaves the doors unlocked and locks the helm, so only staff fly the ship until it is transferred.
+Taking a deed away also stops the voucher the ship was bought with from working its helm; the ship stays a voucher
+ship for a later sale.
 
 Stations and a planet's own surface can't be given an owner or moved (`CanBeOwned`); a ship's own late-join
 station doesn't count. Access actions need a grid that already has a deed or ship access, since setting access

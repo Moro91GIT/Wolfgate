@@ -231,10 +231,19 @@ public sealed class ShipAdminOwnershipTest
             Assert.That(locks.TryUnlock(helm, ship.AdaCard, helmLock), Is.True, "Precondition: the owner's card unlocks the helm.");
             Assert.That(locks.GetEffectiveLockState(helm, helmLock), Is.False);
 
+            // It was bought with a voucher, which the helm lock matches against the ship's own deed.
+            var shipDeed = entMan.GetComponent<ShuttleDeedComponent>(grid);
+#pragma warning disable RA0002 // Stands in for a voucher purchase at a shipyard console.
+            shipDeed.PurchasedWithVoucher = true;
+            shipDeed.PurchaseVoucherUid = ship.GuestCard.ToString();
+#pragma warning restore RA0002
+
             Assert.That(ships.Release(session, grid, false, out result), Is.True, result);
             Assert.Multiple(() =>
             {
                 Assert.That(locks.GetEffectiveLockState(helm, helmLock), Is.True, "Nobody is left to lock the helm, so the release does.");
+                Assert.That(shipDeed.PurchaseVoucherUid, Is.Null, "The voucher it was bought with no longer works the helm.");
+                Assert.That(shipDeed.PurchasedWithVoucher, Is.True, "It is still a voucher ship.");
                 Assert.That(shipyard.DeedHolders(grid), Is.Empty);
                 Assert.That(entMan.HasComponent<ShipOwnershipComponent>(grid), Is.False);
                 Assert.That(comp.OwnerUsers, Is.Empty);
@@ -246,6 +255,7 @@ public sealed class ShipAdminOwnershipTest
             server.PlayerMan.SetAttachedEntity(session, ship.Ben);
             Assert.That(ships.Transfer(session, grid, new WFShipAdminTransferMessage(entMan.GetNetEntity(grid), session.UserId), out result), Is.True, result);
             Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.BenCard), Is.True);
+            Assert.That(entMan.GetComponent<ShuttleDeedComponent>(ship.BenCard).PurchasedWithVoucher, Is.True, "A shipyard still sees a voucher ship on the new owner's card.");
 
             server.PlayerMan.SetAttachedEntity(session, null);
             ship.Delete(entMan);
@@ -327,6 +337,10 @@ public sealed class ShipAdminOwnershipTest
                 Assert.That(ships.Transfer(session, hull, Give(hull, option), out result), Is.True, result);
                 Assert.That(entMan.HasComponent<ShuttleDeedComponent>(ship.GuestCard), Is.True, "Precondition: the purchase path ran.");
                 Assert.That(Faction(hull), Is.EqualTo(expected), $"{option} on a new ship, with {onCard} on the card.");
+
+                // Access is set up from the faction the hull ends with, not the one on the card.
+                var mode = expected is null or NoFaction ? WFShipAccessMode.Private : WFShipAccessMode.Faction;
+                Assert.That(entMan.GetComponent<WFShipAccessComponent>(hull).Mode, Is.EqualTo(mode), $"{option} on a new ship, with {onCard} on the card.");
 
                 // The card is freed for the next ship.
                 entMan.RemoveComponent<ShuttleDeedComponent>(ship.GuestCard);

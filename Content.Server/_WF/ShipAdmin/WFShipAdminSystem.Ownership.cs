@@ -88,16 +88,20 @@ public sealed partial class WFShipAdminSystem
             if (TryComp<VesselComponent>(grid, out var design) && !string.IsNullOrEmpty(design.VesselId.Id))
                 _proto.TryIndex(design.VesselId, out vessel);
 
-            // A purchase puts the card's faction on the hull; here the faction option decides.
+            // A purchase puts the card's faction on the hull; here the faction option decides. It is settled first,
+            // because the purchase sets ship access up from the hull's faction: Faction mode and the door lists.
             var factionBefore = CompOrNull<CompanyComponent>(grid)?.CompanyName;
-            if (!_shipyard.TryAssignDeed(grid, card.Value, target, vessel, Name(grid)))
+            if (options.Faction != WFShipAdminFaction.Keep)
+                SetFaction(grid, PickFaction(carried, options.Faction));
+
+            if (!_shipyard.TryAssignDeed(grid, card.Value, target, vessel, Name(grid), cardFaction: false))
             {
+                SetFaction(grid, factionBefore);
                 result = Loc.GetString("wf-ship-admin-result-transfer-failed");
                 return false;
             }
 
             _shipAccess.AddOwnerUser(grid, options.User);
-            SetFaction(grid, options.Faction == WFShipAdminFaction.Keep ? factionBefore : PickFaction(carried, options.Faction));
         }
         else
         {

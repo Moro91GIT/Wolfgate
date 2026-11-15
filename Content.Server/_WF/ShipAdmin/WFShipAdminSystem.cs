@@ -136,6 +136,24 @@ public sealed partial class WFShipAdminSystem : EntitySystem
             case WFShipAdminAction.ResetFtl:
                 panel.Finish(ResetFtl(panel.Player, grid, out var ftlReset), ftlReset);
                 break;
+            case WFShipAdminAction.Shields:
+                panel.Finish(SetShields(panel.Player, grid, value, out var shielded), shielded);
+                break;
+            case WFShipAdminAction.Power:
+                panel.Finish(SetPower(panel.Player, grid, value, out var powered), powered);
+                break;
+            case WFShipAdminAction.Fitting:
+                panel.Finish(FitBestParts(panel.Player, grid, out var fitted), fitted);
+                break;
+            case WFShipAdminAction.Eject:
+                panel.Finish(Eject(panel.Player, grid, out var ejected), ejected);
+                break;
+            case WFShipAdminAction.Strip:
+                panel.Finish(Strip(panel.Player, grid, out var stripped), stripped);
+                break;
+            case WFShipAdminAction.Delete:
+                panel.Finish(Delete(panel.Player, grid, value, out var deleted), deleted);
+                break;
             case WFShipAdminAction.Release:
                 panel.Finish(Release(panel.Player, grid, notify, out var released), released);
                 break;

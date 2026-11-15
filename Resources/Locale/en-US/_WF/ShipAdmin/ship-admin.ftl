@@ -42,6 +42,9 @@ wf-ship-admin-tab-ownership = Ownership
 wf-ship-admin-tab-access = Access
 wf-ship-admin-tab-repair = Repair
 wf-ship-admin-tab-move = Move
+wf-ship-admin-tab-systems = Systems
+wf-ship-admin-tab-upgrades = Upgrades
+wf-ship-admin-tab-danger = Danger
 
 ## Tags
 wf-ship-admin-tag-locked = locked
@@ -206,6 +209,60 @@ wf-ship-admin-move-ftl-lock-on = Travel with docked ships: turn on
 wf-ship-admin-move-ftl-lock-off = Travel with docked ships: turn off
 wf-ship-admin-move-ftl-lock-tooltip = While on, the ship is carried along when a ship it is docked to jumps.
 
+## Systems tab
+wf-ship-admin-systems-name = Name
+wf-ship-admin-systems-rename = Rename
+wf-ship-admin-systems-radar = Radar signature
+wf-ship-admin-systems-colour-hint = #RRGGBB
+wf-ship-admin-systems-set-colour = Set colour
+wf-ship-admin-systems-hidden = Hidden from radar
+wf-ship-admin-systems-hidden-tooltip = Other ships' radars don't show it at all.
+wf-ship-admin-systems-label-hidden = Label hidden
+wf-ship-admin-systems-label-hidden-tooltip = Radars show the hull but not its name.
+wf-ship-admin-systems-shields-power = Shields and power
+wf-ship-admin-systems-shields-on = Raise shields
+wf-ship-admin-systems-shields-off = Drop shields
+wf-ship-admin-systems-power-on = Power on
+wf-ship-admin-systems-power-off = Power off
+wf-ship-admin-systems-power-off-tooltip = Drains every battery aboard and switches the breakers off. The crew gets it back by flipping breakers.
+wf-ship-admin-systems-protect = Protections
+wf-ship-admin-systems-protect-blastproof = Blast-proof
+wf-ship-admin-systems-protect-blastproof-tooltip = Explosions and EMPs don't harm the ship and blasts don't break its floors.
+wf-ship-admin-systems-protect-pacified = Pacified
+wf-ship-admin-systems-protect-pacified-tooltip = Nobody aboard can fight.
+wf-ship-admin-systems-protect-cleanupimmune = Safe from cleanup
+wf-ship-admin-systems-protect-cleanupimmune-tooltip = The cleanup of abandoned grids never deletes it.
+wf-ship-admin-systems-protect-gunsdisabled = Ship guns disabled
+wf-ship-admin-systems-protect-gunsdisabled-tooltip = Its ship guns don't fire.
+wf-ship-admin-systems-protect-ftlunrestricted = No jump limits
+wf-ship-admin-systems-protect-ftlunrestricted-tooltip = It jumps whatever its mass, with other ships close by, and into no-jump zones.
+
+## Upgrades tab
+wf-ship-admin-upgrades-refits = Refits
+wf-ship-admin-upgrades-refits-note = Brings a refit line up to a tier at no cost. The ship then owns that tier, as if it had bought it at a drydock.
+wf-ship-admin-upgrades-tier = tier { $tier } of { $max }
+wf-ship-admin-upgrades-to-tier = To tier { $tier }
+wf-ship-admin-upgrades-parts = Machine parts
+wf-ship-admin-upgrades-fit = Fit the best parts
+wf-ship-admin-upgrades-fit-tooltip = Swaps the parts in every machine aboard for the best of their kind.
+wf-ship-admin-upgrades-modifiers = Hull modifiers
+wf-ship-admin-upgrades-modifiers-note = A hull modifier swaps parts of the ship for others. It can't be taken back.
+wf-ship-admin-upgrades-modify = Apply modifier
+
+## Danger tab
+wf-ship-admin-danger-aboard = Players aboard: { $count }
+wf-ship-admin-danger-eject-heading = Empty the ship
+wf-ship-admin-danger-eject-note = Brings every player aboard, and whatever they are pulling, to where you stand.
+wf-ship-admin-danger-eject = Bring everyone aboard to me
+wf-ship-admin-danger-strip-heading = Strip to a bare hull
+wf-ship-admin-danger-strip-note = Removes the owner, every deed, the access setup, crew slots and the ship's late-join station, leaving an unclaimed hull like one on the used-ship lot. What is aboard stays. Needs the Debug permission.
+wf-ship-admin-danger-strip = Strip the ship
+wf-ship-admin-danger-delete-heading = Delete the ship
+wf-ship-admin-danger-delete-note = Deletes the ship and everything aboard except players, who are never deleted with it. Needs the Debug permission.
+wf-ship-admin-danger-bring = Bring players aboard to me first
+wf-ship-admin-danger-bring-tooltip = Left unticked, players are left floating where the ship was.
+wf-ship-admin-danger-delete = Delete the ship
+
 ## Chat lines to players
 wf-ship-admin-notice-lost = Staff have taken { $ship } out of your ownership.
 wf-ship-admin-notice-gained = Staff have made you an owner of { $ship }.
@@ -265,6 +322,29 @@ wf-ship-admin-result-ftl-lock-off = { $ship } no longer travels with ships it is
 wf-ship-admin-result-ftl-ready = Its jump drive is ready already.
 wf-ship-admin-result-ftl-jumping = It is in the middle of a jump. Wait for it to arrive.
 wf-ship-admin-result-ftl-reset = Reset the jump cooldown of { $ship }.
+wf-ship-admin-result-bad-name = A ship's name needs 1 to { $max } characters.
+wf-ship-admin-result-rename-failed = The ship could not be renamed.
+wf-ship-admin-result-renamed = Renamed { $old } to { $ship }.
+wf-ship-admin-result-bad-colour = That isn't a colour. Use hex, like #FFC000.
+wf-ship-admin-result-iff = Changed the radar signature of { $ship }.
+wf-ship-admin-result-no-shields = That ship has no shields to switch.
+wf-ship-admin-result-shields-on = Raised the shields of { $ship }.
+wf-ship-admin-result-shields-off = Dropped the shields of { $ship }.
+wf-ship-admin-result-no-power = That ship has no batteries or APCs.
+wf-ship-admin-result-power-on = Powered { $ship }.
+wf-ship-admin-result-power-off = Unpowered { $ship }.
+wf-ship-admin-result-protect-on = Switched { $protect } on for { $ship }.
+wf-ship-admin-result-protect-off = Switched { $protect } off for { $ship }.
+wf-ship-admin-result-bad-refit = That refit or tier doesn't exist.
+wf-ship-admin-result-refit-no-parts = The ship has no parts the { $refit } line covers.
+wf-ship-admin-result-refit-started = Refitting { $ship }: { $refit }, { $count } parts queued.
+wf-ship-admin-result-refitted = Refitted { $ship }: { $refit } is now tier { $tier }.
+wf-ship-admin-result-fitted = Fitted the best parts to { $count } machines on { $ship }.
+wf-ship-admin-result-bad-modifier = That hull modifier doesn't exist.
+wf-ship-admin-result-modified = Applied { $modifier } to { $ship }.
+wf-ship-admin-result-ejected = Brought { $count } from { $ship } to you.
+wf-ship-admin-result-stripped = Stripped { $ship } to a bare unclaimed hull.
+wf-ship-admin-result-deleted = Deleted { $ship }.
 wf-ship-admin-note-no-snapshot = It has no repair snapshot, so missing hull and parts were left out.
 wf-ship-admin-note-account-only = Registered to their account only: { $reason }
 wf-ship-admin-note-crew = It is the ship of crew "{ $crew }", which keeps spawning aboard.

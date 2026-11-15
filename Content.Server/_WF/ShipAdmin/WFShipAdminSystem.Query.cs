@@ -113,6 +113,16 @@ public sealed partial class WFShipAdminSystem
             detail.FixTotal = total;
         }
 
+        if (TryComp<IFFComponent>(grid, out var iff))
+        {
+            detail.IffColor = _shuttle.GetIFFColor(grid, component: iff).ToHex();
+            detail.IffHidden = (iff.Flags & IFFFlags.Hide) != 0;
+            detail.IffLabelHidden = (iff.Flags & IFFFlags.HideLabel) != 0;
+        }
+
+        detail.Protect = Protections(grid);
+        detail.Refits = Refits(grid);
+
         foreach (var dock in _docking.GetDocks(grid))
         {
             if (dock.Comp.DockedWith is not { } other || Transform(other).GridUid is not { } otherGrid)

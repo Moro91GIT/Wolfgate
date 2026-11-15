@@ -9,6 +9,7 @@ using Content.Shared.Atmos.Components;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._Mono.ShipRepair.Components;
+using Content.Shared._WF.Drydock;
 using Content.Shared._WF.ShipAccess;
 using Content.Shared._WF.ShipAdmin;
 using Content.Shared.Database;
@@ -48,6 +49,10 @@ public sealed partial class WFShipAdminSystem
         public int Tiles;
         public int Rebuilt;
         public int Healed;
+
+        /// <summary>The refit line and tier this job brings the ship up to, when it is a refit and not a fix.</summary>
+        public WFShipRefitPrototype? Refit;
+        public int RefitTier;
     }
 
     /// <summary>Whether a fix is running on the ship, and how far it is.</summary>
@@ -223,6 +228,22 @@ public sealed partial class WFShipAdminSystem
     /// <summary>The parts of a fix that take one call each, run once the hull is whole again.</summary>
     private void FinishFix(EntityUid grid, FixJob job)
     {
+        if (job.Refit is { } refit)
+        {
+            // The ship owns the tier now, for as many units as reach it; a later repair restores them at that tier.
+            _refits.SetRefit(grid, refit.ID, job.RefitTier, _refits.Survey(grid, refit, job.RefitTier).UnitsAtTier);
+            Audit(job.Admin, LogImpact.Medium, grid, $"finished a free refit of {refit.ID} to tier {job.RefitTier} ({job.Total} parts)");
+            if (_panels.TryGetValue(job.Admin, out var refitPanel))
+            {
+                refitPanel.Finish(true, Loc.GetString("wf-ship-admin-result-refitted",
+                    ("ship", Name(grid)),
+                    ("refit", Loc.GetString(refit.Name)),
+                    ("tier", job.RefitTier)));
+            }
+
+            return;
+        }
+
         var parts = job.Parts;
         if ((parts & WFShipAdminFixParts.Fires) != 0)
         {

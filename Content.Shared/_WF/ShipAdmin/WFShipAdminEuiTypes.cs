@@ -148,6 +148,48 @@ public sealed class WFShipAdminDetail
     /// <summary>The fix running on the ship, if any: items done and in all.</summary>
     public int FixDone;
     public int FixTotal;
+
+    /// <summary>The ship's radar colour as hex, and whether it or its label is hidden from radar.</summary>
+    public string IffColor = string.Empty;
+    public bool IffHidden;
+    public bool IffLabelHidden;
+
+    public WFShipAdminProtect Protect;
+
+    /// <summary>Every refit line, with the tier the ship owns.</summary>
+    public List<WFShipAdminRefit> Refits = new();
+}
+
+/// <summary>Protections staff can switch on a ship.</summary>
+[Flags, Serializable, NetSerializable]
+public enum WFShipAdminProtect : byte
+{
+    None = 0,
+
+    /// <summary>Explosions and EMPs don't harm it, and blasts don't break its floors.</summary>
+    Blastproof = 1 << 0,
+
+    /// <summary>Nobody aboard can fight.</summary>
+    Pacified = 1 << 1,
+
+    /// <summary>The cleanup of abandoned grids leaves it alone.</summary>
+    CleanupImmune = 1 << 2,
+
+    /// <summary>Its ship guns don't fire.</summary>
+    GunsDisabled = 1 << 3,
+
+    /// <summary>It jumps whatever its mass, with other ships near, and into no-jump zones.</summary>
+    FtlUnrestricted = 1 << 4,
+}
+
+/// <summary>One refit line as the panel shows it.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminRefit
+{
+    public string Id = string.Empty;
+    public string Name = string.Empty;
+    public int Tier;
+    public int MaxTier;
 }
 
 /// <summary>What a scan found wrong with a ship.</summary>
@@ -323,6 +365,50 @@ public sealed class WFShipAdminMoveMessage(NetEntity grid, WFShipAdminMoveKind k
     public readonly WFShipAdminMoveKind Kind = kind;
     public readonly NetEntity? Target = target;
     public readonly Vector2 Position = position;
+}
+
+/// <summary>Renames a ship: its grid, station, deeds and shuttle record.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminRenameMessage(NetEntity grid, string name) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly string Name = name;
+}
+
+/// <summary>Changes how a ship shows on radar. A null field is left as it is.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminIffMessage(NetEntity grid, string? color, bool? hidden, bool? labelHidden) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly string? Color = color;
+    public readonly bool? Hidden = hidden;
+    public readonly bool? LabelHidden = labelHidden;
+}
+
+/// <summary>Switches one protection on or off.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminProtectMessage(NetEntity grid, WFShipAdminProtect protect, bool on) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly WFShipAdminProtect Protect = protect;
+    public readonly bool On = on;
+}
+
+/// <summary>Brings a refit line up to a tier, free.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminRefitMessage(NetEntity grid, string refit, int tier) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly string Refit = refit;
+    public readonly int Tier = tier;
+}
+
+/// <summary>Applies a hull modifier to a ship.</summary>
+[Serializable, NetSerializable]
+public sealed class WFShipAdminModifierMessage(NetEntity grid, string modifier) : EuiMessageBase
+{
+    public readonly NetEntity Grid = grid;
+    public readonly string Modifier = modifier;
 }
 
 /// <summary>An action on a ship that needs no more than a switch.</summary>

@@ -39,6 +39,11 @@ public sealed partial class WFShipAdminWindow : DefaultWindow
     /// <summary>The move tab, for tests.</summary>
     public readonly WFShipAdminMoveTab Move = new();
 
+    /// <summary>The systems, upgrades and danger tabs, for tests.</summary>
+    public readonly WFShipAdminSystemsTab Systems = new();
+    public readonly WFShipAdminUpgradesTab Upgrades = new();
+    public readonly WFShipAdminDangerTab Danger = new();
+
     public WFShipAdminWindow()
     {
         RobustXamlLoader.Load(this);
@@ -48,6 +53,9 @@ public sealed partial class WFShipAdminWindow : DefaultWindow
         AddTab(Access);
         AddTab(Repair);
         AddTab(Move);
+        AddTab(Systems);
+        AddTab(Upgrades);
+        AddTab(Danger);
 
         SearchBar.OnTextChanged += _ => Populate();
         RefreshButton.OnPressed += _ => OnMessage?.Invoke(new WFShipAdminListMessage(_filter));

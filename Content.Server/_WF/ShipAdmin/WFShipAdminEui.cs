@@ -123,6 +123,26 @@ public sealed partial class WFShipAdminEui : BaseEui
                 if (TryTarget(move.Grid, moveAction, out var movedShip))
                     Finish(_ships.Move(Player, movedShip, move, out var moveResult), moveResult);
                 break;
+            case WFShipAdminRenameMessage rename:
+                if (TryTarget(rename.Grid, WFShipAdminAction.Rename, out var renamed))
+                    Finish(_ships.Rename(Player, renamed, rename.Name ?? string.Empty, out var renameResult), renameResult);
+                break;
+            case WFShipAdminIffMessage iff:
+                if (TryTarget(iff.Grid, WFShipAdminAction.Iff, out var signed))
+                    Finish(_ships.SetIff(Player, signed, iff, out var iffResult), iffResult);
+                break;
+            case WFShipAdminProtectMessage protect:
+                if (TryTarget(protect.Grid, WFShipAdminAction.Protect, out var guarded))
+                    Finish(_ships.SetProtect(Player, guarded, protect.Protect, protect.On, out var protectResult), protectResult);
+                break;
+            case WFShipAdminRefitMessage refit:
+                if (TryTarget(refit.Grid, WFShipAdminAction.Refit, out var refitted))
+                    Finish(_ships.StartRefit(Player, refitted, refit.Refit ?? string.Empty, refit.Tier, out var refitResult), refitResult);
+                break;
+            case WFShipAdminModifierMessage modifier:
+                if (TryTarget(modifier.Grid, WFShipAdminAction.Modifier, out var modified))
+                    Finish(_ships.ApplyModifier(Player, modified, modifier.Modifier ?? string.Empty, out var modifierResult), modifierResult);
+                break;
             case WFShipAdminModeMessage mode when Enum.IsDefined(mode.Mode):
                 if (TryTarget(mode.Grid, WFShipAdminAction.SetMode, out var moded))
                     Finish(_ships.SetMode(Player, moded, mode.Mode, mode.Notify, out var modeResult), modeResult);

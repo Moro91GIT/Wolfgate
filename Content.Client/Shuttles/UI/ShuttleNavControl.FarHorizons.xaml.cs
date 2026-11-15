@@ -83,6 +83,13 @@ public partial class ShuttleNavControl
             if (!isOutsideRadarCircle && WfIsScopePlanet(uid, uiPosition)) continue;
 
             NfAddBlipToList(_beaconBlips, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, color);
+            // WOLFGATE(RadarLabels) START: a beacon pinned to the rim keeps its blip, still clickable for a world, but no tag
+            if (isOutsideRadarCircle)
+            {
+                WfAddPlanetBlipHit(uid, uiPosition);
+                continue;
+            }
+            // WOLFGATE END
 
             var distance = Vector2.Distance(worldPos, mapPos.Position);
             var displayedDistance = distance < 50f ? $"{distance:0.0}" : distance < 1000 ? $"{distance:0}" : $"{distance / 1000:0.0}k";

@@ -31,9 +31,12 @@ Entry points: `WFRadarTagLayout` (the grouping, pure geometry) and `ShuttleNavCo
 
 ## Non-modular edits
 
-- [`Content.Client/Shuttles/UI/ShuttleNavControl.FarHorizons.xaml.cs`](../../Shuttles/UI/ShuttleNavControl.FarHorizons.xaml.cs): lines go to the scope's shared tag layout, which stacks overlapping tags.
+- [`Content.Client/Shuttles/UI/ShuttleNavControl.FarHorizons.xaml.cs`](../../Shuttles/UI/ShuttleNavControl.FarHorizons.xaml.cs)
+  - a beacon pinned to the rim keeps its blip, still clickable for a world, but no tag
+  - lines go to the scope's shared tag layout, which stacks overlapping tags.
 - [`Content.Client/Shuttles/UI/ShuttleNavControl.xaml.cs`](../../Shuttles/UI/ShuttleNavControl.xaml.cs)
   - every contact's tag, laid out together over the scope.
+  - only contacts on the scope get a tag; one pinned to the rim keeps just its blip unless hovered
   - lines go to the scope's shared tag layout, which stacks overlapping tags.
   - dock names join the scope's shared tag layout.
 

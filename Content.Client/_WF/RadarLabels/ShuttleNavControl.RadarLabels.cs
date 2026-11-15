@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Client._WF.RadarLabels;
+using Content.Shared._WF.CCVar;
 using Robust.Client.Graphics;
 
 namespace Content.Client.Shuttles.UI;
@@ -108,6 +109,23 @@ public partial class ShuttleNavControl
         if (_wfTags.Count == 0)
             return;
 
+        WfDropTagsOffScope();
+        if (!_wfSettingsCfg.GetCVar(WolfgateCVars.RadarTagStacking))
+        {
+            // Stacking off: every tag by its contact, overlapping or not.
+            for (var i = 0; i < _wfTags.Count; i++)
+                DrawTagAlone(handle, i);
+
+            WfClearTags();
+            return;
+        }
+
+        if (_wfTags.Count == 0)
+        {
+            WfClearTags();
+            return;
+        }
+
         // A tag is known from frame to frame by its name, numbered when names repeat.
         _wfTagKeyCounts.Clear();
         for (var i = 0; i < _wfTags.Count; i++)
@@ -165,10 +183,44 @@ public partial class ShuttleNavControl
             }
         }
 
+        WfClearTags();
+    }
+
+    private void WfClearTags()
+    {
         _wfTags.Clear();
         _wfTagDraws.Clear();
         _wfTagLines.Clear();
         _wfTagAbove.Clear();
+    }
+
+    /// <summary>Whether a point, in pixels, lies on the scope: inside the ellipse it draws within, not out at its rim or corners.</summary>
+    private bool WfOnScope(Vector2 point)
+    {
+        var half = new Vector2(PixelSize.X, PixelSize.Y) / 2f;
+        if (half.X <= 0f || half.Y <= 0f)
+            return false;
+
+        var offset = (point - half) / half;
+        return offset.LengthSquared() <= 1f;
+    }
+
+    /// <summary>Drops the tags of contacts off the scope, so a stack lists only what the scope shows.</summary>
+    private void WfDropTagsOffScope()
+    {
+        var kept = 0;
+        for (var i = 0; i < _wfTags.Count; i++)
+        {
+            if (!WfOnScope(_wfTags[i].Anchor))
+                continue;
+
+            _wfTags[kept] = _wfTags[i];
+            _wfTagDraws[kept] = _wfTagDraws[i];
+            kept++;
+        }
+
+        _wfTags.RemoveRange(kept, _wfTags.Count - kept);
+        _wfTagDraws.RemoveRange(kept, _wfTagDraws.Count - kept);
     }
 
     private void DrawTagAlone(DrawingHandleScreen handle, int index)

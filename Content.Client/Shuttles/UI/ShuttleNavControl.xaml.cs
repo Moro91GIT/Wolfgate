@@ -990,7 +990,10 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
                     var distance = Vector2.Distance(gridMapPos, mapPos.Position);
 
-                    if (!isOutsideRadarCircle || isDistantPOI || isMouseOver)
+                    // WOLFGATE(RadarLabels) START: only contacts on the scope get a tag; one pinned to the rim keeps just its blip unless hovered
+                    // if (!isOutsideRadarCircle || isDistantPOI || isMouseOver)
+                    if (!isOutsideRadarCircle || isMouseOver)
+                    // WOLFGATE END
                     {
                         // Shows decimal when distance is < 50m, otherwise pointless to show it.
                         var displayedDistance = distance < 50f ? $"{distance:0.0}" : distance < 1000 ? $"{distance:0}" : $"{distance / 1000:0.0}k";

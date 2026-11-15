@@ -95,6 +95,12 @@ public sealed class WolfgateCVars
         CVarDef.Create("wf.radar_zoom_to_mouse", false, CVar.CLIENTONLY | CVar.ARCHIVE);
 
     /// <summary>
+    /// Whether radar tags that would overlap share one stacked list. Off, every tag sits by its contact as it always did.
+    /// </summary>
+    public static readonly CVarDef<bool> RadarTagStacking =
+        CVarDef.Create("wf.radar_tag_stacking", true, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    /// <summary>
     /// The player's chat tabs: <c>name=channel,channel</c> entries separated by <c>|</c>, with <c>*</c> for every
     /// channel. Empty means the default tabs.
     /// </summary>

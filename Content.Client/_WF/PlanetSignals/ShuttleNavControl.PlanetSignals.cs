@@ -120,6 +120,13 @@ public partial class ShuttleNavControl
         }
     }
 
+    /// <summary>Lets a world pinned to the scope's rim, which has no tag, be clicked by its blip alone.</summary>
+    private void WfAddPlanetBlipHit(EntityUid body, Vector2 uiPosition)
+    {
+        if (EntManager.HasComponent<WFPlanetSignalsComponent>(body))
+            _wfPlanetHits.Add((body, uiPosition * UIScale, 16f * UIScale, default));
+    }
+
     /// <summary>
     /// Over a world's name on the radar out in space: how many vessels, sites and people it holds, and whether the ship's
     /// expedition is there, added to the name's tag. A world drawn here is off the scope or has no scope circle, so only

@@ -118,6 +118,45 @@ public sealed class BattleLoadTest
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>A wall the small blast inside it breaks no longer holds it in: the blast reaches past it.</summary>
+    [Test]
+    public async Task MicroExplosionThroughAWallItBreaks()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var explosions = entMan.System<ExplosionSystem>();
+
+        EntityUid behind = default;
+        MapId mapId = default;
+        await server.WaitPost(() =>
+        {
+            var grid = MakeGrid(entMan, server.ResolveDependency<ITileDefinitionManager>(), out mapId);
+            var wall = entMan.SpawnEntity("WallPlastitanium", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            behind = entMan.SpawnEntity("Girder", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+
+            // Battered to within a hair of falling.
+            var destroyedAt = entMan.System<Content.Server.Destructible.DestructibleSystem>().DestroyedAt(wall);
+            var structural = server.ProtoMan.Index<Content.Shared.Damage.Prototypes.DamageTypePrototype>("Structural");
+            entMan.System<DamageableSystem>().TryChangeDamage(wall, new DamageSpecifier(structural, destroyedAt - 0.5f), ignoreResistances: true);
+
+            var bomb = entMan.SpawnEntity(null, new EntityCoordinates(grid, new Vector2(0.05f, 0.5f)));
+            explosions.QueueExplosion(bomb, "Default", 5f, 1f, 1f);
+            entMan.DeleteEntity(bomb);
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var reached = !entMan.TryGetComponent<DamageableComponent>(behind, out var damage) || damage.TotalDamage > 0;
+            Assert.That(reached, Is.True, "A wall the blast broke still held it in.");
+        });
+
+        await server.WaitPost(() => entMan.System<SharedMapSystem>().DeleteMap(mapId));
+        await pair.CleanReturnAsync();
+    }
+
     [Test]
     public async Task NearbySmallExplosionsMerge()
     {

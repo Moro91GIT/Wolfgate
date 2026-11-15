@@ -127,10 +127,15 @@ public sealed partial class ExplosionSystem
         var ringIntensity = MathF.Min(micro.MaxTileIntensity, (micro.TotalIntensity - centerIntensity) / 4f);
         var damageModifier = _damageableSystem.UniversalExplosionDamageModifier * _damageableSystem.UniversalAllDamageModifier;
         // A blast inside a standing wall leaves it only through the sides the wall leaves open, as a full explosion does.
-        var blocked = TryComp<ExplosionAirtightGridComponent>(gridUid, out var airtight)
-                      && airtight.Tiles.TryGetValue(center, out var centerData)
-            ? centerData.BlockedDirections
-            : AtmosDirection.Invalid;
+        // A wall the blast at its centre breaks, one already weakened say, no longer holds it.
+        var blocked = AtmosDirection.Invalid;
+        if (TryComp<ExplosionAirtightGridComponent>(gridUid, out var airtight)
+            && airtight.Tiles.TryGetValue(center, out var centerData)
+            && !(_explosionTypes.TryGetValue(micro.Proto.ID, out var typeIndex)
+                 && (float) GetToleranceValues(centerData.ToleranceCacheIndex).Values[typeIndex] <= centerIntensity))
+        {
+            blocked = centerData.BlockedDirections;
+        }
 
         _wfMicroProcessed.Clear();
         _wfMicroTiles.Clear();

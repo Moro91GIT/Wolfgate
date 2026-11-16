@@ -39,6 +39,7 @@ it hands the query to `KeybindSearch`, which also matches a bound key exactly (t
 
 - [`Content.IntegrationTests/Tests/_WF/Options/KeybindSearchTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Options/KeybindSearchTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/Options/OptionsSearchTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Options/OptionsSearchTest.cs)
+- [`Content.IntegrationTests/Tests/_WF/Options/OptionsTabTestHelper.cs`](../../../Content.IntegrationTests/Tests/_WF/Options/OptionsTabTestHelper.cs)
 - [`Content.IntegrationTests/Tests/_WF/Options/Ss13KeybindPresetTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Options/Ss13KeybindPresetTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/Options/WolfgateExtraTabTest.cs`](../../../Content.IntegrationTests/Tests/_WF/Options/WolfgateExtraTabTest.cs)
 

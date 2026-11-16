@@ -1,6 +1,7 @@
 using System.Numerics;
 using Content.Client.Chat.Managers;
 using Content.Client._WF.ChatFont; // WOLFGATE(ChatFont)
+using Content.Client._WF.SpeechBubbles; // WOLFGATE(SpeechBubbles)
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
 using Content.Shared.Speech;
@@ -193,7 +194,10 @@ namespace Content.Client.Chat.UI
             if (fontColor != null)
                 msg.PushColor(fontColor.Value);
             msg.AddMarkupOrThrow(message);
-            return msg;
+            // WOLFGATE(SpeechBubbles) START: the player's maximum bubble length
+            // return msg;
+            return WFBubbleLength.Truncate(msg);
+            // WOLFGATE END
         }
 
         protected FormattedMessage ExtractAndFormatSpeechSubstring(ChatMessage message, string tag, Color? fontColor = null)

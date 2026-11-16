@@ -85,6 +85,7 @@ public sealed partial class GraphicsTab : Control
 
         Control.AddOptionCheckBox(FHCCVars.RenderStarSystem, RenderStarSystemCheckBox); // Far Horizons
         WfAddWeatherQuality(); // WOLFGATE(WolfWeather)
+        WfAddDisplayOptions(); // WOLFGATE(DisplayOptions): FPS cap, space background, bloom, grain
 
         Control.Initialize();
 

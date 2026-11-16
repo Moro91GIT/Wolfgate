@@ -41,7 +41,8 @@ takes catalogue IDs only, so the `Admin` flag does not become a general spawn ri
 normal one, gives it an in-character name and description (the preset's, else the avatar prototype's, else the
 admin's character, else "admin observer"; never the account name) and puts the old ones back on hiding. It stays a
 ghost: nothing can hit, pull, cuff or strip it, and it keeps every observer power. Each change is admin-logged. A
-new observer always starts hidden. Avatars other than the ghost sprite come in later phases.
+new observer always starts hidden. A client that has ghosts switched off, as one does after leaving a ghost for a
+body, still draws a manifested observer.
 
 While manifested, Say, Whisper, Emote, Subtle and radio are in character: `ChatSystem` no longer forwards its
 speech to dead chat, it gets an intrinsic transmitter on every radio channel that needs no telecom server, and it
@@ -50,12 +51,63 @@ Hidden, everything is as before.
 
 A manifested observer always carries `WFStaffMarkerComponent`, and nothing can remove the marker's fixed part
 (`WFStaffMarkerSystem`): a line on examine and a tag in front of its name in chat and on the radio. The wording is
-the admin's choice (rank by default, "Staff", account name, or rank and name). At least one visual is always on;
-the nameplate (`WFStaffNameplateOverlay`) is the one drawn so far. The marker's colour is fixed for staff and the
-admin's own only for a holder of the `Host` flag; the server decides both from the admin's flags.
+the admin's choice (rank by default, "Staff", account name, or rank and name). At least one visual is always on.
+The marker's colour is fixed for staff and the admin's own only for a holder of the `Host` flag; the server decides
+both from the admin's flags.
+
+The visuals, any mix of them, drawn on every viewer's client from the networked marker:
+
+- Nameplate: the wording over the avatar (`WFStaffNameplateOverlay`).
+- Sigil: a status icon beside the head, by rank and never chosen: the `Admin` job icon, or the `MindShield` frame
+  for a holder of the `Host` flag.
+- Ground ring, shield and glyph: drawn by `WFStaffMarkerOverlay` under and over the avatar, unlit, upright and in
+  the marker's colour. The glyph circles the avatar and passes behind it.
+- Hologram and aura outline: passes over the avatar's sprite (`SpriteSystem.SetPostShader`), put back each frame
+  if something clears them. The aura can instead be a light, an entity each client makes for itself.
+
+Each look of the ring, glyph, shield and aura is a `wfStaffMarkerVariant` prototype in
+`Resources/Prototypes/_WF/AdminObserver/marker.yml`. A look points at a sprite where it already is; nothing is
+copied. `staff_tint.swsl` draws a sprite as its brightness alone so the marker's colour becomes its colour,
+whatever hue the art has. A look that no longer exists falls back to its visual's default.
+
+## Avatars
+
+A preset has a kind. Ghost is the observer's own sprite.
+
+Object and Mob show an entity prototype: the server takes any that exists and can be spawned, the client refuses
+one with no sprite (`WFAvatarVisualsSystem.CanShow`; the server reads no sprites). The client copies the
+prototype's default sprite onto the observer and puts the observer's own back when it hides. It is the look as
+written in the prototype and does not animate with state. An object or mob with only a plate beside it could pass
+for the real thing, so one whose marker has nothing drawn on the avatar itself also gets the hologram and the
+ring. `WFAvatarPickerWindow` picks the prototype: the spawn menu, with picking in place of placing.
+
+Character shows one of the admin's saved characters. `WFAvatarBodySystem` builds a real humanoid from the profile,
+so markings, colours, species and clothing are drawn by the code that draws anyone's, and each client copies its
+sprite onto the observer twice a second. It wears the preset's saved layout, else its starting gear, else the
+loadout of the job the character most wants. The observer takes the character's name and speech sounds. The body
+has no mind, rides in a container on the observer, is deleted with it and is kept after hiding, so it can be
+dressed while hidden: `OpenDresser` opens its strip window and `SaveOutfit` writes what it wears into the preset,
+under the kit's save rules. The outfit menu's `Pick` mode picks a starting gear.
+
+The body must never count as a person:
+
+- It is kept paused, the engine's flag for what is not simulated, and paused again after a map change wakes it.
+  Godmode is on as well but is not enough here: Wolfmed puts a body in vacuum under without dealing damage.
+- It is built from the profile without Monolith's persistent components and items, which belong to the character
+  played for real.
+- Its suit sensors are switched off, when it is built and whenever it is dressed.
+- Every body is deleted when the round ends, before `PersistAtRoundEndSystem` saves the persistent items it finds
+  under each player's entity.
+
+A new admin's document starts with two presets: Ghost, and My character (their selected character).
+
+Not in this module yet: the observer panel, which will hold the preset editor and the Dress and Save buttons;
+what the observer holds is not drawn on an avatar; MODsuits on avatars.
 
 Entry points: `WFAdminObserverKeys` (the key functions), `WFAdminObserverHotkeySystem` (client),
 `WFManifestSystem` (`TryManifest`, `TryUnmanifest`), `WFStaffMarkerSystem` (`Mark`), `ManifestCommand`,
+`WFStaffMarkerVisualsSystem` and `WFAvatarVisualsSystem` (client), `WFAvatarBodySystem` (`Ensure`, `OpenDresser`,
+`SaveOutfit`),
 `WFAdminObserverStore` (`Get`, `Change`), `WFAdminObserverSerializer` (storage format and clean-up),
 `WFAdminObserverKitSystem` (`Snapshot`, `Restore`, `Give`, `PutAway`), `WFAdminKitCatalogueSystem`, `AdminKitCommand`
 and `WFAdminKitControl` (client).

@@ -84,16 +84,31 @@ public sealed partial class WFManifestSystem : EntitySystem
             return false;
         }
 
+        if (preset.Kind is WFAvatarKind.Object or WFAvatarKind.Mob && !IsAvatarPrototype(preset.Prototype))
+        {
+            message = Loc.GetString("wf-observer-preset-prototype-invalid", ("id", preset.Prototype ?? string.Empty));
+            return false;
+        }
+
         var character = _mind.TryGetMind(player, out _, out var mind) ? mind.CharacterName : null;
         if (character == player.Name)
             character = null;
 
         Unmanifest(uid, effects: false);
         Manifest(uid, preset, character);
-        _marker.Mark(uid, player, data.Marker);
+        _marker.Mark(uid, player, data.Marker, preset.Kind);
 
         message = Loc.GetString("wf-observer-manifest-done", ("name", Name(uid)));
         return true;
+    }
+
+    /// <summary>
+    /// Whether an entity prototype can be shown as an object or mob avatar: it exists and can be spawned. Whether
+    /// it has a sprite is the client's to check, as the server reads none.
+    /// </summary>
+    public bool IsAvatarPrototype(string? id)
+    {
+        return id != null && _prototypes.TryIndex<EntityPrototype>(id, out var prototype) && !prototype.Abstract;
     }
 
     /// <summary>Hides a player's admin observer from the living again.</summary>
@@ -135,7 +150,7 @@ public sealed partial class WFManifestSystem : EntitySystem
         else if (avatar != null)
             _metaData.SetEntityDescription(uid, avatar.Description, meta);
 
-        _marker.Mark(uid, new WFStaffMarkerSettings { Wording = WFMarkerWording.Staff }, null, string.Empty, false);
+        _marker.Mark(uid, new WFStaffMarkerSettings { Wording = WFMarkerWording.Staff }, null, string.Empty, false, preset.Kind);
         SetVisible(uid, true);
 
         if (!HasComp<IntrinsicRadioTransmitterComponent>(uid))

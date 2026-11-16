@@ -23,6 +23,7 @@ public sealed partial class WFManifestClientSystem : EntitySystem
     [Dependency] private EntityLookupSystem _lookup = default!;
     [Dependency] private GhostSystem _ghost = default!;
     [Dependency] private SpriteSystem _sprite = default!;
+    [Dependency] private WFAvatarVisualsSystem _avatar = default!;
 
     public override void Initialize()
     {
@@ -60,6 +61,7 @@ public sealed partial class WFManifestClientSystem : EntitySystem
     private void OnRemove(Entity<WFManifestedComponent> ent, ref ComponentRemove args)
     {
         RefreshChat(ent);
+        _avatar.Restore(ent);
 
         // Hidden again, the observer is a ghost like any other to this client.
         if (TryComp<SpriteComponent>(ent, out var sprite))

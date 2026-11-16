@@ -96,9 +96,13 @@ and `WFAdminKitControl` (client).
 - [`Content.Client/_WF/AdminObserver/UI/WFAdminKitControl.xaml.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFAdminKitControl.xaml.cs)
 - [`Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml`](../../../Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml)
 - [`Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml.cs)
+- [`Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml`](../../../Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml)
+- [`Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml.cs)
 - [`Content.Client/_WF/AdminObserver/WFAdminKitClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminKitClientSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFAdminObserverClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminObserverClientSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFAdminObserverHotkeySystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminObserverHotkeySystem.cs)
+- [`Content.Client/_WF/AdminObserver/WFAvatarVisualsComponent.cs`](../../../Content.Client/_WF/AdminObserver/WFAvatarVisualsComponent.cs)
+- [`Content.Client/_WF/AdminObserver/WFAvatarVisualsSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAvatarVisualsSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFManifestClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFManifestClientSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFStaffMarkerOverlay.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerOverlay.cs)
 - [`Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsComponent.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsComponent.cs)
@@ -112,6 +116,7 @@ and `WFAdminKitControl` (client).
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/AdminKitRoundTripTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/AdminKitRoundTripTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/AdminKitRulesTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/AdminKitRulesTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/AdminObserverStoreTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/AdminObserverStoreTest.cs)
+- [`Content.IntegrationTests/Tests/_WF/AdminObserver/AvatarPrototypeRulesTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/AvatarPrototypeRulesTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestPermissionTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestPermissionTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestSpeechTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestSpeechTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestVisibilityTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestVisibilityTest.cs)
@@ -130,6 +135,7 @@ and `WFAdminKitControl` (client).
 
 ### Localization
 
+- [`Resources/Locale/en-US/_WF/AdminObserver/avatars.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/avatars.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/hotkeys.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/hotkeys.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/kit.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/kit.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl)

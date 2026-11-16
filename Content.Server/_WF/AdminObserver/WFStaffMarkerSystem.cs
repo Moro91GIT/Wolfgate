@@ -42,23 +42,38 @@ public sealed partial class WFStaffMarkerSystem : EntitySystem
         args.VoiceName = Loc.GetString("wf-staff-marker-name", ("label", ent.Comp.Label), ("name", args.VoiceName));
     }
 
+    /// <summary>The visuals drawn on the avatar itself. A nameplate and a sigil sit beside it.</summary>
+    public const WFMarkerVisuals OnAvatar = WFMarkerVisuals.Aura | WFMarkerVisuals.Shield | WFMarkerVisuals.Hologram
+                                            | WFMarkerVisuals.Glyph | WFMarkerVisuals.Ring;
+
+    /// <summary>What an object or mob avatar gets when the admin chose nothing drawn on the avatar itself.</summary>
+    public const WFMarkerVisuals ObjectDefault = WFMarkerVisuals.Hologram | WFMarkerVisuals.Ring;
+
     /// <summary>Marks an entity as this admin, by their saved choices, rank and flags.</summary>
-    public WFStaffMarkerComponent Mark(EntityUid uid, ICommonSession admin, WFStaffMarkerSettings settings)
+    public WFStaffMarkerComponent Mark(
+        EntityUid uid,
+        ICommonSession admin,
+        WFStaffMarkerSettings settings,
+        WFAvatarKind kind = WFAvatarKind.Ghost)
     {
-        return Mark(uid, settings, _admin.GetAdminData(admin)?.Title, admin.Name, _admin.HasAdminFlag(admin, AdminFlags.Host));
+        return Mark(uid, settings, _admin.GetAdminData(admin)?.Title, admin.Name, _admin.HasAdminFlag(admin, AdminFlags.Host), kind);
     }
 
     /// <summary>
     /// Marks an entity as staff. The colour and sigil follow <paramref name="host"/>, not the saved settings: only
     /// a holder of the Host flag keeps a colour of their own.
     /// </summary>
-    public WFStaffMarkerComponent Mark(EntityUid uid, WFStaffMarkerSettings settings, string? rank, string account, bool host)
+    public WFStaffMarkerComponent Mark(
+        EntityUid uid,
+        WFStaffMarkerSettings settings,
+        string? rank,
+        string account,
+        bool host,
+        WFAvatarKind kind = WFAvatarKind.Ghost)
     {
         var marker = EnsureComp<WFStaffMarkerComponent>(uid);
         marker.Label = Label(settings.Wording, rank, account);
-        marker.Visuals = (settings.Visuals & Supported) is var visuals && visuals != WFMarkerVisuals.None
-            ? visuals
-            : WFMarkerVisuals.Nameplate;
+        marker.Visuals = VisualsFor(kind, settings.Visuals);
         marker.Host = host;
         marker.Color = MarkerColor(settings.Color, host);
         marker.Ring = Variant(WFMarkerVisuals.Ring, settings.Ring);
@@ -67,6 +82,20 @@ public sealed partial class WFStaffMarkerSystem : EntitySystem
         marker.Aura = Variant(WFMarkerVisuals.Aura, settings.Aura);
         Dirty(uid, marker);
         return marker;
+    }
+
+    /// <summary>
+    /// The visuals an avatar is marked with: the chosen ones, never none. An object or mob could pass for the real
+    /// thing with a plate beside it and nothing else, so it also gets <see cref="ObjectDefault"/> unless the admin
+    /// chose something drawn on the avatar.
+    /// </summary>
+    public static WFMarkerVisuals VisualsFor(WFAvatarKind kind, WFMarkerVisuals chosen)
+    {
+        var visuals = chosen & Supported;
+        if (kind is WFAvatarKind.Object or WFAvatarKind.Mob && (visuals & OnAvatar) == 0)
+            visuals |= ObjectDefault;
+
+        return visuals == WFMarkerVisuals.None ? WFMarkerVisuals.Nameplate : visuals;
     }
 
     /// <summary>The look a visual takes: the chosen one if it exists and is a look for that visual, else the default.</summary>

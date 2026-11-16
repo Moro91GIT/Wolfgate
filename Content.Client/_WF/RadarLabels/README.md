@@ -12,8 +12,9 @@ ships within 750 m, the hovered contact, waypoints, beacons, your expedition, ci
 admin crew tags. Every other contact is a blip, with a `×N` count where several crowd together. Round the cursor a faint lens
 (32 px) shows every tag, stacking as above, and the tag nearest the cursor alone shows its detail lines (company,
 coordinates, track ID, a world's signals). Tags fade in and out over 0.15 s. Only contacts on the scope get a tag:
-one pinned to the rim keeps its blip. Every radar marks docks, pink squares that keep a minimum size on screen so
-they read from afar; dock names show only once the radar is zoomed in (`ShuttleNavControl.Docks.cs`). Only the
+one pinned to the rim keeps its blip. Every radar marks docks as pink squares with a small minimum size on screen;
+zoomed far out, where a dock would be a speck, they hide, and dock names show only once the radar is zoomed in
+(`ShuttleNavControl.Docks.cs`). Only the
 admin radar has a docks toggle. The
 `wf.radar_smart_tags` option (Options, Wolfgate) turns all of this off, so every tag sits whole by its contact as
 before.

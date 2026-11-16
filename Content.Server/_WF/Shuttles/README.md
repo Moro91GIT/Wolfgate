@@ -215,7 +215,7 @@ A jump's mass-scaled startup, travel and cooldown times use the mass of every gr
   - start with the player's saved radar display choices.
   - zoom toward the cursor toggle.
   - keep a changed radar display choice for the next radar.
-  - a dock marker keeps a minimum size on screen, so docks read from afar
+  - a dock marker keeps a small minimum size on screen, and hides when zoomed far out
   - dock names only up close, so they don't crowd the contacts
 - [`Content.Server/_Mono/Detection/ApplyIFFFlagsToDockedShipsSystem.cs`](../../_Mono/Detection/ApplyIFFFlagsToDockedShipsSystem.cs)
   - the host can be grid B, since docking orders the pair by entity id.

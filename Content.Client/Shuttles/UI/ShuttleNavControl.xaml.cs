@@ -1341,7 +1341,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                 //var color = Color.ToSrgb(Color.Magenta); // Frontier
                 var color = Color.ToSrgb(state.HighlightedRadarColor); // Frontier
 
-                // WOLFGATE(Shuttles) START: a dock marker keeps a minimum size on screen, so docks read from afar
+                // WOLFGATE(Shuttles) START: a dock marker keeps a small minimum size on screen, and hides when zoomed far out
                 // var verts = new[]
                 // {
                 //     Vector2.Transform(position + new Vector2(-DockScale, -DockScale), gridToView),
@@ -1349,7 +1349,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                 //     Vector2.Transform(position + new Vector2(DockScale, DockScale), gridToView),
                 //     Vector2.Transform(position + new Vector2(-DockScale, DockScale), gridToView),
                 // };
-                var verts = WfDockVertices(position, positionInView, gridToView, DockScale);
+                if (WfDockVertices(position, positionInView, gridToView, DockScale) is not { } verts)
+                    break;
                 // WOLFGATE END
 
                 handle.DrawPrimitives(DrawPrimitiveTopology.TriangleFan, verts, color.WithAlpha(0.8f));

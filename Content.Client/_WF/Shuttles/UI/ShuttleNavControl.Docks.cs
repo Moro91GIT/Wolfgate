@@ -6,16 +6,26 @@ namespace Content.Client.Shuttles.UI;
 public partial class ShuttleNavControl
 {
     /// <summary>The least half-width of a dock marker on screen, in pixels at UI scale 1.</summary>
-    private const float WfDockMinHalfSize = 3f;
+    private const float WfDockMinHalfSize = 2f;
+
+    /// <summary>Below this true half-width on screen the radar is zoomed too far out for docks, which are then hidden.</summary>
+    private const float WfDockHideHalfSize = 0.75f;
 
     /// <summary>The half-width a dock marker must reach on screen before dock names are drawn.</summary>
     private const float WfDockNameHalfSize = 4f;
 
-    /// <summary>A dock's square at its true size, or a minimum-size square on screen when that would be smaller.</summary>
-    private Vector2[] WfDockVertices(Vector2 position, Vector2 inView, Matrix3x2 gridToView, float scale)
+    /// <summary>
+    /// A dock's square at its true size, or a minimum-size square on screen when that would be smaller. Null when the
+    /// radar is zoomed so far out that a dock would be a speck: a marker held at the minimum size then dwarfs its ship.
+    /// </summary>
+    private Vector2[]? WfDockVertices(Vector2 position, Vector2 inView, Matrix3x2 gridToView, float scale)
     {
+        var half = WfDockHalfSize(gridToView, scale);
+        if (half < WfDockHideHalfSize * UIScale)
+            return null;
+
         var min = WfDockMinHalfSize * UIScale;
-        if (WfDockHalfSize(gridToView, scale) >= min)
+        if (half >= min)
         {
             return new[]
             {

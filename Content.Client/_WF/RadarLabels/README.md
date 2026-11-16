@@ -19,6 +19,11 @@ admin radar has a docks toggle. The
 `wf.radar_smart_tags` option (Options, Wolfgate) turns all of this off, so every tag sits whole by its contact as
 before.
 
+Two more options sit beside it. `wf.radar_icons_only` ("Radar shows only icons") leaves just the icons: no names,
+not even the always ones, no `×N` counts and no lens circle; hovering a contact shows its tag alone, details and all.
+`wf.radar_hover_reveal` (on by default) turns the cursor's part off: no lens, and a pointed-at contact names itself
+only if it would anyway. Icons only with hover reveal off is a bare scope; the all-names toggle still names everything.
+
 The radar mode buttons carry an all-names toggle (`wf.radar_all_names`): every contact on the scope shows its name, and
 the lens only adds details. Contacts on the scope are drawn as what they are (`ShuttleNavControl.RadarIcons.cs`): a ship
 as a chevron pointing its heading, a station as a square with a dot, an asteroid as a rough hexagon, a wreck as a cross.

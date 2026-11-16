@@ -1073,7 +1073,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
                         // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
                         WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, isMouseOver ? 3 : isPlayerShuttle ? 2 : 1,
-                            always: isMouseOver || distance <= WfTagCloseRange, key: gUid.Id); // a ship this close keeps its name: it could be shooting
+                            always: isMouseOver && WfHoverReveal || distance <= WfTagCloseRange, key: gUid.Id); // a ship this close keeps its name: it could be shooting
                         WfTagLine(handle, mainLabel, UIScale * 0.9f, displayColor);
                         if (shouldDrawDetailedIFF)
                         {

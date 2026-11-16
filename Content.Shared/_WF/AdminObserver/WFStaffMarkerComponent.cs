@@ -1,4 +1,6 @@
+using Content.Shared.StatusIcon;
 using Robust.Shared.GameStates;
+using Robust.Shared.Prototypes;
 
 namespace Content.Shared._WF.AdminObserver;
 
@@ -31,7 +33,7 @@ public sealed partial class WFStaffMarkerComponent : Component
     [DataField, AutoNetworkedField]
     public bool Host;
 
-    /// <summary>The chosen look of each visual that has several; empty for the default.</summary>
+    /// <summary>The look of each visual that has several, as a <see cref="WFStaffMarkerVariantPrototype"/> ID.</summary>
     [DataField, AutoNetworkedField]
     public string Ring = string.Empty;
 
@@ -46,4 +48,12 @@ public sealed partial class WFStaffMarkerComponent : Component
     /// <inheritdoc cref="Ring"/>
     [DataField, AutoNetworkedField]
     public string Aura = string.Empty;
+
+    /// <summary>The sigil beside the head of a member of staff.</summary>
+    [DataField]
+    public ProtoId<SsdIconPrototype> AdminSigil = "WFStaffSigilAdmin";
+
+    /// <summary>The sigil beside the head of a holder of the Host flag.</summary>
+    [DataField]
+    public ProtoId<SsdIconPrototype> HostSigil = "WFStaffSigilHost";
 }

@@ -86,10 +86,12 @@ and `WFAdminKitControl` (client).
 - [`Content.Shared/_WF/AdminObserver/WFAdminObserverKeys.cs`](../../../Content.Shared/_WF/AdminObserver/WFAdminObserverKeys.cs)
 - [`Content.Shared/_WF/AdminObserver/WFManifestedComponent.cs`](../../../Content.Shared/_WF/AdminObserver/WFManifestedComponent.cs)
 - [`Content.Shared/_WF/AdminObserver/WFStaffMarkerComponent.cs`](../../../Content.Shared/_WF/AdminObserver/WFStaffMarkerComponent.cs)
+- [`Content.Shared/_WF/AdminObserver/WFStaffMarkerVariantPrototype.cs`](../../../Content.Shared/_WF/AdminObserver/WFStaffMarkerVariantPrototype.cs)
 
 ### Client
 
 - [`Content.Client/_WF/AdminObserver/ChatUIController.AdminObserver.cs`](../../../Content.Client/_WF/AdminObserver/ChatUIController.AdminObserver.cs)
+- [`Content.Client/_WF/AdminObserver/GhostSystem.AdminObserver.cs`](../../../Content.Client/_WF/AdminObserver/GhostSystem.AdminObserver.cs)
 - [`Content.Client/_WF/AdminObserver/UI/WFAdminKitControl.xaml`](../../../Content.Client/_WF/AdminObserver/UI/WFAdminKitControl.xaml)
 - [`Content.Client/_WF/AdminObserver/UI/WFAdminKitControl.xaml.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFAdminKitControl.xaml.cs)
 - [`Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml`](../../../Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml)
@@ -98,6 +100,9 @@ and `WFAdminKitControl` (client).
 - [`Content.Client/_WF/AdminObserver/WFAdminObserverClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminObserverClientSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFAdminObserverHotkeySystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminObserverHotkeySystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFManifestClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFManifestClientSystem.cs)
+- [`Content.Client/_WF/AdminObserver/WFStaffMarkerOverlay.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerOverlay.cs)
+- [`Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsComponent.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsComponent.cs)
+- [`Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFStaffNameplateOverlay.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffNameplateOverlay.cs)
 
 ### Integration tests
@@ -111,6 +116,7 @@ and `WFAdminKitControl` (client).
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestSpeechTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestSpeechTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestVisibilityTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestVisibilityTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerFloorTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerFloorTest.cs)
+- [`Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerVisualsTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerVisualsTest.cs)
 
 ### Unit tests
 
@@ -120,6 +126,7 @@ and `WFAdminKitControl` (client).
 
 - [`Resources/Prototypes/_WF/AdminObserver/actions.yml`](../../../Resources/Prototypes/_WF/AdminObserver/actions.yml)
 - [`Resources/Prototypes/_WF/AdminObserver/kit.yml`](../../../Resources/Prototypes/_WF/AdminObserver/kit.yml)
+- [`Resources/Prototypes/_WF/AdminObserver/marker.yml`](../../../Resources/Prototypes/_WF/AdminObserver/marker.yml)
 
 ### Localization
 
@@ -127,6 +134,10 @@ and `WFAdminKitControl` (client).
 - [`Resources/Locale/en-US/_WF/AdminObserver/kit.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/kit.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/marker.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/marker.ftl)
+
+### Textures
+
+- [`Resources/Textures/_WF/AdminObserver/Shaders/staff_tint.swsl`](../../../Resources/Textures/_WF/AdminObserver/Shaders/staff_tint.swsl)
 
 ## Non-modular edits
 
@@ -147,5 +158,6 @@ and `WFAdminKitControl` (client).
 - [`Resources/Prototypes/Entities/Mobs/Player/admin_ghost.yml`](../../../Resources/Prototypes/Entities/Mobs/Player/admin_ghost.yml)
   - the kit comes from the admin's saved layout, or WFAdminObserverGear
   - a manifested observer says, whispers and emotes as the living do
+  - the staff marker's sigil is drawn as a status icon
 
 <!-- WOLFGATE-GENERATED END -->

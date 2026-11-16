@@ -118,6 +118,9 @@
   - type: Emoting
   - type: TypingIndicator
   # WOLFGATE END
+  # WOLFGATE(AdminObserver) START: the staff marker's sigil is drawn as a status icon
+  - type: StatusIcon
+  # WOLFGATE END
   - type: BypassInteractionChecks
   - type: BankAccount # Frontier
   - type: ShowHealthBars # Monolith

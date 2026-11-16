@@ -4,6 +4,7 @@ using Content.Shared.Administration;
 using Content.Shared.Chat;
 using Content.Shared.Examine;
 using Robust.Shared.Player;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
 namespace Content.Server._WF.AdminObserver;
@@ -15,9 +16,12 @@ namespace Content.Server._WF.AdminObserver;
 public sealed partial class WFStaffMarkerSystem : EntitySystem
 {
     [Dependency] private IAdminManager _admin = default!;
+    [Dependency] private IPrototypeManager _prototypes = default!;
 
     /// <summary>The visuals the client can draw. A marker with none of them gets the nameplate.</summary>
-    public const WFMarkerVisuals Supported = WFMarkerVisuals.Nameplate;
+    public const WFMarkerVisuals Supported = WFMarkerVisuals.Nameplate | WFMarkerVisuals.Sigil | WFMarkerVisuals.Aura
+                                             | WFMarkerVisuals.Shield | WFMarkerVisuals.Hologram
+                                             | WFMarkerVisuals.Glyph | WFMarkerVisuals.Ring;
 
     public override void Initialize()
     {
@@ -57,12 +61,27 @@ public sealed partial class WFStaffMarkerSystem : EntitySystem
             : WFMarkerVisuals.Nameplate;
         marker.Host = host;
         marker.Color = MarkerColor(settings.Color, host);
-        marker.Ring = settings.Ring;
-        marker.Glyph = settings.Glyph;
-        marker.Shield = settings.Shield;
-        marker.Aura = settings.Aura;
+        marker.Ring = Variant(WFMarkerVisuals.Ring, settings.Ring);
+        marker.Glyph = Variant(WFMarkerVisuals.Glyph, settings.Glyph);
+        marker.Shield = Variant(WFMarkerVisuals.Shield, settings.Shield);
+        marker.Aura = Variant(WFMarkerVisuals.Aura, settings.Aura);
         Dirty(uid, marker);
         return marker;
+    }
+
+    /// <summary>The look a visual takes: the chosen one if it exists and is a look for that visual, else the default.</summary>
+    public string Variant(WFMarkerVisuals visual, string chosen)
+    {
+        if (_prototypes.TryIndex<WFStaffMarkerVariantPrototype>(chosen, out var variant) && variant.Visual == visual)
+            return variant.ID;
+
+        foreach (var candidate in _prototypes.EnumeratePrototypes<WFStaffMarkerVariantPrototype>())
+        {
+            if (candidate.Visual == visual && candidate.Default)
+                return candidate.ID;
+        }
+
+        return string.Empty;
     }
 
     /// <summary>The staff wording for an admin. A missing rank reads as "Staff".</summary>

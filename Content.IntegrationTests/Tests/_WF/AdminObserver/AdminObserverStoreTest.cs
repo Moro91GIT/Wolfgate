@@ -80,7 +80,7 @@ public sealed class AdminObserverStoreTest
         Assert.Multiple(() =>
         {
             Assert.That(seen?.Marker.Wording, Is.EqualTo(WFMarkerWording.Staff));
-            Assert.That(seen?.Presets.Select(p => p.Name), Is.EqualTo(new[] { "Crate" }), "An unknown prototype should be dropped.");
+            Assert.That(seen?.Presets.Select(p => p.Name), Does.Contain("Crate").And.Not.Contain("Gone"), "An unknown prototype should be dropped.");
         });
 
         // The write follows the change by itself.
@@ -117,7 +117,7 @@ public sealed class AdminObserverStoreTest
             Assert.Multiple(() =>
             {
                 Assert.That(data.Marker.Wording, Is.EqualTo(WFMarkerWording.RankAndName));
-                Assert.That(data.Presets.Select(p => p.Name), Is.EqualTo(new[] { "Crate" }));
+                Assert.That(data.Presets.Select(p => p.Name), Does.Contain("Crate").And.Not.Contain("Gone"));
                 Assert.That(data.DefaultPreset, Is.EqualTo("Crate"));
             });
         });

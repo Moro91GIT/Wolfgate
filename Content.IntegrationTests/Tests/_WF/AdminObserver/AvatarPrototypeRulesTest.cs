@@ -72,7 +72,12 @@ public sealed class AvatarPrototypeRulesTest
                     EntryStyle = WFEntryStyle.Silent,
                 });
             });
-            Assert.That(store.Get(session)!.Presets.Select(p => p.Name), Is.EquivalentTo(new[] { "tool", "named" }));
+            var kept = store.Get(session)!.Presets.Select(p => p.Name).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(kept, Does.Contain("tool").And.Contain("named"));
+                Assert.That(kept, Does.Not.Contain("abstract").And.Not.Contain("missing"));
+            });
             Assert.That(manifest.TryManifest(session, "abstract", out _), Is.False);
         });
 

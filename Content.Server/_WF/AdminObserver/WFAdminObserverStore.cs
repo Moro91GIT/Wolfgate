@@ -156,9 +156,22 @@ public sealed partial class WFAdminObserverStore : EntitySystem
         if (json != null && data == null)
             Log.Warning($"The admin observer document of {session.Name} could not be read; starting a new one.");
 
-        _data[user] = Sanitize(data ?? new WFAdminObserverData());
+        _data[user] = Sanitize(data ?? Stock());
         Send(session);
         Loaded?.Invoke(session);
+    }
+
+    /// <summary>A new admin's document: the plain ghost, and their selected character in what it would spawn in.</summary>
+    private WFAdminObserverData Stock()
+    {
+        var data = new WFAdminObserverData();
+        data.Presets.Add(new WFAvatarPreset { Name = Loc.GetString("wf-observer-preset-stock-ghost") });
+        data.Presets.Add(new WFAvatarPreset
+        {
+            Name = Loc.GetString("wf-observer-preset-stock-own"),
+            Kind = WFAvatarKind.Character,
+        });
+        return data;
     }
 
     private WFAdminObserverData Sanitize(WFAdminObserverData data)

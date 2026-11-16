@@ -7,6 +7,7 @@ using Content.Shared.Inventory;
 using Content.Shared.Item;
 using Robust.Client.GameObjects;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Timing;
 
 namespace Content.Client._WF.AdminObserver;
 
@@ -17,6 +18,7 @@ namespace Content.Client._WF.AdminObserver;
 public sealed partial class WFAvatarVisualsSystem : EntitySystem
 {
     [Dependency] private IComponentFactory _factory = default!;
+    [Dependency] private IGameTiming _timing = default!;
     [Dependency] private IPrototypeManager _prototypes = default!;
     [Dependency] private AppearanceSystem _appearance = default!;
     [Dependency] private ClientClothingSystem _clothing = default!;
@@ -25,6 +27,9 @@ public sealed partial class WFAvatarVisualsSystem : EntitySystem
 
     /// <summary>Layers with this shader are displacement maps, which must keep it to work.</summary>
     private const string DisplacementShader = "DisplacedDraw";
+
+    /// <summary>How often a character avatar's sprite is copied from its body again.</summary>
+    private static readonly TimeSpan BodyRefresh = TimeSpan.FromSeconds(0.5);
 
     public override void FrameUpdate(float frameTime)
     {
@@ -36,9 +41,14 @@ public sealed partial class WFAvatarVisualsSystem : EntitySystem
             var hologram = TryComp<WFStaffMarkerComponent>(uid, out var marker) && (marker.Visuals & WFMarkerVisuals.Hologram) != 0;
             var look = new WFAvatarLook(manifested.Kind, manifested.Prototype, manifested.Body, hologram);
             var visuals = EnsureComp<WFAvatarVisualsComponent>(uid);
-            if (visuals.Look != look)
+
+            // A character's body can be dressed while it is shown, and may reach this client after the observer does.
+            var stale = look.Kind == WFAvatarKind.Character
+                        && (!visuals.Replaced || _timing.RealTime - visuals.LastCopy >= BodyRefresh);
+            if (visuals.Look != look || stale)
             {
                 visuals.Look = look;
+                visuals.LastCopy = _timing.RealTime;
                 Apply((uid, sprite), visuals, look);
             }
 
@@ -77,6 +87,12 @@ public sealed partial class WFAvatarVisualsSystem : EntitySystem
         {
             ForgetWorn(ent, strip: false);
             _sprite.CopySprite((EntityUid.Invalid, source), (ent.Owner, ent.Comp));
+            visuals.Replaced = true;
+        }
+        else if (look.Kind == WFAvatarKind.Character && TryComp<SpriteComponent>(look.Body, out var body))
+        {
+            ForgetWorn(ent, strip: false);
+            _sprite.CopySprite((look.Body.Value, body), (ent.Owner, ent.Comp));
             visuals.Replaced = true;
         }
         else if (visuals.Replaced)

@@ -33,3 +33,19 @@ public sealed class WFAdminKitUnplacedEvent : EntityEventArgs
 /// <summary>Server to client: open the Kit window.</summary>
 [Serializable, NetSerializable]
 public sealed class WFAdminKitOpenEvent : EntityEventArgs;
+
+/// <summary>Client to server: open the strip window of my character avatar's body, so I can dress it.</summary>
+[Serializable, NetSerializable]
+public sealed class WFAvatarDressRequestEvent : EntityEventArgs
+{
+    /// <summary>The name of the character preset to dress.</summary>
+    public string Preset = string.Empty;
+}
+
+/// <summary>Client to server: save what my character avatar's body wears into its preset.</summary>
+[Serializable, NetSerializable]
+public sealed class WFAvatarSaveOutfitRequestEvent : EntityEventArgs
+{
+    /// <inheritdoc cref="WFAvatarDressRequestEvent.Preset"/>
+    public string Preset = string.Empty;
+}

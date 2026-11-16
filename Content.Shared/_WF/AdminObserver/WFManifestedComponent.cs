@@ -1,4 +1,5 @@
 using Content.Shared.Actions;
+using Content.Shared.Speech;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 
@@ -46,6 +47,18 @@ public sealed partial class WFManifestedComponent : Component
     /// <summary>Whether manifesting added the telecom exemption, so hiding removes it.</summary>
     [DataField]
     public bool AddedTelecomExempt;
+
+    /// <summary>Whether manifesting gave the observer its character's voice, so hiding gives its own back.</summary>
+    [DataField]
+    public bool ChangedVoice;
+
+    /// <summary>The observer's own speech sounds, put back when it hides.</summary>
+    [DataField]
+    public ProtoId<SpeechSoundsPrototype>? PreviousSpeechSounds;
+
+    /// <summary>The observer's own speech verb, put back when it hides.</summary>
+    [DataField]
+    public ProtoId<SpeechVerbPrototype> PreviousSpeechVerb = "Default";
 }
 
 /// <summary>Raised on an admin observer by its Manifest action: show it, or hide it again.</summary>

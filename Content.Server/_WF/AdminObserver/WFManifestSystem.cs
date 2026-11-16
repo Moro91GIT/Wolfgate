@@ -8,6 +8,7 @@ using Content.Shared.Mind;
 using Content.Shared.Popups;
 using Content.Shared.Radio;
 using Content.Shared.Radio.Components;
+using Content.Shared.Speech;
 using Robust.Server.GameObjects;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
@@ -29,6 +30,7 @@ public sealed partial class WFManifestSystem : EntitySystem
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private VisibilitySystem _visibility = default!;
     [Dependency] private WFAdminObserverStore _store = default!;
+    [Dependency] private WFAvatarBodySystem _body = default!;
     [Dependency] private WFStaffMarkerSystem _marker = default!;
 
     private static readonly EntProtoId BluespaceEffect = "EffectFlashBluespace";
@@ -94,8 +96,21 @@ public sealed partial class WFManifestSystem : EntitySystem
         if (character == player.Name)
             character = null;
 
+        EntityUid? body = null;
+        if (preset.Kind == WFAvatarKind.Character)
+        {
+            body = _body.Ensure((uid, Comp<WFAdminObserverComponent>(uid)), player, preset);
+            if (body == null)
+            {
+                message = Loc.GetString("wf-observer-preset-no-characters");
+                return false;
+            }
+
+            character = _body.Profile(player, preset)?.Name ?? character;
+        }
+
         Unmanifest(uid, effects: false);
-        Manifest(uid, preset, character);
+        Manifest(uid, preset, character, body);
         _marker.Mark(uid, player, data.Marker, preset.Kind);
 
         message = Loc.GetString("wf-observer-manifest-done", ("name", Name(uid)));
@@ -129,7 +144,7 @@ public sealed partial class WFManifestSystem : EntitySystem
     /// Makes an entity visible as a preset. The caller marks it as staff straight after: an observer is never
     /// visible unmarked, so until then it carries a marker that says only "Staff".
     /// </summary>
-    public void Manifest(EntityUid uid, WFAvatarPreset preset, string? characterName)
+    public void Manifest(EntityUid uid, WFAvatarPreset preset, string? characterName, EntityUid? body = null)
     {
         var comp = EnsureComp<WFManifestedComponent>(uid);
         var meta = MetaData(uid);
@@ -137,6 +152,7 @@ public sealed partial class WFManifestSystem : EntitySystem
         comp.PreviousDescription = meta.EntityDescription;
         comp.Kind = preset.Kind;
         comp.Prototype = preset.Prototype;
+        comp.Body = body;
         comp.EntryStyle = preset.EntryStyle;
         comp.Preset = preset.Name;
 
@@ -149,6 +165,18 @@ public sealed partial class WFManifestSystem : EntitySystem
             _metaData.SetEntityDescription(uid, preset.Description, meta);
         else if (avatar != null)
             _metaData.SetEntityDescription(uid, avatar.Description, meta);
+        else if (body != null)
+            _metaData.SetEntityDescription(uid, MetaData(body.Value).EntityDescription, meta);
+
+        // A character avatar sounds like its character.
+        if (body != null && TryComp<SpeechComponent>(body, out var voice) && TryComp<SpeechComponent>(uid, out var speech))
+        {
+            comp.ChangedVoice = true;
+            comp.PreviousSpeechSounds = speech.SpeechSounds;
+            comp.PreviousSpeechVerb = speech.SpeechVerb;
+            speech.SpeechSounds = voice.SpeechSounds;
+            speech.SpeechVerb = voice.SpeechVerb;
+        }
 
         _marker.Mark(uid, new WFStaffMarkerSettings { Wording = WFMarkerWording.Staff }, null, string.Empty, false, preset.Kind);
         SetVisible(uid, true);
@@ -200,6 +228,12 @@ public sealed partial class WFManifestSystem : EntitySystem
 
         if (comp.AddedTelecomExempt)
             RemComp<TelecomExemptComponent>(uid);
+
+        if (comp.ChangedVoice && TryComp<SpeechComponent>(uid, out var speech))
+        {
+            speech.SpeechSounds = comp.PreviousSpeechSounds;
+            speech.SpeechVerb = comp.PreviousSpeechVerb;
+        }
 
         RemComp<WFStaffMarkerComponent>(uid);
         RemComp<WFManifestedComponent>(uid);

@@ -15,13 +15,16 @@ using Robust.Shared.Maths;
 
 namespace Content.IntegrationTests.Tests._WF.PixelShift;
 
-/// <summary>The pixel shift and tilt keys nudge the networked shift, which persists, clamps and is blocked when helpless.</summary>
+/// <summary>
+/// The pixel shift and tilt keys nudge the networked shift, which clamps, is blocked when helpless and clears on a reset
+/// or a step.
+/// </summary>
 public sealed class PixelShiftTest : InteractionTest
 {
     protected override string PlayerPrototype => "MobHuman";
 
     [Test]
-    public async Task ShiftAndTiltPersistUntilReset()
+    public async Task ShiftAndTiltUntilReset()
     {
         var start = Transform.GetWorldPosition(SPlayer);
 
@@ -56,17 +59,35 @@ public sealed class PixelShiftTest : InteractionTest
             Assert.That(sprite.Offset.X, Is.EqualTo(0f).Within(0.001f), "The restore pass left the shift on.");
         });
 
-        // Walking leaves it alone.
+        await Tap(WFPixelShiftKeys.WFPixelShiftReset);
+        Assert.That(shift.Offset, Is.EqualTo(Vector2i.Zero));
+        Assert.That(shift.Tilt, Is.Zero);
+    }
+
+    [Test]
+    public async Task WalkingClearsTheShift()
+    {
+        var start = Transform.GetWorldPosition(SPlayer);
+
+        await SetKey(WFPixelShiftKeys.WFPixelShift, BoundKeyState.Down);
+        await Tap(EngineKeyFunctions.MoveUp, 2);
+        await SetKey(WFPixelShiftKeys.WFPixelShift, BoundKeyState.Up);
+        await SetKey(WFPixelShiftKeys.WFPixelTilt, BoundKeyState.Down);
+        await Tap(EngineKeyFunctions.MoveLeft);
+        await SetKey(WFPixelShiftKeys.WFPixelTilt, BoundKeyState.Up);
+        Assert.That(Offset(), Is.EqualTo(new Vector2i(0, 2)));
+
         await SetKey(EngineKeyFunctions.MoveRight, BoundKeyState.Down);
         await RunTicks(20);
         await SetKey(EngineKeyFunctions.MoveRight, BoundKeyState.Up);
         await RunTicks(5);
-        Assert.That(Transform.GetWorldPosition(SPlayer).X - start.X, Is.GreaterThan(0.3f));
-        Assert.That(shift.Offset, Is.EqualTo(new Vector2i(3, 1)), "Walking cleared the shift.");
 
-        await Tap(WFPixelShiftKeys.WFPixelShiftReset);
-        Assert.That(shift.Offset, Is.EqualTo(Vector2i.Zero));
-        Assert.That(shift.Tilt, Is.Zero);
+        Assert.That(Transform.GetWorldPosition(SPlayer).X - start.X, Is.GreaterThan(0.3f));
+        var shift = SEntMan.GetComponent<WFPixelShiftComponent>(SPlayer);
+        Assert.That(shift.Offset, Is.EqualTo(Vector2i.Zero), "Walking left the shift on.");
+        Assert.That(shift.Tilt, Is.Zero, "Walking left the tilt on.");
+        Assert.That(CEntMan.GetComponent<WFPixelShiftComponent>(CPlayer).Offset, Is.EqualTo(Vector2i.Zero),
+            "The client kept the shift.");
     }
 
     [Test]

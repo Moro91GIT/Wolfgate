@@ -55,8 +55,15 @@ public sealed class Ss13KeybindPresetTest
                     foreach (var combo in onFoot)
                     {
                         var functions = combo.Select(b => b.Function).Distinct().ToArray();
-                        if (functions.Length > 1 && functions.Any(preset.Contains))
+                        if (functions.Length > 1 && functions.Any(preset.Contains) && !IsSharedOnPurpose(functions))
                             Assert.Fail($"{combo.Key} is shared by {string.Join(", ", functions.Select(f => f.FunctionName))}");
+                    }
+
+                    foreach (var (first, then) in Ss13KeybindPreset.SharedKeys)
+                    {
+                        Assert.That(input.GetKeyBindings(first).Min(b => b.Priority),
+                            Is.GreaterThan(input.GetKeyBindings(then).Max(b => b.Priority)),
+                            $"{first.FunctionName} must run before {then.FunctionName}");
                     }
 
                     Assert.That(input.IsKeyFunctionModified(EngineKeyFunctions.Use), Is.False);
@@ -70,6 +77,12 @@ public sealed class Ss13KeybindPresetTest
         });
 
         await pair.CleanReturnAsync();
+
+        bool IsSharedOnPurpose(BoundKeyFunction[] functions)
+        {
+            return functions.Length == 2 && Ss13KeybindPreset.SharedKeys.Any(s =>
+                functions.Contains(s.First) && functions.Contains(s.Then));
+        }
 
         void AssertType(BoundKeyFunction function, KeyBindingType type)
         {

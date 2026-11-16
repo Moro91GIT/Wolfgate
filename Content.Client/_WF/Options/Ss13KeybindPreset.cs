@@ -1,4 +1,6 @@
 using System.Linq;
+using Content.Shared._WF.PixelShift;
+using Content.Shared._WF.RMCCore.Input;
 using Content.Shared._WF.TurnInPlace;
 using Content.Shared.Input;
 using Robust.Client.Input;
@@ -25,6 +27,9 @@ public static class Ss13KeybindPreset
         (ContentKeyFunctions.ToggleStanding, Key.U, Key.Unknown),
         // Ctrl alone is free; Ctrl combos take over from it, and text fields let it through.
         (WFTurnInPlaceKeys.WFTurnInPlace, Key.Control, Key.Unknown),
+        // B is also Resist; see SharedKeys.
+        (WFPixelShiftKeys.WFPixelShift, Key.B, Key.Unknown),
+        (WFPixelShiftKeys.WFPixelTilt, Key.V, Key.Unknown),
 
         (ContentKeyFunctions.ThrowItemInHand, Key.R, Key.Unknown),
         (ContentKeyFunctions.ThrowItemInHand, Key.End, Key.Unknown),
@@ -65,6 +70,17 @@ public static class Ss13KeybindPreset
         (ContentKeyFunctions.ZoomOut, Key.NumpadNum4, Key.Control),
         (ContentKeyFunctions.ZoomIn, Key.NumpadNum6, Key.Control),
         (ContentKeyFunctions.ResetZoom, Key.NumpadNum5, Key.Control),
+        (ContentKeyFunctions.OpenBackpack, Key.B, Key.Control),
+        (ContentKeyFunctions.OpenSandboxWindow, Key.B, Key.Alt),
+    };
+
+    /// <summary>
+    /// Pairs that share a key on purpose, as in SS13. The first runs before the second: Resist handles B, so pixel shift
+    /// has to see it first for both to fire.
+    /// </summary>
+    public static readonly (BoundKeyFunction First, BoundKeyFunction Then)[] SharedKeys =
+    {
+        (WFPixelShiftKeys.WFPixelShift, CMKeyFunctions.RMCResist),
     };
 
     /// <summary>Functions left with no key. Escape still opens the escape menu.</summary>
@@ -102,6 +118,7 @@ public static class Ss13KeybindPreset
                 BaseKey = key,
                 Mod1 = mod,
                 Type = toggle ? KeyBindingType.Toggle : KeyBindingType.State,
+                Priority = SharedKeys.Any(s => s.First == function) ? 1 : 0,
             });
         }
     }

@@ -10,7 +10,7 @@ namespace Content.Shared._WF.PixelShift;
 
 /// <summary>
 /// Shifts and tilts a mob's own sprite while a pixel shift key is held. <see cref="SharedMoverController"/> hands it
-/// the movement keys pressed meanwhile.
+/// the movement keys pressed meanwhile; a movement key pressed without one clears the shift.
 /// </summary>
 public sealed class WFPixelShiftSystem : EntitySystem
 {
@@ -107,6 +107,13 @@ public sealed class WFPixelShiftSystem : EntitySystem
 
         Dirty(uid, shift);
         return true;
+    }
+
+    /// <summary>Clears the shift and tilt when the mob steps off, as long as it can walk.</summary>
+    public void ResetOnWalk(EntityUid uid)
+    {
+        if (HasComp<WFPixelShiftComponent>(uid) && _blocker.CanMove(uid))
+            Reset(uid);
     }
 
     /// <summary>Clears the shift and tilt.</summary>

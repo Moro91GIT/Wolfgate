@@ -139,7 +139,7 @@ public sealed partial class WFJudgeLineSystem
         if (call.Grid is { } grid && !TerminatingOrDeleted(grid) && Transform(grid).MapID == call.Position.MapId)
             return grid;
 
-        if (Transform(call.Caller).GridUid is { } standing && !HasComp<StationMemberComponent>(standing)
+        if (Transform(call.Caller).GridUid is { } standing && !IsStation(standing)
             && (Ship(call) is not { } ship || ship.Grid != standing))
             return standing;
 
@@ -551,7 +551,7 @@ public sealed partial class WFJudgeLineSystem
         var query = EntityQueryEnumerator<StationMemberComponent, MapGridComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out _, out _, out var xform))
         {
-            if (xform.MapID != here.MapId || _docking.GetDocks(uid).Count == 0)
+            if (xform.MapID != here.MapId || !IsStation(uid) || _docking.GetDocks(uid).Count == 0)
                 continue;
 
             var distance = (_transform.GetWorldPosition(xform) - here.Position).LengthSquared();

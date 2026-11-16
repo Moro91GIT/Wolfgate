@@ -20,6 +20,7 @@ using Content.Shared.GameTicking;
 using Content.Shared.Inventory;
 using Content.Shared.Mind;
 using Content.Shared.Roles.Jobs;
+using Content.Shared._NF.Shipyard.Components;
 using Content.Shared.Station.Components;
 using Robust.Shared.Configuration;
 using Robust.Shared.Map;
@@ -152,7 +153,7 @@ public sealed partial class WFJudgeLineSystem : EntitySystem
         var xform = Transform(caller);
         if (xform.MapID != _ticker.DefaultMap)
             return Loc.GetString("wf-judgeline-refuse-sector");
-        if (xform.GridUid is { } grid && HasComp<StationMemberComponent>(grid))
+        if (xform.GridUid is { } grid && IsStation(grid))
             return Loc.GetString("wf-judgeline-refuse-station");
 
         if (TryComp<ActorComponent>(caller, out var actor))
@@ -398,10 +399,16 @@ public sealed partial class WFJudgeLineSystem : EntitySystem
     /// <summary>The ship someone stands on that could be theirs: no station and no encounter's hull.</summary>
     private EntityUid? OwnShip(EntityUid uid)
     {
-        if (Transform(uid).GridUid is not { } grid || HasComp<StationMemberComponent>(grid)
+        if (Transform(uid).GridUid is not { } grid || IsStation(grid)
             || HasComp<WFEncounterGridComponent>(grid))
             return null;
 
         return grid;
+    }
+
+    /// <summary>A real station: a station member that is no player-bought shuttle.</summary>
+    private bool IsStation(EntityUid grid)
+    {
+        return HasComp<StationMemberComponent>(grid) && !HasComp<ShuttleDeedComponent>(grid);
     }
 }

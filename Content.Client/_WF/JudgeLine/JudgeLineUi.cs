@@ -3,22 +3,26 @@ using Content.Shared._WF.JudgeLine;
 using Content.Shared.CartridgeLoader;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Utility;
 
 namespace Content.Client._WF.JudgeLine;
 
 /// <summary>The Judge Line PDA app.</summary>
 public sealed partial class JudgeLineUi : UIFragment
 {
+    private ScrollContainer? _root;
     private WFJudgeLinePanel? _panel;
 
     public override Control GetUIFragmentRoot()
     {
-        return _panel!;
+        return _root!;
     }
 
     public override void Setup(BoundUserInterface userInterface, EntityUid? fragmentOwner)
     {
         _panel = new WFJudgeLinePanel();
+        _root = new ScrollContainer { HScrollEnabled = false, VerticalExpand = true, HorizontalExpand = true };
+        _root.AddChild(_panel);
         _panel.OnCall += kind => userInterface.SendMessage(new CartridgeUiMessage(new WFJudgeLineCallMessage(kind)));
         _panel.OnCancel += () => userInterface.SendMessage(new CartridgeUiMessage(new WFJudgeLineCancelMessage()));
     }
@@ -63,12 +67,9 @@ public sealed class WFJudgeLinePanel : BoxContainer
             var button = new Button { Text = Loc.GetString($"wf-judgeline-kind-{name}"), HorizontalExpand = true };
             button.OnPressed += _ => OnCall?.Invoke(kind);
             row.AddChild(button);
-            row.AddChild(new Label
-            {
-                Text = Loc.GetString($"wf-judgeline-kind-{name}-hint"),
-                StyleClasses = { "LabelSubText" },
-                Margin = new Thickness(4, 0, 0, 0),
-            });
+            var hint = new RichTextLabel { StyleClasses = { "LabelSubText" }, Margin = new Thickness(4, 0, 0, 0) };
+            hint.SetMessage(Loc.GetString($"wf-judgeline-kind-{name}-hint"));
+            row.AddChild(hint);
             _buttons.AddChild(row);
         }
     }
@@ -87,7 +88,10 @@ public sealed class WFJudgeLinePanel : BoxContainer
         if (!open)
         {
             var intro = Loc.GetString("wf-judgeline-app-intro", ("fee", state.Fee));
-            _info.SetMessage(state.Refusal == null ? intro : $"{intro}\n\n[color=#d05050]{state.Refusal}[/color]");
+            var text = FormattedMessage.EscapeText(intro);
+            if (state.Refusal != null)
+                text += $"\n\n[color=#d05050]{FormattedMessage.EscapeText(state.Refusal)}[/color]";
+            _info.SetMessage(FormattedMessage.FromMarkupPermissive(text));
             return;
         }
 
@@ -98,7 +102,8 @@ public sealed class WFJudgeLinePanel : BoxContainer
             _ => Loc.GetString("wf-judgeline-app-on-scene"),
         };
         var kind = Loc.GetString($"wf-judgeline-kind-{state.Kind.ToString().ToLowerInvariant()}");
-        _info.SetMessage(Loc.GetString("wf-judgeline-app-open", ("kind", kind), ("phase", phase),
-            ("status", state.Status ?? string.Empty)));
+        _info.SetMessage(FormattedMessage.FromMarkupPermissive(Loc.GetString("wf-judgeline-app-open",
+            ("kind", FormattedMessage.EscapeText(kind)), ("phase", FormattedMessage.EscapeText(phase)),
+            ("status", FormattedMessage.EscapeText(state.Status ?? string.Empty)))));
     }
 }

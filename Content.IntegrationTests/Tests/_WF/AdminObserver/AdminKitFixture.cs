@@ -7,6 +7,8 @@ using Content.Server._WF.AdminObserver;
 using Content.Server.Administration.Managers;
 using Content.Shared._WF.AdminObserver;
 using Content.Shared.Administration;
+using Content.Shared.Mind;
+using Content.Shared.Players;
 using Robust.Server.Player;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -37,13 +39,40 @@ public static class AdminKitFixture
     public static async Task<EntityUid> Enter(TestPair pair, ICommonSession session, EntityCoordinates coords)
     {
         var server = pair.Server;
-        var players = server.ResolveDependency<IPlayerManager>();
+        var minds = server.System<SharedMindSystem>();
         EntityUid observer = default;
         await server.WaitPost(() =>
         {
+            minds.WipeMind(session.ContentData()?.Mind);
             observer = server.EntMan.SpawnEntity(Observer, coords);
-            players.SetAttachedEntity(session, observer);
+            minds.TransferTo(minds.CreateMind(session.UserId).Owner, observer);
         });
+        await pair.RunTicksSync(5);
+        return observer;
+    }
+
+    /// <summary>Puts the pair's player in a new living human, with a mind of their own.</summary>
+    public static async Task<EntityUid> Living(TestPair pair, EntityCoordinates coords)
+    {
+        var server = pair.Server;
+        var minds = server.System<SharedMindSystem>();
+        var session = server.ResolveDependency<IPlayerManager>().Sessions.Single();
+        EntityUid human = default;
+        await server.WaitPost(() =>
+        {
+            minds.WipeMind(session.ContentData()?.Mind);
+            human = server.EntMan.SpawnEntity("MobHuman", coords);
+            minds.TransferTo(minds.CreateMind(session.UserId).Owner, human);
+        });
+        await pair.RunTicksSync(5);
+        return human;
+    }
+
+    /// <summary>Spawns an admin observer nobody is in.</summary>
+    public static async Task<EntityUid> Unmanned(TestPair pair, EntityCoordinates coords)
+    {
+        EntityUid observer = default;
+        await pair.Server.WaitPost(() => observer = pair.Server.EntMan.SpawnEntity(Observer, coords));
         await pair.RunTicksSync(5);
         return observer;
     }

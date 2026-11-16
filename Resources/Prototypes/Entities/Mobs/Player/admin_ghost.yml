@@ -113,6 +113,11 @@
   #   prototypes: [ NFMobAghostGear ] # Frontier MobAghostGear<NFMobAghostGear
   - type: WFAdminObserver
   # WOLFGATE END
+  # WOLFGATE(AdminObserver) START: a manifested observer says, whispers and emotes as the living do
+  - type: Speech
+  - type: Emoting
+  - type: TypingIndicator
+  # WOLFGATE END
   - type: BypassInteractionChecks
   - type: BankAccount # Frontier
   - type: ShowHealthBars # Monolith

@@ -1,4 +1,5 @@
 using Robust.Shared.Network;
+using Robust.Shared.Prototypes;
 
 namespace Content.Shared._WF.AdminObserver;
 
@@ -25,4 +26,11 @@ public sealed partial class WFAdminObserverComponent : Component
     /// <summary>Whether the layout was saved when the player last left, so deletion need not save it again.</summary>
     [ViewVariables]
     public bool SavedOnLeave;
+
+    /// <summary>The action that shows the observer to players and hides it again.</summary>
+    [DataField]
+    public EntProtoId ManifestAction = "WFActionManifest";
+
+    [ViewVariables]
+    public EntityUid? ManifestActionEntity;
 }

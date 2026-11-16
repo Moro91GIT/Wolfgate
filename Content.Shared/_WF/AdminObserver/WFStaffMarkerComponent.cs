@@ -1,0 +1,49 @@
+using Robust.Shared.GameStates;
+
+namespace Content.Shared._WF.AdminObserver;
+
+/// <summary>
+/// Marks an entity players can see as a member of staff: a line on examine, a tag on its name in chat, and at
+/// least one visual. The server fills every field; nothing here is the client's to choose.
+/// </summary>
+[RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true)]
+public sealed partial class WFStaffMarkerComponent : Component
+{
+    /// <summary>What everyone without the Host flag is marked in.</summary>
+    public static readonly Color StaffColor = Color.FromHex("#b3357d");
+
+    /// <summary>What a holder of the Host flag is marked in until they choose a colour.</summary>
+    public static readonly Color HostColor = Color.FromHex("#fe019a");
+
+    /// <summary>The staff wording: a rank, "Staff", an account name, or rank and name.</summary>
+    [DataField, AutoNetworkedField]
+    public string Label = string.Empty;
+
+    /// <summary>Which visuals are shown. Never <see cref="WFMarkerVisuals.None"/>.</summary>
+    [DataField, AutoNetworkedField]
+    public WFMarkerVisuals Visuals = WFMarkerVisuals.Nameplate;
+
+    /// <summary>The colour of every coloured visual.</summary>
+    [DataField, AutoNetworkedField]
+    public Color Color = StaffColor;
+
+    /// <summary>Whether the marked admin holds the Host flag, which changes the sigil.</summary>
+    [DataField, AutoNetworkedField]
+    public bool Host;
+
+    /// <summary>The chosen look of each visual that has several; empty for the default.</summary>
+    [DataField, AutoNetworkedField]
+    public string Ring = string.Empty;
+
+    /// <inheritdoc cref="Ring"/>
+    [DataField, AutoNetworkedField]
+    public string Glyph = string.Empty;
+
+    /// <inheritdoc cref="Ring"/>
+    [DataField, AutoNetworkedField]
+    public string Shield = string.Empty;
+
+    /// <inheritdoc cref="Ring"/>
+    [DataField, AutoNetworkedField]
+    public string Aura = string.Empty;
+}

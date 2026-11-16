@@ -1,0 +1,11 @@
+# Name and description come from Fluent (ent-WFActionManifest).
+- type: entity
+  id: WFActionManifest
+  components:
+  - type: InstantAction
+    icon: Interface/Actions/eyeclose.png
+    iconOn: Interface/Actions/eyeopen.png
+    keywords: [ "admin", "observer", "avatar", "visible" ]
+    priority: -3
+    checkCanInteract: false
+    event: !type:WFToggleManifestEvent

@@ -16,7 +16,11 @@ public sealed partial class WFAdminObserverHotkeySystem : EntitySystem
     [Dependency] private IPlayerManager _player = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
 
+    [Dependency] private WFManifestClientSystem _manifest = default!;
+
     private const string AghostCommand = "aghost";
+    private const string ManifestCommand = "manifest";
+    private const string UnmanifestCommand = "unmanifest";
 
     public override void Initialize()
     {
@@ -25,7 +29,17 @@ public sealed partial class WFAdminObserverHotkeySystem : EntitySystem
         CommandBinds.Builder
             .Bind(WFAdminObserverKeys.WFToggleAghost, InputCmdHandler.FromDelegate(_ => ToggleAghost(), handle: true,
                 outsidePrediction: true))
+            .Bind(WFAdminObserverKeys.WFToggleManifest, InputCmdHandler.FromDelegate(_ => ToggleManifest(), handle: true,
+                outsidePrediction: true))
             .Register<WFAdminObserverHotkeySystem>();
+    }
+
+    /// <summary>Shows the admin observer to players, or hides it again.</summary>
+    public void ToggleManifest()
+    {
+        var command = _manifest.LocalManifested() ? UnmanifestCommand : ManifestCommand;
+        if (_admin.CanCommand(command))
+            _console.ExecuteCommand(command);
     }
 
     public override void Shutdown()

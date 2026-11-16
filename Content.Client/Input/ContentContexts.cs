@@ -157,6 +157,7 @@ namespace Content.Client.Input
             aghost.AddFunction(ContentKeyFunctions.TryPullObject);
             aghost.AddFunction(ContentKeyFunctions.MovePulledObject);
             aghost.AddFunction(ContentKeyFunctions.ReleasePulledObject);
+            aghost.AddFunction(WFAdminObserverKeys.WFToggleManifest); // WOLFGATE(AdminObserver): the manifest key works in the admin observer
 
             var ghost = contexts.New("ghost", "human");
             ghost.AddFunction(EngineKeyFunctions.MoveUp);

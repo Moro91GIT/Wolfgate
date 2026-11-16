@@ -166,6 +166,57 @@ public sealed class WFAutoDockTest
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>
+    /// "Dock at" pressed mid-flight waits for the autopilot to let go of the controls, which its shutdown takes with it,
+    /// before steering in; and the approach's time is set once, so it doesn't run out while the ship is still flying in.
+    /// </summary>
+    [Test]
+    public async Task DockingFromAFlyingAutopilotKeepsItsSteering()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Dirty = true });
+        var server = pair.Server;
+        var map = await pair.CreateTestMap();
+        var entities = server.EntMan;
+        var xform = entities.System<SharedTransformSystem>();
+        var steering = entities.System<ShipSteeringSystem>();
+        var autoDock = entities.System<WFAutoDockSystem>();
+
+        await server.WaitAssertion(() =>
+        {
+            entities.DeleteEntity(map.Grid);
+            var (ship, _, console, station, stationDock) = Build(entities, map.MapId);
+            var helm = entities.GetComponent<ShuttleConsoleComponent>(console);
+            var htn = entities.GetComponent<HTNComponent>(console);
+
+            // The helm's autopilot is flying somewhere, its steering on the console.
+            var elsewhere = new EntityCoordinates(map.MapUid, new Vector2(-200f, 0f));
+            htn.Blackboard.SetValue(helm.AutopilotTargetKey, elsewhere);
+            steering.Steer(console, elsewhere);
+
+            Assert.That(autoDock.TryStart((console, helm), station, stationDock, null), Is.True);
+            var request = entities.GetComponent<WFAutoDockComponent>(console);
+            Assert.That(request.Phase, Is.EqualTo(WFAutoDockPhase.Release), "It waits for the autopilot to let go.");
+            Assert.That(autoDock.Advance(console, request), Is.Null);
+            Assert.That(request.Phase, Is.EqualTo(WFAutoDockPhase.Release));
+
+            // The autopilot task shuts down and stops its steering, as on the planner's next update.
+            steering.Stop(console);
+            Assert.That(autoDock.Advance(console, request), Is.Null);
+            Assert.That(request.Phase, Is.EqualTo(WFAutoDockPhase.Approach));
+            Assert.That(entities.HasComponent<ShipSteererComponent>(console), Is.True, "The docking has the controls.");
+            Assert.That(autoDock.Advance(console, request), Is.Null, "And keeps them.");
+
+            // The approach's budget covers the whole flight; past the bare timeout it still flies on.
+            var distance = Vector2.Distance(xform.ToMapCoordinates(request.Plan.Standoff).Position, xform.GetWorldPosition(ship));
+            Assert.That(request.ApproachBudget, Is.GreaterThan(distance / 10f));
+            request.PhaseStart = server.Timing.CurTime - TimeSpan.FromSeconds(request.ApproachBudget - 1f);
+            Assert.That(autoDock.Advance(console, request), Is.Null, "Within its budget it flies on.");
+            Assert.That(request.Phase, Is.EqualTo(WFAutoDockPhase.Approach));
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
     [Test]
     public async Task DockingRetriesThenGivesUp()
     {

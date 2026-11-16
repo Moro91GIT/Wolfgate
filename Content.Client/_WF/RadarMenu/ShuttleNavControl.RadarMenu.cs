@@ -64,7 +64,9 @@ public partial class ShuttleNavControl
             var centre = WfContactCentre(contact);
             menu = new WFRadarContextMenu(name, WfReadout(from, centre));
             var net = EntManager.GetNetEntity(contact);
-            menu.AddKey(Loc.GetString("wf-radar-menu-approach"), canFly ? () => WfFlyTo(WfApproachPoint(contact, from)) : null);
+            // The side to stop on is read when the key is pressed: the ship may have moved round since the menu opened.
+            menu.AddKey(Loc.GetString("wf-radar-menu-approach"),
+                canFly ? () => WfFlyTo(WfApproachPoint(contact, WfScannerWorldPosition() ?? from)) : null);
             menu.AddKey(Loc.GetString("wf-radar-menu-dock-at"), canFly ? () => WfShowDocks(menu, net) : null, closes: false);
             menu.AddKey(Loc.GetString("wf-radar-menu-hail"), canFly ? () => WfSendWaypointMessage(new HailRequestMessage(net)) : null);
             menu.AddKey(Loc.GetString("wf-radar-menu-mark-contact"),
@@ -163,6 +165,9 @@ public partial class ShuttleNavControl
     {
         menu.NewPage(Loc.GetString("wf-radar-menu-docks-checking"));
         menu.AddKey(Loc.GetString("wf-radar-menu-dock-any"), () => WfSendWaypointMessage(new WFAutoDockRequestMessage(grid, null)));
+        // The server answers each console at most twice a second; a request it passed over can be sent again.
+        menu.AddKey(Loc.GetString("wf-radar-menu-docks-retry"),
+            () => WfSendWaypointMessage(new WFAutoDockOptionsRequestMessage(grid)), closes: false);
 
         var system = EntManager.System<WFRadarMenuSystem>();
         var console = _consoleEntity is { } uid ? EntManager.GetNetEntity(uid) : NetEntity.Invalid;
@@ -224,13 +229,7 @@ public partial class ShuttleNavControl
         foreach (var grid in _grids)
         {
             var uid = grid.Owner;
-            if (uid == console.GridUid || EntManager.HasComponent<MapComponent>(uid)
-                || !EntManager.TryGetComponent<PhysicsComponent>(uid, out var body))
-                continue;
-
-            EntManager.TryGetComponent<IFFComponent>(uid, out var iff);
-            if (!_shuttles.CanDraw(uid, body, iff) || GetGridDetected(uid) == DetectionLevel.Undetected
-                && iff != null && (iff.Flags & IFFFlags.HideLabel) != 0)
+            if (uid == console.GridUid || EntManager.HasComponent<MapComponent>(uid) || !WfContactShown(uid))
                 continue;
 
             var onHull = _transform.GetWorldMatrix(uid) is var matrix
@@ -247,6 +246,17 @@ public partial class ShuttleNavControl
         if (best is { } found)
             name = WfContactName(found);
         return best;
+    }
+
+    /// <summary>Whether the radar shows a grid at all: drawable, and not a hidden contact it has not detected.</summary>
+    private bool WfContactShown(EntityUid uid)
+    {
+        if (!EntManager.TryGetComponent<PhysicsComponent>(uid, out var body))
+            return false;
+
+        EntManager.TryGetComponent<IFFComponent>(uid, out var iff);
+        return _shuttles.CanDraw(uid, body, iff)
+               && !(GetGridDetected(uid) == DetectionLevel.Undetected && iff != null && (iff.Flags & IFFFlags.HideLabel) != 0);
     }
 
     /// <summary>A contact's name as the radar labels it: hidden ones by their signature, garbled past the Lattice.</summary>
@@ -273,7 +283,15 @@ public partial class ShuttleNavControl
     private Vector2 WfApproachPoint(EntityUid contact, Vector2 from)
     {
         var centre = WfContactCentre(contact);
-        var radius = EntManager.TryGetComponent<MapGridComponent>(contact, out var grid) ? grid.LocalAABB.Size.Length() / 2f : 0f;
+        // The farthest corner of the hull from that centre, which need not be the middle of its bounds.
+        var radius = 0f;
+        if (EntManager.TryGetComponent<MapGridComponent>(contact, out var grid))
+        {
+            var local = EntManager.TryGetComponent<PhysicsComponent>(contact, out var body) ? body.LocalCenter : Vector2.Zero;
+            var box = grid.LocalAABB;
+            radius = MathF.Max(MathF.Max((box.BottomLeft - local).Length(), (box.BottomRight - local).Length()),
+                MathF.Max((box.TopLeft - local).Length(), (box.TopRight - local).Length()));
+        }
         var away = from - centre;
         var direction = away.LengthSquared() > 0.01f ? Vector2.Normalize(away) : Vector2.UnitY;
         return centre + direction * (radius + WfApproachStandoff);

@@ -24,6 +24,7 @@ wf-radar-menu-orbit-none = That world has no orbit to enter from here.
 wf-radar-menu-orbit-failed = Couldn't enter orbit: {$reason}
 
 wf-radar-menu-docks-checking = Checking docks…
+wf-radar-menu-docks-retry = Check docks again
 wf-radar-menu-docks-none = No free dock fits this ship.
 wf-radar-menu-docks-title = {$count ->
     [one] 1 free dock fits

@@ -223,7 +223,8 @@ public partial class ShuttleNavControl
         var transform = EntManager.System<SharedTransformSystem>();
         foreach (var grid in _grids)
         {
-            if (EntManager.HasComponent<MapComponent>(grid.Owner))
+            // Only a grid the radar shows can be what was clicked; a hidden one leaves the world clickable.
+            if (EntManager.HasComponent<MapComponent>(grid.Owner) || !WfContactShown(grid.Owner))
                 continue;
 
             var gridToView = transform.GetWorldMatrix(grid.Owner) * _wfWorldToView;

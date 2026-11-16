@@ -24,6 +24,10 @@ public sealed partial class WFAutoDockComponent : Component
     [ViewVariables]
     public TimeSpan PhaseStart;
 
+    /// <summary>Seconds the approach may take, set once as it starts from the distance to fly, as an NPC pilot's.</summary>
+    [ViewVariables]
+    public float ApproachBudget;
+
     /// <summary>Failed tries so far; each goes back out to the standoff.</summary>
     [ViewVariables]
     public int Attempts;
@@ -42,6 +46,9 @@ public sealed partial class WFAutoDockComponent : Component
 
 public enum WFAutoDockPhase : byte
 {
+    /// <summary>The helm's autopilot was flying: waiting for it to let go of the controls before taking them.</summary>
+    Release,
+
     /// <summary>Flying to the standoff out in front of the target's port.</summary>
     Approach,
 

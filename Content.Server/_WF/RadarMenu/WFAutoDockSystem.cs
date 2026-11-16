@@ -47,6 +47,9 @@ public sealed partial class WFAutoDockSystem : EntitySystem
     private static readonly WFCrewNavigationSettings Navigation = new();
 
     private static readonly TimeSpan CheckGap = TimeSpan.FromSeconds(0.1);
+
+    /// <summary>The longest a docking waits for a flying autopilot to let go of the controls.</summary>
+    private static readonly TimeSpan ReleaseWait = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan OptionsGap = TimeSpan.FromSeconds(0.5);
 
     private readonly Dictionary<EntityUid, TimeSpan> _nextOptions = new();
@@ -153,6 +156,9 @@ public sealed partial class WFAutoDockSystem : EntitySystem
         }
 
         // The helm's own autopilot lets go, and any orbit trip ends; the docking flies the ship itself from here.
+        // A flying autopilot stops its steering as it shuts down on the planner's next update, which would take the
+        // docking's with it, so the docking waits for it to let go first.
+        var flying = AutopilotEngaged(console) || HasComp<ShipSteererComponent>(console);
         StopAutopilot(console);
         RemCompDeferred<WFAutoOrbitComponent>(console);
         var request = EnsureComp<WFAutoDockComponent>(console);
@@ -161,7 +167,14 @@ public sealed partial class WFAutoDockSystem : EntitySystem
         request.Plan = plan;
         request.Attempts = 0;
         request.Pilot = pilot;
-        SetPhase(console, request, WFAutoDockPhase.Approach);
+        if (flying)
+        {
+            request.Phase = WFAutoDockPhase.Release;
+            request.PhaseStart = _timing.CurTime;
+            request.NextCheck = _timing.CurTime;
+        }
+        else
+            SetPhase(console, request, WFAutoDockPhase.Approach);
 
         Tell(console, pilot, "wf-radar-menu-dock-started", ("grid", Name(grid)));
         return true;
@@ -199,6 +212,18 @@ public sealed partial class WFAutoDockSystem : EntitySystem
             || Transform(ship).MapUid is not { } map)
             return Fail(console, "wf-radar-menu-dock-failed-gone");
 
+        // The autopilot that was flying lets go of the controls on the planner's next update; then the docking takes
+        // them. If it never does, its steering is stopped here.
+        if (request.Phase == WFAutoDockPhase.Release)
+        {
+            var waited = _timing.CurTime - request.PhaseStart;
+            if (HasComp<ShipSteererComponent>(console) && waited < ReleaseWait)
+                return null;
+            _steering.Stop(console);
+            SetPhase(console, request, WFAutoDockPhase.Approach);
+            return null;
+        }
+
         // Something else took the controls: the steering was stopped, or someone flies the ship by hand.
         if (!TryComp<ShipSteererComponent>(console, out var steerer)
             || TryComp<PilotedShuttleComponent>(ship, out var piloted) && piloted.ActiveSources > 1)
@@ -230,7 +255,7 @@ public sealed partial class WFAutoDockSystem : EntitySystem
                 if ((standoff - shipPosition).Length() <= Navigation.DockStandoff)
                     steerer.AvoidCollisions = false;
 
-                if (elapsed >= Navigation.DockApproachTimeout + (standoff - shipPosition).Length() / 5f)
+                if (elapsed >= request.ApproachBudget)
                     return Retry(console, request, ship, "wf-radar-menu-dock-failed-short");
                 if (steerer.Status == ShipSteeringStatus.InRange)
                     SetPhase(console, request, WFAutoDockPhase.Settle);
@@ -277,6 +302,13 @@ public sealed partial class WFAutoDockSystem : EntitySystem
             return;
 
         var plan = request.Plan;
+        // The approach's time is set once from the distance to fly, as an NPC pilot's, so it doesn't shrink en route.
+        if (phase == WFAutoDockPhase.Approach)
+        {
+            var distance = Vector2.Distance(_xform.ToMapCoordinates(plan.Standoff).Position, _xform.GetWorldPosition(ship));
+            request.ApproachBudget = Navigation.DockApproachTimeout + distance / MathF.Max(Navigation.CruiseSpeed, 1f) * 1.5f;
+        }
+
         var heading = _pilots.DockHeading(plan, request.TargetGrid);
         var target = phase == WFAutoDockPhase.Creep ? plan.Final : _pilots.StandoffOnMap(plan, map);
         if (_steering.Steer(console, target) is not { } steerer)

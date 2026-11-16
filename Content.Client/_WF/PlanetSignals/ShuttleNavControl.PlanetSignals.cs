@@ -195,13 +195,21 @@ public partial class ShuttleNavControl
                 if ((pixel - centre).Length() > radius && !label.Contains(pixel))
                     continue;
 
-                _wfSignalsWindow ??= new WFPlanetSignalsWindow();
-                _wfSignalsWindow.Show(body, WfOurGrid());
+                // The world's menu lists its signals among the rest; a radar without it lists them at once.
+                if (!WfOpenWorldMenu(body))
+                    WfShowPlanetSignals(body);
                 return true;
             }
         }
 
         return WfOpenRadarMenu(relative);
+    }
+
+    /// <summary>Opens the signal list of a world.</summary>
+    private void WfShowPlanetSignals(EntityUid body)
+    {
+        _wfSignalsWindow ??= new WFPlanetSignalsWindow();
+        _wfSignalsWindow.Show(body, WfOurGrid());
     }
 
     /// <summary>

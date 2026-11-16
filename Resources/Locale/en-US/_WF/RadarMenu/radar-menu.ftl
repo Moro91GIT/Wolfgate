@@ -16,6 +16,12 @@ wf-radar-menu-copy = Copy coordinates
 wf-radar-menu-copy-text = {$x}, {$y}
 wf-radar-menu-recentre = Recentre radar
 wf-radar-menu-cancel-autopilot = Cancel autopilot
+wf-radar-menu-world-signals = List world signals
+wf-radar-menu-orbit = Autopilot into orbit
+
+wf-radar-menu-orbit-started = Autopilot: heading into orbit of {$planet}.
+wf-radar-menu-orbit-none = That world has no orbit to enter from here.
+wf-radar-menu-orbit-failed = Couldn't enter orbit: {$reason}
 
 wf-radar-menu-docks-checking = Checking docks…
 wf-radar-menu-docks-none = No free dock fits this ship.

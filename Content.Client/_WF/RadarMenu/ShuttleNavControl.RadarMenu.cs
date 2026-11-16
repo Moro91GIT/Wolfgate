@@ -1,6 +1,8 @@
 using System.Numerics;
+using Content.Client._WF.Planets;
 using Content.Client._WF.RadarMenu;
 using Content.Shared._Mono.Detection;
+using Content.Shared._WF.Planets;
 using Content.Shared._WF.Hailing;
 using Content.Shared._WF.RadarMenu;
 using Content.Shared._WF.Waypoints;
@@ -87,6 +89,62 @@ public partial class ShuttleNavControl
         menu.OpenAtMouse();
         return true;
     }
+
+    /// <summary>
+    /// Opens the menu for a world clicked on the radar: its signals, autopilot into its orbit, and a waypoint on it.
+    /// False on a radar without the menu, which lists the signals at once instead.
+    /// </summary>
+    private bool WfOpenWorldMenu(EntityUid body)
+    {
+        if (_wfWaypointKey == null
+            || !EntManager.TryGetComponent<TransformComponent>(_consoleEntity, out var console)
+            || !console.Anchored
+            || console.MapID == MapId.Nullspace
+            || !EntManager.TryGetComponent<TransformComponent>(body, out var bodyXform)
+            || bodyXform.MapID != console.MapID)
+            return false;
+
+        _wfMenu?.Close();
+        var centre = _transform.GetWorldPosition(bodyXform);
+        var from = WfScannerWorldPosition() ?? centre;
+        var canFly = _wfWaypointCanFly;
+        var canMark = console.GridUid != null;
+        var name = EntManager.GetComponent<MetaDataComponent>(body).EntityName;
+        var net = EntManager.GetNetEntity(body);
+
+        var menu = new WFRadarContextMenu(name, WfReadout(from, centre));
+        menu.AddKey(Loc.GetString("wf-radar-menu-world-signals"), () => WfShowPlanetSignals(body));
+        menu.AddKey(Loc.GetString("wf-radar-menu-orbit"), canFly && EntManager.HasComponent<WFSectorPlanetComponent>(body)
+            ? () => WfRequestOrbit(body, net, name)
+            : null);
+        menu.AddKey(Loc.GetString("wf-radar-menu-mark-contact"),
+            canMark ? () => WfSendWaypointMessage(new WFWaypointAddMessage(name, centre)) : null);
+        WfCommonKeys(menu, centre, canFly);
+
+        _wfMenu = menu;
+        menu.OnClosed(() =>
+        {
+            if (_wfMenu == menu)
+                _wfMenu = null;
+        });
+        menu.OpenAtMouse();
+        return true;
+    }
+
+    /// <summary>Sends the autopilot into a world's orbit, asking first for a world nobody is cleared to visit.</summary>
+    private void WfRequestOrbit(EntityUid body, NetEntity net, string name)
+    {
+        if (EntManager.TryGetComponent<WFSectorPlanetComponent>(body, out var sector) && !sector.Sanctioned)
+        {
+            _wfOrbitConfirm ??= new WFUnsanctionedOrbitConfirmWindow();
+            _wfOrbitConfirm.Ask(name, () => WfSendWaypointMessage(new WFAutoOrbitRequestMessage(net, true)));
+            return;
+        }
+
+        WfSendWaypointMessage(new WFAutoOrbitRequestMessage(net, false));
+    }
+
+    private WFUnsanctionedOrbitConfirmWindow? _wfOrbitConfirm;
 
     /// <summary>Keys every menu has: copy the coordinates, recentre a panned radar, cancel the autopilot.</summary>
     private void WfCommonKeys(WFRadarContextMenu menu, Vector2 position, bool canFly)

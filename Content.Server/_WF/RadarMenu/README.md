@@ -9,6 +9,10 @@ scanner and handheld scanners don't.
 - **A contact:** autopilot alongside (it stops 30 m clear of the hull, on our side), dock at…, hail, save a waypoint
   on it. The heading shows the contact's name as the radar labels it, with range and bearing.
 - **A waypoint:** autopilot to it, delete it.
+- **A world:** list its signals (what a click on a world did before), autopilot into orbit, save a waypoint on it.
+  The autopilot heads for a point three quarters into the world's orbit range on our side and, once the ship is in
+  range, enters orbit through `WFOrbitEntrySystem.TryEnterOrbit`, as the console's orbit button does; an unsanctioned
+  world asks first. Radars without the menu still list a clicked world's signals at once.
 - **Always:** copy coordinates, recentre a panned radar, and at a helm, cancel the autopilot.
 
 Flying, docking, hailing and cancelling need a helm; waypoints need a helm or mass scanner on a grid. Keys a radar can't
@@ -35,6 +39,8 @@ click reaches the menu through the radar's existing click handling in `ShuttleNa
 
 - [`Content.Server/_WF/RadarMenu/WFAutoDockComponent.cs`](WFAutoDockComponent.cs)
 - [`Content.Server/_WF/RadarMenu/WFAutoDockSystem.cs`](WFAutoDockSystem.cs)
+- [`Content.Server/_WF/RadarMenu/WFAutoDockSystem.Orbit.cs`](WFAutoDockSystem.Orbit.cs)
+- [`Content.Server/_WF/RadarMenu/WFAutoOrbitComponent.cs`](WFAutoOrbitComponent.cs)
 
 ### Shared
 

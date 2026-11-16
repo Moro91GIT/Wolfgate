@@ -30,6 +30,17 @@ public sealed class WFAutoDockRequestMessage(NetEntity grid, NetEntity? dock) : 
     public NetEntity? Dock = dock;
 }
 
+/// <summary>
+/// Fly toward a world and enter its orbit once in range. An unsanctioned world needs <see cref="Confirmed"/>, as the
+/// console's orbit button asks.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class WFAutoOrbitRequestMessage(NetEntity planet, bool confirmed) : BoundUserInterfaceMessage
+{
+    public NetEntity Planet = planet;
+    public bool Confirmed = confirmed;
+}
+
 /// <summary>Switch the helm's autopilot off, and any docking it was flying to.</summary>
 [Serializable, NetSerializable]
 public sealed class WFAutopilotCancelMessage : BoundUserInterfaceMessage;

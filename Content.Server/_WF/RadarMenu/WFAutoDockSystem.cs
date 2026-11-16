@@ -24,7 +24,7 @@ namespace Content.Server._WF.RadarMenu;
 /// of the port with a clear lane, settle there turned to dock, creep in port to port and dock once the ports line up,
 /// as the Dock key does. A bump or a stall goes back out and tries again; after three tries it stops and says why.
 /// </summary>
-public sealed class WFAutoDockSystem : EntitySystem
+public sealed partial class WFAutoDockSystem : EntitySystem
 {
     [Dependency] private DockingSystem _docking = default!;
     [Dependency] private IGameTiming _timing = default!;
@@ -61,6 +61,7 @@ public sealed class WFAutoDockSystem : EntitySystem
             subs.Event<WFAutoDockOptionsRequestMessage>(OnOptionsRequest);
             subs.Event<WFAutoDockRequestMessage>(OnDockRequest);
             subs.Event<WFAutopilotCancelMessage>(OnCancel);
+            subs.Event<WFAutoOrbitRequestMessage>(OnOrbitRequest);
         });
 
         // A new autopilot target from the map or a waypoint replaces the docking.
@@ -68,6 +69,7 @@ public sealed class WFAutoDockSystem : EntitySystem
         SubscribeLocalEvent<WFAutoDockComponent, PilotedShuttleRelayedEvent<StartCollideEvent>>(OnCollide);
         SubscribeLocalEvent<WFAutoDockComponent, ComponentShutdown>(OnShutdown);
         SubscribeLocalEvent<Content.Shared.GameTicking.RoundRestartCleanupEvent>(_ => _nextOptions.Clear());
+        InitializeOrbit();
     }
 
     private void OnOptionsRequest(Entity<ShuttleConsoleComponent> ent, ref WFAutoDockOptionsRequestMessage args)
@@ -150,8 +152,9 @@ public sealed class WFAutoDockSystem : EntitySystem
             return false;
         }
 
-        // The helm's own autopilot lets go; the docking flies the ship itself from here.
+        // The helm's own autopilot lets go, and any orbit trip ends; the docking flies the ship itself from here.
         StopAutopilot(console);
+        RemCompDeferred<WFAutoOrbitComponent>(console);
         var request = EnsureComp<WFAutoDockComponent>(console);
         request.TargetGrid = grid;
         request.RequestedDock = dock;
@@ -167,6 +170,7 @@ public sealed class WFAutoDockSystem : EntitySystem
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
+        UpdateOrbit();
         var now = _timing.CurTime;
         var query = EntityQueryEnumerator<WFAutoDockComponent>();
         while (query.MoveNext(out var uid, out var request))
@@ -378,6 +382,7 @@ public sealed class WFAutoDockSystem : EntitySystem
         if (HasComp<WFAutoDockComponent>(ent))
             _steering.Stop(ent.Owner);
         RemCompDeferred<WFAutoDockComponent>(ent);
+        RemCompDeferred<WFAutoOrbitComponent>(ent);
         StopAutopilot(ent);
         Tell(ent, args.Actor, "wf-radar-menu-autopilot-cancelled");
     }

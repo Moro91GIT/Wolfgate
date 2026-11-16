@@ -113,6 +113,59 @@ public sealed class WFAutoDockTest
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>
+    /// "Autopilot into orbit" aims inside the world's orbit range on our side, refuses an unsanctioned world until
+    /// confirmed, and lets the autopilot go to enter orbit once in range.
+    /// </summary>
+    [Test]
+    public async Task OrbitTripAimsInsideTheRangeAndEntersThere()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Dirty = true });
+        var server = pair.Server;
+        var map = await pair.CreateTestMap();
+        var entities = server.EntMan;
+        var maps = entities.System<SharedMapSystem>();
+        var xform = entities.System<SharedTransformSystem>();
+        var autoDock = entities.System<WFAutoDockSystem>();
+
+        await server.WaitAssertion(() =>
+        {
+            entities.DeleteEntity(map.Grid);
+            var (ship, _, console, _, _) = Build(entities, map.MapId);
+            var helm = entities.GetComponent<ShuttleConsoleComponent>(console);
+            var htn = entities.GetComponent<HTNComponent>(console);
+
+            // A world 6 km off whose orbit reaches 2 km out.
+            var orbitMap = maps.CreateMap(out _);
+            entities.EnsureComponent<Content.Shared._WF.Planets.WFOrbitLayerComponent>(orbitMap).Range = 2000f;
+            var planet = entities.SpawnEntity(null, new MapCoordinates(new Vector2(6000f, 0f), map.MapId));
+            var sector = entities.EnsureComponent<Content.Shared._WF.Planets.WFSectorPlanetComponent>(planet);
+            sector.OrbitMap = entities.GetNetEntity(orbitMap);
+            sector.Sanctioned = false;
+
+            Assert.That(autoDock.TryStartOrbit((console, helm), planet, false, null), Is.False,
+                "An unsanctioned world needs a confirmed request.");
+            Assert.That(autoDock.TryStartOrbit((console, helm), planet, true, null), Is.True);
+            Assert.That(htn.Blackboard.TryGetValue<EntityCoordinates>(helm.AutopilotTargetKey, out var target, entities), Is.True);
+            var aim = xform.ToMapCoordinates(target).Position;
+            Assert.That(Vector2.Distance(aim, new Vector2(6000f, 0f)), Is.EqualTo(1500f).Within(1f),
+                "The autopilot aims well inside the orbit range, not at the world's middle.");
+            Assert.That(aim.X, Is.LessThan(6000f), "It aims on our side of the world.");
+
+            var request = entities.GetComponent<WFAutoOrbitComponent>(console);
+            autoDock.AdvanceOrbit(console, request);
+            Assert.That(entities.HasComponent<WFAutoOrbitComponent>(console), Is.True, "Still out of range, it flies on.");
+
+            // In range: the autopilot lets go and orbit entry takes over.
+            xform.SetWorldPosition(ship, new Vector2(4500f, 0f));
+            autoDock.AdvanceOrbit(console, request);
+            Assert.That(htn.Blackboard.TryGetValue<EntityCoordinates>(helm.AutopilotTargetKey, out _, entities), Is.False,
+                "In range, the autopilot is let go.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
     [Test]
     public async Task DockingRetriesThenGivesUp()
     {

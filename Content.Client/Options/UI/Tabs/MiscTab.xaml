@@ -28,6 +28,12 @@
                 <CheckBox Name="RadioNoiseCheckBox" Text="{Loc 'ui-options-radio-noise'}" /> <!-- Mono -->
                 <Label Text="{Loc 'ui-options-general-cursor'}"
                        StyleClasses="LabelKeyText"/>
+                <!-- WOLFGATE(Screentips) START: screentip position and colour -->
+                <ui:OptionDropDown Name="DropDownScreentips" Title="{Loc 'ui-options-wf-screentips'}" />
+                <ui:OptionColorSlider Name="ScreentipColorSlider"
+                                      Title="{Loc 'ui-options-wf-screentip-color'}"
+                                      Example="{Loc 'ui-options-wf-screentip-color-example'}"/>
+                <!-- WOLFGATE END -->
                 <CheckBox Name="ShowHeldItemCheckBox" Text="{Loc 'ui-options-show-held-item'}" />
                 <CheckBox Name="ShowCombatModeIndicatorsCheckBox" Text="{Loc 'ui-options-show-combat-mode-indicators'}" />
                 <Label Text="{Loc 'ui-options-general-storage'}"

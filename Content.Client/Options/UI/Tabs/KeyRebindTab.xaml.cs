@@ -2,6 +2,8 @@ using System.Numerics;
 using Content.Client._WF.Options; // WOLFGATE(Options)
 using Content.Shared._WF.RMCCore.Input; // WOLFGATE(Xenonids)
 using Content.Shared._WF.LandingGuide; // WOLFGATE(LandingGuide)
+using Content.Shared._WF.CancelInteractions; // WOLFGATE(CancelInteractions)
+using Content.Shared._WF.HandSelect; // WOLFGATE(HandSelect)
 using Content.Client.Stylesheets;
 using Content.Shared.CCVar;
 using Content.Shared.Input;
@@ -206,6 +208,9 @@ namespace Content.Client.Options.UI.Tabs
             AddButton(ContentKeyFunctions.ExamineEntity);
             AddButton(ContentKeyFunctions.SwapHands);
             AddButton(ContentKeyFunctions.SwapHandsPrevious); // Frontier
+            AddButton(WFHandSelectKeys.WFSelectLeftHand); // WOLFGATE(HandSelect): swap to left hand
+            AddButton(WFHandSelectKeys.WFSelectRightHand); // WOLFGATE(HandSelect): swap to right hand
+            AddButton(WFCancelInteractionKeys.WFCancelInteractions); // WOLFGATE(CancelInteractions): cancel own do-afters
             AddButton(ContentKeyFunctions.MoveStoredItem);
             AddButton(ContentKeyFunctions.RotateStoredItem);
             AddButton(ContentKeyFunctions.SaveItemLocation);

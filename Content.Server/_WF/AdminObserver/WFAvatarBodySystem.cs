@@ -51,6 +51,7 @@ public sealed partial class WFAvatarBodySystem : EntitySystem
     {
         base.Initialize();
         SubscribeLocalEvent<WFAvatarBodyComponent, DidEquipEvent>(OnEquipped);
+        SubscribeLocalEvent<WFAvatarBodyComponent, EntityUnpausedEvent>(OnUnpaused);
         SubscribeLocalEvent<RoundEndedEvent>(OnRoundEnded, before: new[] { typeof(PersistAtRoundEndSystem) });
         SubscribeNetworkEvent<WFAvatarDressRequestEvent>((ev, args) => OpenDresser(args.SenderSession, ev.Preset));
         SubscribeNetworkEvent<WFAvatarSaveOutfitRequestEvent>((ev, args) => SaveOutfit(args.SenderSession, ev.Preset));
@@ -111,17 +112,14 @@ public sealed partial class WFAvatarBodySystem : EntitySystem
         return body;
     }
 
-    public override void Update(float frameTime)
+    /// <summary>
+    /// Moving to another map wakes everything carried along. A body left awake would breathe, bleed and starve, so
+    /// it goes straight back to sleep.
+    /// </summary>
+    private void OnUnpaused(Entity<WFAvatarBodyComponent> ent, ref EntityUnpausedEvent args)
     {
-        base.Update(frameTime);
-
-        // Moving to another map wakes everything carried along. A body left awake would breathe, bleed and starve.
-        var query = AllEntityQuery<WFAvatarBodyComponent, MetaDataComponent>();
-        while (query.MoveNext(out var uid, out _, out var meta))
-        {
-            if (!meta.EntityPaused)
-                _metaData.SetEntityPaused(uid, true, meta);
-        }
+        if (!TerminatingOrDeleted(ent))
+            _metaData.SetEntityPaused(ent, true);
     }
 
     /// <summary>Opens the strip window of a character preset's body for its admin, to dress it by hand.</summary>

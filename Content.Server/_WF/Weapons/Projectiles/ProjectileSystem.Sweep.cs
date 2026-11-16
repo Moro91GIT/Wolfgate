@@ -41,11 +41,8 @@ public sealed partial class ProjectileSystem
     /// <summary>Fields a round may pass in one tick, each followed by a sweep of what lies behind it.</summary>
     private const int WfSweepPasses = 4;
 
-    /// <summary>
-    /// How far a held round creeps into what it struck in a tick. Short enough to stay inside a wall whether physics
-    /// takes the tick in one step or two: a metre in one step carried the round out of the wall's far side.
-    /// </summary>
-    private const float WfHoldCreep = 0.25f;
+    /// <summary>The round whose path is being swept, for collision rules that judge a hit by where the round is now.</summary>
+    public EntityUid? WfSweptRound { get; private set; }
 
     /// <summary>The tick's length, until its first substep has swept.</summary>
     private float _wfSweepTime;
@@ -191,7 +188,9 @@ public sealed partial class ProjectileSystem
             }
 
             // Hold the round on what it hit, in the struck grid's frame so an impact blast moves with the ship, and
-            // creep it in for the physics contact to land the hit.
+            // creep it in at a metre a tick for the physics contact to land the hit. Slower would read as a spent shot
+            // to what judges a hit by its speed, the harpoon; in one physics step a metre can carry the round out of
+            // the wall's far side, which is what the hold and the next sweep are for.
             var coordinates = _transformSystem.ToCoordinates(point);
             if (Transform(hit.Entity).GridUid is { } grid)
                 coordinates = _transformSystem.WithEntityId(coordinates, grid);
@@ -199,7 +198,7 @@ public sealed partial class ProjectileSystem
             projectile.RaycastResetVelocity ??= velocity + frameVelocity;
             _transformSystem.SetCoordinates(uid, coordinates);
             // Set after the move: changing parent keeps the map velocity, which would add the hull's speed to the creep.
-            _physics.SetLinearVelocity(uid, hit.Direction * WfHoldCreep / frameTime, body: body);
+            _physics.SetLinearVelocity(uid, hit.Direction / frameTime, body: body);
             var hold = EnsureComp<WFSweepHoldComponent>(uid);
             hold.Target = hit.Entity;
             hold.At = coordinates;
@@ -212,6 +211,7 @@ public sealed partial class ProjectileSystem
         Vector2 velocity, Vector2 frameVelocity, float frameTime, EntityUid? ignore)
     {
         WfSweepHit? soonest = null;
+        WfSweptRound = uid;
         foreach (var hit in WfSweep(uid, from, velocity, frameVelocity, frameTime, fixture.CollisionMask))
         {
             if (soonest is { } best && hit.Time >= best.Time || hit.Entity == ignore ||
@@ -245,6 +245,7 @@ public sealed partial class ProjectileSystem
             soonest = hit;
         }
 
+        WfSweptRound = null;
         return soonest;
     }
 

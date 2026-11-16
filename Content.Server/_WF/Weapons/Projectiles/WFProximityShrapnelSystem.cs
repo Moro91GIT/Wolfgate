@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Server.Projectiles;
 using Content.Shared.Projectiles;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Events;
@@ -10,6 +11,7 @@ public sealed class WFProximityShrapnelSystem : EntitySystem
 {
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private EntityLookupSystem _lookup = default!;
+    [Dependency] private ProjectileSystem _projectiles = default!;
 
     public override void Initialize()
     {
@@ -20,7 +22,9 @@ public sealed class WFProximityShrapnelSystem : EntitySystem
     private void OnPreventCollide(Entity<WFProximityShrapnelComponent> ent, ref PreventCollideEvent args)
     {
         var other = args.OtherEntity;
-        if (args.Cancelled || HasComp<ProjectileComponent>(other) || Transform(other).GridUid == null)
+        // What the sweep finds lies on the pellet's own path, however far a closing hull makes that this tick.
+        if (args.Cancelled || _projectiles.WfSweptRound == ent.Owner || HasComp<ProjectileComponent>(other) ||
+            Transform(other).GridUid == null)
             return;
 
         if (!TryComp<FixturesComponent>(ent, out var fixtures) ||

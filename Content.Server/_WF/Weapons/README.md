@@ -29,9 +29,9 @@ field and the round flew a whole tick unswept, up to 10 m, which put shells insi
 `WFHullTunnelTest` fires rounds and turret shots from every bearing at a sealed hull that is still, flying, turning or
 shielded; `ShellStopsAtClosingHullFromAnyRange` covers every phase of the sweep at 40 and 60 m/s.
 
-Live runs `physics.target_minimum_tickrate` 30, one physics step a tick. The old hold crept a metre a tick, which in
-one step carried the round out of the far side of the wall: it then hit whoever stood behind, or its fuse went off
-inside. The creep is now a quarter metre, and `WFHullTunnelTest` runs at both 60 and 30.
+Live runs `physics.target_minimum_tickrate` 30, one physics step a tick. The hold creeps a metre a tick, which in one
+step can carry the round out of the far side of the wall: it then hit whoever stood behind, or its fuse went off
+inside. `WFHullTunnelTest` runs at both 60 and 30.
 
 A held round has `WFSweepHoldComponent`: it can hit nothing but what it was held on, so the creep cannot reach someone
 standing behind a window, and if the physics contact has not landed by the next tick the sweep sets off its warhead and

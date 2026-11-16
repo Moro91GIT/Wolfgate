@@ -162,6 +162,8 @@ public sealed class WFHullTunnelTest
         {
             var transform = entities.System<SharedTransformSystem>();
             var physics = entities.System<SharedPhysicsSystem>();
+            server.CfgMan.SetCVar(Robust.Shared.CVars.NetTickrate, TickRate);
+            server.CfgMan.SetCVar(Robust.Shared.CVars.TargetMinimumTickrate, _physicsRate);
             SpawnHull(entities, map, hull, inside);
             var centre = transform.ToMapCoordinates(new EntityCoordinates(map.Grid.Owner, 0.5f, 0.5f));
             for (var x = -1; x <= 1; x++)
@@ -201,6 +203,7 @@ public sealed class WFHullTunnelTest
                 "Shrapnel hit someone inside a sealed hull.");
             Assert.That(Cut(spacer), Is.GreaterThan(0f),
                 "Shrapnel no longer reaches someone in the open.");
+            server.CfgMan.SetCVar(Robust.Shared.CVars.TargetMinimumTickrate, 60);
         });
 
         await pair.CleanReturnAsync();

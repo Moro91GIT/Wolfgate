@@ -237,7 +237,7 @@ public sealed partial class WFCrewFriendlyFireSystem : EntitySystem
     /// <summary>Whether this crew's ship rounds pass the structures of another ship.</summary>
     private bool PassesHull(EntityUid shooter, WFCrewComponent crew, EntityUid ship, EntityUid grid)
     {
-        if (_objectives.IsAttackTarget(ship, crew.Group, grid) || _alerts.IsHostileShip(ship, crew.Group, grid)
+        if (HasComp<WFCrewSeizedHullComponent>(grid) || _objectives.IsAttackTarget(ship, crew.Group, grid) || _alerts.IsHostileShip(ship, crew.Group, grid)
             || _security.IsHostileDockingTarget(ship, crew.Group, grid))
             return false;
         return _escorts.AreInFormation(ship, grid) || _security.IsAuthorized(shooter, grid)

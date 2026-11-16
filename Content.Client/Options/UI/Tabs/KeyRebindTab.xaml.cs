@@ -2,6 +2,7 @@ using System.Numerics;
 using Content.Client._WF.Options; // WOLFGATE(Options)
 using Content.Shared._WF.RMCCore.Input; // WOLFGATE(Xenonids)
 using Content.Shared._WF.LandingGuide; // WOLFGATE(LandingGuide)
+using Content.Shared._WF.AdminObserver; // WOLFGATE(AdminObserver)
 using Content.Client.Stylesheets;
 using Content.Shared.CCVar;
 using Content.Shared.Input;
@@ -277,6 +278,11 @@ namespace Content.Client.Options.UI.Tabs
             AddButton(ContentKeyFunctions.OpenTileSpawnWindow);
             AddButton(ContentKeyFunctions.OpenDecalSpawnWindow);
             AddButton(ContentKeyFunctions.OpenAdminMenu);
+            // WOLFGATE(AdminObserver) START: admin ghost, manifest and observer panel keys
+            AddButton(WFAdminObserverKeys.WFToggleAghost);
+            AddButton(WFAdminObserverKeys.WFToggleManifest);
+            AddButton(WFAdminObserverKeys.WFOpenObserverPanel);
+            // WOLFGATE END
             AddButton(EngineKeyFunctions.WindowCloseAll);
             AddButton(EngineKeyFunctions.WindowCloseRecent);
             AddButton(EngineKeyFunctions.EscapeMenu);

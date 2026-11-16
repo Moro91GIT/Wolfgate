@@ -222,7 +222,13 @@ public sealed partial class WFJudgeLineSystem : EntitySystem
     /// <summary>Cancels a caller's own call. The fee is refunded only while it is still queued.</summary>
     public bool Cancel(EntityUid caller)
     {
-        if (CallOf(caller) is not { } call)
+        return CallOf(caller) is { } call && Cancel(call);
+    }
+
+    /// <summary>Cancels one call; a queued one is refunded.</summary>
+    public bool Cancel(WFJudgeLineCall call)
+    {
+        if (call.Phase == WFJudgeLinePhase.Leaving || !_calls.Contains(call))
             return false;
 
         Close(call, Loc.GetString("wf-judgeline-status-cancelled"), refund: call.Phase == WFJudgeLinePhase.Queued);

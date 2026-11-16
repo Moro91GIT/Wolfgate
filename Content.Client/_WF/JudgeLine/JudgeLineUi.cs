@@ -10,18 +10,24 @@ namespace Content.Client._WF.JudgeLine;
 /// <summary>The Judge Line PDA app.</summary>
 public sealed partial class JudgeLineUi : UIFragment
 {
-    private ScrollContainer? _root;
+    private WFJudgeLineRoot? _root;
     private WFJudgeLinePanel? _panel;
+    private BoundUserInterface? _bound;
 
     public override Control GetUIFragmentRoot()
     {
         return _root!;
     }
 
+    /// <summary>Builds the page, or keeps the shown one: the loader calls this on every state and only attaches a new root type.</summary>
     public override void Setup(BoundUserInterface userInterface, EntityUid? fragmentOwner)
     {
+        if (_root is { Disposed: false } && _bound == userInterface)
+            return;
+
+        _bound = userInterface;
         _panel = new WFJudgeLinePanel();
-        _root = new ScrollContainer { HScrollEnabled = false, VerticalExpand = true, HorizontalExpand = true };
+        _root = new WFJudgeLineRoot();
         _root.AddChild(_panel);
         _panel.OnCall += kind => userInterface.SendMessage(new CartridgeUiMessage(new WFJudgeLineCallMessage(kind)));
         _panel.OnCancel += () => userInterface.SendMessage(new CartridgeUiMessage(new WFJudgeLineCancelMessage()));
@@ -31,6 +37,17 @@ public sealed partial class JudgeLineUi : UIFragment
     {
         if (state is WFJudgeLineUiState cast)
             _panel?.UpdateState(cast);
+    }
+}
+
+/// <summary>The app's scrolling root, its own type so the loader tells it apart from other apps.</summary>
+public sealed class WFJudgeLineRoot : ScrollContainer
+{
+    public WFJudgeLineRoot()
+    {
+        HScrollEnabled = false;
+        VerticalExpand = true;
+        HorizontalExpand = true;
     }
 }
 

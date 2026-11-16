@@ -139,6 +139,9 @@ public sealed partial class WFJudgeLineSystem
         if (call.Grid is { } grid && !TerminatingOrDeleted(grid) && Transform(grid).MapID == call.Position.MapId)
             return grid;
 
+        if (TerminatingOrDeleted(call.Caller))
+            return null;
+
         if (Transform(call.Caller).GridUid is { } standing && !IsStation(standing)
             && (Ship(call) is not { } ship || ship.Grid != standing))
             return standing;

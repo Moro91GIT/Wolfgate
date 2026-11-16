@@ -1,4 +1,5 @@
 #nullable enable
+using System.Linq;
 using System.Numerics;
 using Content.Server._WF.Encounters.Components;
 using Content.Server._WF.Encounters.Systems;
@@ -37,6 +38,14 @@ public sealed partial class WFEncounterTest
         {
             await Server.WaitPost(() =>
             {
+                var line = Server.System<WFJudgeLineSystem>();
+                foreach (var call in line.Calls.Where(c => c.Caller == SPlayer).ToList())
+                {
+                    line.Cancel(call);
+                    if (call.Encounter is { } encounter && SEntMan.EntityExists(encounter))
+                        Server.System<WFEncounterSystem>().End(encounter);
+                }
+
                 config.SetCVar(JudgeLineCVars.DispatchDelay, JudgeLineCVars.DispatchDelay.DefaultValue);
                 config.SetCVar(JudgeLineCVars.ArrivalDistance, JudgeLineCVars.ArrivalDistance.DefaultValue);
             });
@@ -92,9 +101,11 @@ public sealed partial class WFEncounterTest
             var line = Server.System<WFJudgeLineSystem>();
             var at = new Vector2(-90000, 90000);
             WFJudgeLineCall call = default!;
+            var strikes = 0;
             await Server.WaitAssertion(() =>
             {
                 Assert.That(line.Refusal(SPlayer), Is.Not.Null, "Someone with no job is no vagrant.");
+                strikes = line.Strikes(SEntMan.GetComponent<ActorComponent>(SPlayer).PlayerSession.UserId);
                 var caller = ClampDeck(at).Grid;
                 SEntMan.GetComponent<ShuttleComponent>(caller).LinearThrust[0] = 1000f;
                 Server.System<SharedTransformSystem>().SetCoordinates(SPlayer, new EntityCoordinates(caller, new Vector2(1.5f, 0.5f)));
@@ -107,7 +118,7 @@ public sealed partial class WFEncounterTest
             {
                 Assert.That(call.Phase, Is.EqualTo(WFJudgeLinePhase.Leaving), "The responder leaves.");
                 var user = SEntMan.GetComponent<ActorComponent>(SPlayer).PlayerSession.UserId;
-                Assert.That(line.Strikes(user), Is.EqualTo(1), "The hoax counts against the caller.");
+                Assert.That(line.Strikes(user), Is.EqualTo(strikes + 1), "The hoax counts against the caller.");
                 Assert.That(line.CallOf(SPlayer), Is.Null);
                 Assert.That(SEntMan.GetComponent<WFEncounterComponent>(call.Encounter!.Value).Resolution,
                     Is.EqualTo(WFEncounterResolution.Completed));

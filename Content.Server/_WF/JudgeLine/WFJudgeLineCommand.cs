@@ -32,7 +32,7 @@ public sealed partial class WFJudgeLineCommand : LocalizedEntityCommands
                 Call(shell, args);
                 break;
             case "end" when args.Length == 2 && int.TryParse(args[1], out var id):
-                if (_line.Calls.FirstOrDefault(call => call.Id == id) is not { } ending || !_line.Cancel(ending.Caller))
+                if (_line.Calls.FirstOrDefault(call => call.Id == id) is not { } ending || !_line.Cancel(ending))
                     shell.WriteError(Loc.GetString("cmd-wf_judgeline-no-call"));
                 break;
             default:

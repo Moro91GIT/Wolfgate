@@ -1,4 +1,6 @@
 using Content.Shared._WF.RMCCore.Input; // WOLFGATE(Xenonids)
+using Content.Shared._WF.PixelShift; // WOLFGATE(PixelShift)
+using Content.Shared._WF.TurnInPlace; // WOLFGATE(TurnInPlace)
 using Content.Shared.Input;
 using Robust.Shared.Input;
 
@@ -61,6 +63,12 @@ namespace Content.Client.Input
             human.AddFunction(EngineKeyFunctions.MoveLeft);
             human.AddFunction(EngineKeyFunctions.MoveRight);
             human.AddFunction(EngineKeyFunctions.Walk);
+            human.AddFunction(WFTurnInPlaceKeys.WFTurnInPlace); // WOLFGATE(TurnInPlace): hold to turn without moving
+            // WOLFGATE(PixelShift) START: hold to shift or tilt your sprite, and reset it
+            human.AddFunction(WFPixelShiftKeys.WFPixelShift);
+            human.AddFunction(WFPixelShiftKeys.WFPixelTilt);
+            human.AddFunction(WFPixelShiftKeys.WFPixelShiftReset);
+            // WOLFGATE END
             human.AddFunction(ContentKeyFunctions.ShuttleAscend); // Mono / PZN
             human.AddFunction(ContentKeyFunctions.ShuttleDescend);
             human.AddFunction(ContentKeyFunctions.SwapHands);

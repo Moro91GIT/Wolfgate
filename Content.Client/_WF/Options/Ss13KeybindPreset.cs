@@ -1,4 +1,5 @@
 using System.Linq;
+using Content.Shared._WF.TurnInPlace;
 using Content.Shared.Input;
 using Robust.Client.Input;
 using Robust.Shared.Input;
@@ -22,6 +23,8 @@ public static class Ss13KeybindPreset
         (EngineKeyFunctions.MoveRight, Key.Right, Key.Unknown),
         (EngineKeyFunctions.Walk, Key.Alt, Key.Unknown),
         (ContentKeyFunctions.ToggleStanding, Key.U, Key.Unknown),
+        // Ctrl alone is free; Ctrl combos take over from it, and text fields let it through.
+        (WFTurnInPlaceKeys.WFTurnInPlace, Key.Control, Key.Unknown),
 
         (ContentKeyFunctions.ThrowItemInHand, Key.R, Key.Unknown),
         (ContentKeyFunctions.ThrowItemInHand, Key.End, Key.Unknown),

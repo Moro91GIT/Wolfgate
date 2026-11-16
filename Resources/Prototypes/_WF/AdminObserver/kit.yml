@@ -1,0 +1,119 @@
+# What an admin observer carries when its admin has no saved layout.
+- type: startingGear
+  id: WFAdminObserverGear
+  equipment:
+    back: ClothingBackpackSatchelHolding
+    id: NFAdminPDA
+  storage:
+    back:
+    - Omnitool
+    - ToolDebug
+    - JawsOfLife
+    - WelderExperimental
+    - Multitool
+    - GasAnalyzer
+    - trayScanner
+    - ShipRepairDeviceAdmin
+    - FireExtinguisherBluespace
+    - HolofanProjector
+    - RPED
+    - AdminHypo
+    - HandheldHealthAnalyzer
+    - BluespaceBeaker
+    - SyringeBluespace
+    - UniversalIDCard
+    - AccessConfiguratorUniversal
+    - DoorRemoteAll
+    - EmagUnlimited
+    - DemagUnlimited
+    - AccessBreakerUnlimited
+    - PinpointerUniversalDebug
+    - ImplanterAdmeme
+    - RCDExperimental
+    - LightReplacer
+    - HoloprojectorField
+    - HandTeleporterAdmin
+    - WeaponTetherGunAdmin
+    - WeaponForceGunAdmin
+
+# The kit catalogue: what the Kit window offers, adminkit give hands out, and a layout keeps for an admin without
+# the Spawn flag. Everything in WFAdminObserverGear is listed.
+- type: wfAdminKitCategory
+  id: WFAdminKitEngineering
+  name: wf-observer-kit-category-engineering
+  order: 1
+  entries:
+  - ClothingBackpackSatchelHolding
+  - Omnitool
+  - ToolDebug
+  - JawsOfLife
+  - WelderExperimental
+  - Multitool
+  - GasAnalyzer
+  - trayScanner
+  - ShipRepairDeviceAdmin
+  - FireExtinguisherBluespace
+  - HolofanProjector
+  - RPED
+
+- type: wfAdminKitCategory
+  id: WFAdminKitMedical
+  name: wf-observer-kit-category-medical
+  order: 2
+  entries:
+  - AdminHypo
+  - HandheldHealthAnalyzer
+  - BluespaceBeaker
+  - SyringeBluespace
+  - WeaponStaffHealing
+
+- type: wfAdminKitCategory
+  id: WFAdminKitAccess
+  name: wf-observer-kit-category-access
+  order: 3
+  entries:
+  - NFAdminPDA
+  - UniversalIDCard
+  - AccessConfiguratorUniversal
+  - DoorRemoteAll
+  - EmagUnlimited
+  - DemagUnlimited
+  - AccessBreakerUnlimited
+  - PinpointerUniversalDebug
+  - ImplanterAdmeme
+
+- type: wfAdminKitCategory
+  id: WFAdminKitBuilding
+  name: wf-observer-kit-category-building
+  order: 4
+  entries:
+  - RCDExperimental
+  - LightReplacer
+  - HoloprojectorField
+
+- type: wfAdminKitCategory
+  id: WFAdminKitMovement
+  name: wf-observer-kit-category-movement
+  order: 5
+  entries:
+  - HandTeleporterAdmin
+  - WeaponTetherGunAdmin
+  - WeaponForceGunAdmin
+
+- type: wfAdminKitCategory
+  id: WFAdminKitWeapons
+  name: wf-observer-kit-category-weapons
+  order: 6
+  entries:
+  - WeaponPulseRifle
+  - WeaponWandDeath
+  - WeaponImprovisedPneumaticCannonAdmeme
+
+- type: wfAdminKitCategory
+  id: WFAdminKitFun
+  name: wf-observer-kit-category-fun
+  order: 7
+  entries:
+  - SoapOmega
+  - AdvMopItem
+  - SpaceCash50000

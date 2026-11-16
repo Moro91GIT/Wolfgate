@@ -15,3 +15,21 @@ public sealed class WFAdminObserverDataEvent : EntityEventArgs
 /// <summary>Client to server: send my observer document. Ignored without the Admin flag.</summary>
 [Serializable, NetSerializable]
 public sealed class WFAdminObserverRequestDataEvent : EntityEventArgs;
+
+/// <summary>Client to server: save what my observer carries as my kit layout now.</summary>
+[Serializable, NetSerializable]
+public sealed class WFAdminKitSaveRequestEvent : EntityEventArgs;
+
+/// <summary>Server to client: kit items that had nowhere to go, by entity prototype.</summary>
+[Serializable, NetSerializable]
+public sealed class WFAdminKitUnplacedEvent : EntityEventArgs
+{
+    public List<string> Prototypes = new();
+
+    /// <summary>Whether this is a new observer's whole list, replacing what the client was showing.</summary>
+    public bool Replace;
+}
+
+/// <summary>Server to client: open the Kit window.</summary>
+[Serializable, NetSerializable]
+public sealed class WFAdminKitOpenEvent : EntityEventArgs;

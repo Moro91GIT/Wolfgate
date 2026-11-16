@@ -108,8 +108,11 @@
   - type: ShowAntagIcons
   - type: Inventory
     templateId: aghost
-  - type: Loadout
-    prototypes: [ NFMobAghostGear ] # Frontier MobAghostGear<NFMobAghostGear
+  # WOLFGATE(AdminObserver) START: the kit comes from the admin's saved layout, or WFAdminObserverGear
+  # - type: Loadout
+  #   prototypes: [ NFMobAghostGear ] # Frontier MobAghostGear<NFMobAghostGear
+  - type: WFAdminObserver
+  # WOLFGATE END
   - type: BypassInteractionChecks
   - type: BankAccount # Frontier
   - type: ShowHealthBars # Monolith

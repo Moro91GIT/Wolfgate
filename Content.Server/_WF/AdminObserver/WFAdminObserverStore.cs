@@ -29,6 +29,9 @@ public sealed partial class WFAdminObserverStore : EntitySystem
     /// <summary>How long after the last change a document is written.</summary>
     public static readonly TimeSpan SaveDelay = TimeSpan.FromSeconds(2);
 
+    /// <summary>Raised when an admin's document has come into memory.</summary>
+    public event Action<ICommonSession>? Loaded;
+
     private readonly Dictionary<NetUserId, WFAdminObserverData> _data = new();
     private readonly Dictionary<NetUserId, CancellationTokenSource> _pending = new();
     private readonly HashSet<NetUserId> _loading = new();
@@ -77,7 +80,16 @@ public sealed partial class WFAdminObserverStore : EntitySystem
     /// </summary>
     public bool Change(ICommonSession session, Action<WFAdminObserverData> change)
     {
-        if (Get(session) is not { } data)
+        return IsAllowed(session) && ChangeLoaded(session.UserId, change);
+    }
+
+    /// <summary>
+    /// <see cref="Change"/> for a document that is in memory, without asking for the flag again. For what an
+    /// admin's own observer saves as they leave it, when their session may already be closing.
+    /// </summary>
+    public bool ChangeLoaded(NetUserId user, Action<WFAdminObserverData> change)
+    {
+        if (!_data.TryGetValue(user, out var data))
             return false;
 
         WFAdminObserverSerializer.TrySerialize(data, out var before);
@@ -86,12 +98,14 @@ public sealed partial class WFAdminObserverStore : EntitySystem
 
         if (!WFAdminObserverSerializer.TrySerialize(data, out _))
         {
-            _data[session.UserId] = WFAdminObserverSerializer.Deserialize(before) ?? new WFAdminObserverData();
+            _data[user] = WFAdminObserverSerializer.Deserialize(before) ?? new WFAdminObserverData();
             return false;
         }
 
-        ScheduleSave(session.UserId);
-        Send(session);
+        ScheduleSave(user);
+        if (_players.TryGetSessionById(user, out var session) && session.Status != SessionStatus.Disconnected)
+            Send(session);
+
         return true;
     }
 
@@ -144,6 +158,7 @@ public sealed partial class WFAdminObserverStore : EntitySystem
 
         _data[user] = Sanitize(data ?? new WFAdminObserverData());
         Send(session);
+        Loaded?.Invoke(session);
     }
 
     private WFAdminObserverData Sanitize(WFAdminObserverData data)
@@ -201,7 +216,9 @@ public sealed partial class WFAdminObserverStore : EntitySystem
                 _ = EnsureLoadedAsync(args.Session);
                 break;
             case SessionStatus.Disconnected:
-                _ = UnloadAsync(args.Session.UserId);
+                // A frame later, so the observer the player is leaving can still save its kit.
+                var user = args.Session.UserId;
+                Timer.Spawn(TimeSpan.Zero, () => _ = UnloadAsync(user));
                 break;
         }
     }

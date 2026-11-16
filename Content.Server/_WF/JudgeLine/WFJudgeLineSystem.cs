@@ -151,7 +151,7 @@ public sealed partial class WFJudgeLineSystem : EntitySystem
             return Loc.GetString("wf-judgeline-refuse-open");
 
         var xform = Transform(caller);
-        if (xform.MapID != _ticker.DefaultMap)
+        if (xform.MapID != (SectorOverride ?? _ticker.DefaultMap))
             return Loc.GetString("wf-judgeline-refuse-sector");
         if (xform.GridUid is { } grid && IsStation(grid))
             return Loc.GetString("wf-judgeline-refuse-station");
@@ -217,6 +217,16 @@ public sealed partial class WFJudgeLineSystem : EntitySystem
         Notify(call, Loc.GetString("wf-judgeline-status-received", ("kind", KindName(kind))));
         Dispatch();
         return call;
+    }
+
+    /// <summary>The map that counts as the Colossus sector instead of the round's default map; tests set it.</summary>
+    public MapId? SectorOverride { get; set; }
+
+    /// <summary>Clears a player's hoax strikes and cooldown.</summary>
+    public void Pardon(NetUserId user)
+    {
+        _strikes.Remove(user);
+        _cooldowns.Remove(user);
     }
 
     /// <summary>Cancels a caller's own call. The fee is refunded only while it is still queued.</summary>

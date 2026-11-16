@@ -5,9 +5,15 @@ using Content.Server._WF.Encounters.Components;
 using Content.Server._WF.Encounters.Systems;
 using Content.Server._WF.JudgeLine;
 using Content.Server._WF.NpcCrew.Systems;
+using Content.Server._NF.Bank;
+using Content.Server.Mind;
 using Content.Server.Shuttles.Components;
+using Content.Shared._NF.Bank.Components;
 using Content.Shared._WF.Encounters;
 using Content.Shared._WF.JudgeLine;
+using Content.Shared.GameTicking;
+using Content.Shared.Roles;
+using Content.Shared.Roles.Jobs;
 using Robust.Shared.Configuration;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -46,6 +52,9 @@ public sealed partial class WFEncounterTest
                         Server.System<WFEncounterSystem>().End(encounter);
                 }
 
+                line.Pardon(SEntMan.GetComponent<ActorComponent>(SPlayer).PlayerSession.UserId);
+                line.SectorOverride = null;
+                config.SetCVar(JudgeLineCVars.Responders, JudgeLineCVars.Responders.DefaultValue);
                 config.SetCVar(JudgeLineCVars.DispatchDelay, JudgeLineCVars.DispatchDelay.DefaultValue);
                 config.SetCVar(JudgeLineCVars.ArrivalDistance, JudgeLineCVars.ArrivalDistance.DefaultValue);
             });
@@ -123,6 +132,64 @@ public sealed partial class WFEncounterTest
                 Assert.That(SEntMan.GetComponent<WFEncounterComponent>(call.Encounter!.Value).Resolution,
                     Is.EqualTo(WFEncounterResolution.Completed));
                 Server.System<WFEncounterSystem>().End(call.Encounter!.Value);
+            });
+        });
+    }
+
+    /// <summary>
+    /// A vagrant's call takes the fee. Cancelled while queued, it is refunded and starts the cooldown; cancelled once a
+    /// responder is dispatched, the fee is kept.
+    /// </summary>
+    [Test]
+    public async Task JudgeLineChargesTheFeeAndRefundsOnlyAQueuedCancel()
+    {
+        await WithQuickJudges(async () =>
+        {
+            var line = Server.System<WFJudgeLineSystem>();
+            var bank = Server.System<BankSystem>();
+            var config = Server.ResolveDependency<IConfigurationManager>();
+            var fee = config.GetCVar(JudgeLineCVars.Fee);
+            EntityUid mindId = default;
+            await Server.WaitAssertion(() =>
+            {
+                line.SectorOverride = MapData.MapId;
+                var grid = ClampDeck(new Vector2(90000, -90000)).Grid;
+                Server.System<SharedTransformSystem>().SetCoordinates(SPlayer, new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+
+                var minds = Server.System<MindSystem>();
+                mindId = minds.CreateMind(ServerSession.UserId).Owner;
+                minds.TransferTo(mindId, SPlayer, ghostCheckOverride: true, createGhost: false);
+                Server.System<SharedRoleSystem>().MindAddJobRole(mindId, silent: true, jobPrototype: SharedGameTicker.FallbackOverflowJob);
+                Assert.That(line.IsVagrant(SPlayer), Is.True, "A Contractor in no company is a vagrant.");
+
+                SEntMan.EnsureComponent<BankAccountComponent>(SPlayer);
+                bank.TryGetBalance(SPlayer, out var balance);
+                if (balance < fee * 2)
+                    bank.TryBankDeposit(SPlayer, fee * 2 - balance, tax: false);
+                bank.TryGetBalance(SPlayer, out var before);
+
+                config.SetCVar(JudgeLineCVars.Responders, 0);
+                Assert.That(line.TryCall(SPlayer, WFJudgeLineKind.Stranded, out var refusal), Is.True, refusal);
+                bank.TryGetBalance(SPlayer, out var charged);
+                Assert.That(charged, Is.EqualTo(before - fee), "The call takes the fee.");
+                Assert.That(line.CallOf(SPlayer)!.Phase, Is.EqualTo(WFJudgeLinePhase.Queued), "No responder is free.");
+                Assert.That(line.Refusal(SPlayer), Is.Not.Null, "One call at a time.");
+
+                Assert.That(line.Cancel(SPlayer), Is.True);
+                bank.TryGetBalance(SPlayer, out var refunded);
+                Assert.That(refunded, Is.EqualTo(before), "A queued cancel is refunded.");
+                Assert.That(line.CallOf(SPlayer), Is.Null);
+                Assert.That(line.Refusal(SPlayer), Is.Not.Null, "Closing a call starts the cooldown.");
+
+                line.Pardon(SEntMan.GetComponent<ActorComponent>(SPlayer).PlayerSession.UserId);
+                config.SetCVar(JudgeLineCVars.Responders, 2);
+                Assert.That(line.TryCall(SPlayer, WFJudgeLineKind.Stranded, out refusal), Is.True, refusal);
+                Assert.That(line.CallOf(SPlayer)!.Phase, Is.EqualTo(WFJudgeLinePhase.Dispatched));
+                Assert.That(line.Cancel(SPlayer), Is.True);
+                bank.TryGetBalance(SPlayer, out var kept);
+                Assert.That(kept, Is.EqualTo(before - fee), "A dispatched cancel keeps the fee.");
+
+                Server.System<SharedRoleSystem>().MindRemoveRole<JobRoleComponent>(mindId);
             });
         });
     }

@@ -25,6 +25,10 @@ Everything is client-side and goes through the existing `OpenSlotStorageNetworkM
 - [`Content.Client/_WF/WornStorage/InventoryUIController.WornStorage.cs`](../../../Content.Client/_WF/WornStorage/InventoryUIController.WornStorage.cs)
 - [`Content.Client/_WF/WornStorage/KeyRebindTab.WornStorage.cs`](../../../Content.Client/_WF/WornStorage/KeyRebindTab.WornStorage.cs)
 
+### Integration tests
+
+- [`Content.IntegrationTests/Tests/_WF/WornStorage/WornStorageClickTest.cs`](../../../Content.IntegrationTests/Tests/_WF/WornStorage/WornStorageClickTest.cs)
+
 ### Localization
 
 - [`Resources/Locale/en-US/_WF/WornStorage/worn-storage.ftl`](../../../Resources/Locale/en-US/_WF/WornStorage/worn-storage.ftl)

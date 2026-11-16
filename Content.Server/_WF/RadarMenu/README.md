@@ -2,7 +2,8 @@
 
 A left click on a helm, cockpit or mass scanner radar opens a console-styled menu for the spot, contact or waypoint
 under the cursor. A click on a world still lists its signals, and radars whose clicks aim guns (gunnery, drones, the
-cockpit's aim) keep their clicks.
+cockpit's aim) keep their clicks. Only an anchored helm or mass scanner has the menu: the admin radar, an admin ghost's
+scanner and handheld scanners don't.
 
 - **A spot:** autopilot to here, save a waypoint here.
 - **A contact:** autopilot alongside (it stops 30 m clear of the hull, on our side), dock at…, hail, save a waypoint

@@ -33,8 +33,12 @@ public partial class ShuttleNavControl
     /// </summary>
     public bool WfOpenRadarMenu(Vector2 relative)
     {
-        if (WfCursorWorldPosition(relative) is not { } point
+        // Only a helm or mass scanner built into a ship or station has the menu: not the admin radar, an admin ghost's
+        // scanner or a handheld one, whose clicks are for looking around.
+        if (_wfWaypointKey == null
+            || WfCursorWorldPosition(relative) is not { } point
             || !EntManager.TryGetComponent<TransformComponent>(_consoleEntity, out var console)
+            || !console.Anchored
             || console.MapID == MapId.Nullspace)
             return false;
 

@@ -49,7 +49,6 @@
       - id: WeaponOverseerMace # Mono
       - id: PhoneInstrumentHigh # Mono
       - id: WeaponCaseShortBombCollar # Mono
-      - id: RDServerCaelestinusFlatpack # Mono
 
 - type: entity
   id: LockerNfsdSheriffFilled

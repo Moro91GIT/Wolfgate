@@ -1,0 +1,79 @@
+# The Judge Line app, installed on vagrants' PDAs at spawn: call a judge ship to an emergency.
+- type: entity
+  parent: NFBasePDACartridge
+  id: WFJudgeLineCartridge
+  name: judge line cartridge
+  description: A PDA program that calls the Caelestinus judges to an emergency, for a fee.
+  components:
+  - type: Sprite
+    sprite: Objects/Devices/cartridge.rsi
+    state: cart-sec
+  - type: Icon
+    sprite: Objects/Devices/cartridge.rsi
+    state: cart-sec
+  - type: UIFragment
+    ui: !type:JudgeLineUi
+  - type: Cartridge
+    programName: wf-judgeline-program-name
+    icon:
+      sprite: Objects/Misc/books.rsi
+      state: icon_law
+    readonly: true
+  - type: WFJudgeLineCartridge
+
+# What the judges hand a stranded crew: fuel for the common generators, repair stock and air.
+- type: entity
+  parent: CrateEngineering
+  id: WFJudgeLineReliefCrate
+  name: judge relief crate
+  description: Fuel, plating and air, courtesy of the Caelestinus judges.
+  components:
+  - type: StorageFill
+    contents:
+    - id: SheetPlasma10
+      amount: 2
+    - id: SheetUranium10
+    - id: SheetSteel10
+      amount: 2
+    - id: SheetGlass10
+    - id: PartRodMetal10
+    - id: Welder
+    - id: ToolboxMechanicalFilled
+    - id: OxygenTankFilled
+      amount: 2
+    - id: ClothingMaskBreath
+      amount: 2
+
+# The ship a vagrant's call sends out. It drops out of FTL near the caller and works the emergency under the Judge
+# Line's orders (WFJudgeLineSystem), then leaves; nothing schedules it. Pinned while it works, so neither its clock nor
+# finished orders take it away. It fights the sector's threats like the patrols, and anyone the caller's ship is
+# fighting once it is allied with it.
+- type: wfEncounter
+  id: WFEncounterJudgeResponder
+  name: wf-encounter-name-judge-responder
+  start: Manual
+  category: Patrol
+  icon: Shield
+  cost: 0
+  ships:
+  - key: judge
+    navigation: WFCrewNavigationWarship
+    vessels: [ Hornet, Lightning, Petra, WFRoswell ]
+    deckhands: 0
+    guards: 2
+    captain: false
+    roles: [ WFCrewPilot, WFCrewGunner, WFCrewParamedic ]
+    side: judges
+    faction: WFCrew
+    company: WFJudges
+    profile: WFCrewProfileJudge
+    boarding: Ignore # the caller may come aboard
+    docking: Ignore
+    distress: false
+    disengage: Deter
+    disengageRange: 2500
+    warnRange: 1500
+    attackRange: 400
+    zoneTargets: AtWar
+    knownThreatsOnly: true
+    npcTargetsOnly: true

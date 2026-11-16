@@ -1,0 +1,79 @@
+using Content.Shared._WF.JudgeLine;
+using Robust.Shared.Map;
+using Robust.Shared.Network;
+
+namespace Content.Server._WF.JudgeLine;
+
+/// <summary>The Judge Line PDA app.</summary>
+[RegisterComponent]
+public sealed partial class WFJudgeLineCartridgeComponent : Component;
+
+/// <summary>On someone with a call open: who has hurt them since, so the judges know whom to stop.</summary>
+[RegisterComponent]
+public sealed partial class WFJudgeLineCallerComponent : Component
+{
+    /// <summary>Whoever hurt the caller, and when last.</summary>
+    [ViewVariables]
+    public Dictionary<EntityUid, TimeSpan> Assailants = new();
+
+    [ViewVariables]
+    public TimeSpan? LastHurt;
+}
+
+/// <summary>One open call on the Judge Line.</summary>
+public sealed class WFJudgeLineCall
+{
+    public int Id;
+    public EntityUid Caller;
+    public NetUserId? User;
+
+    /// <summary>What the caller said was wrong.</summary>
+    public WFJudgeLineKind Chosen;
+
+    /// <summary>What the judges are dealing with: the chosen kind, or the real one they found instead.</summary>
+    public WFJudgeLineKind Kind;
+
+    public WFJudgeLinePhase Phase = WFJudgeLinePhase.Queued;
+
+    /// <summary>The caller's own ship, if they called from one.</summary>
+    public EntityUid? Grid;
+
+    /// <summary>The caller's last known position.</summary>
+    public MapCoordinates Position;
+
+    public int Fee;
+    public TimeSpan Placed;
+
+    /// <summary>When the responder drops out of FTL, while dispatched.</summary>
+    public TimeSpan DueAt;
+
+    /// <summary>Whether any emergency was real when the call was made.</summary>
+    public bool RealAtCall;
+
+    public EntityUid? Encounter;
+    public TimeSpan? Arrived;
+
+    /// <summary>When the emergency was last seen still going on.</summary>
+    public TimeSpan LastTrouble;
+
+    /// <summary>When the responder docked with the ship it was sent to.</summary>
+    public TimeSpan? Docked;
+
+    /// <summary>When the responder heads off, once the emergency is over.</summary>
+    public TimeSpan? LeaveAt;
+
+    /// <summary>Guards sent across, and the post each came from.</summary>
+    public readonly Dictionary<EntityUid, EntityCoordinates?> Posted = new();
+
+    /// <summary>The station a picked-up caller is flown to.</summary>
+    public EntityUid? Station;
+
+    /// <summary>Whether a picked-up caller has come aboard the responder.</summary>
+    public bool Aboard;
+
+    /// <summary>Whether the relief crate has been handed over.</summary>
+    public bool Relief;
+
+    /// <summary>The latest line from the responder, shown in the app.</summary>
+    public string? Status;
+}

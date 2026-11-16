@@ -35,4 +35,6 @@ wf-radar-menu-dock-none = No free dock there fits this ship.
 wf-radar-menu-dock-failed-gone = Couldn't dock: the target is gone. Autopilot off.
 wf-radar-menu-dock-failed-taken = Couldn't dock: no free dock fits any more. Autopilot off.
 wf-radar-menu-dock-failed-short = Couldn't dock: stopped too far from the dock. Autopilot off.
+wf-radar-menu-dock-failed-align = Couldn't dock: couldn't line up with the dock. Autopilot off.
+wf-radar-menu-dock-failed-cancelled = Docking stopped: someone took the controls. Autopilot off.
 wf-radar-menu-autopilot-cancelled = Autopilot off.

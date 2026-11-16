@@ -1,21 +1,53 @@
+using Content.Server._WF.NpcCrew.Systems;
+
 namespace Content.Server._WF.RadarMenu;
 
-/// <summary>On a helm whose autopilot is flying to a dock: where to dock once it arrives. See <see cref="WFAutoDockSystem"/>.</summary>
+/// <summary>On a helm flying its ship in to dock, as NPC pilots do. See <see cref="WFAutoDockSystem"/>.</summary>
 [RegisterComponent]
 public sealed partial class WFAutoDockComponent : Component
 {
     [ViewVariables]
     public EntityUid TargetGrid;
 
-    /// <summary>The dock asked for, or null for any free one that fits.</summary>
+    /// <summary>The dock the pilot picked, or null for any free one that fits.</summary>
     [ViewVariables]
-    public EntityUid? Dock;
+    public EntityUid? RequestedDock;
+
+    /// <summary>The port pair, docked pose and standoff being flown, from the NPC pilots' planner.</summary>
+    [ViewVariables]
+    public WFDockPlan Plan;
+
+    [ViewVariables]
+    public WFAutoDockPhase Phase = WFAutoDockPhase.Approach;
+
+    /// <summary>When the current phase began.</summary>
+    [ViewVariables]
+    public TimeSpan PhaseStart;
+
+    /// <summary>Failed tries so far; each goes back out to the standoff.</summary>
+    [ViewVariables]
+    public int Attempts;
+
+    /// <summary>A grid the ship touched since the last check.</summary>
+    [ViewVariables]
+    public EntityUid? Collision;
 
     /// <summary>The pilot who asked, told how it went.</summary>
     [ViewVariables]
     public EntityUid? Pilot;
 
-    /// <summary>After this a stale request no longer docks.</summary>
     [ViewVariables]
-    public TimeSpan Expires;
+    public TimeSpan NextCheck;
+}
+
+public enum WFAutoDockPhase : byte
+{
+    /// <summary>Flying to the standoff out in front of the target's port.</summary>
+    Approach,
+
+    /// <summary>Stopping at the standoff, turned to dock.</summary>
+    Settle,
+
+    /// <summary>Easing in port to port until the docks can connect.</summary>
+    Creep,
 }

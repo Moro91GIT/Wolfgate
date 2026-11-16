@@ -1,49 +1,52 @@
 using System.Numerics;
-using Content.Server._Mono.NPC.HTN.Operators;
+using Content.Server._Mono.NPC.HTN;
+using Content.Server._WF.NpcCrew.Systems;
 using Content.Server.NPC.HTN;
-using Content.Server.Shuttles;
+using Content.Server.Physics.Controllers;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._Mono.Shuttles;
+using Content.Shared._WF.NpcCrew;
 using Content.Shared._WF.RadarMenu;
 using Content.Shared.Popups;
 using Content.Shared.Shuttles.Components;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
-using Robust.Shared.Physics.Systems;
+using Robust.Shared.Physics.Events;
 using Robust.Shared.Timing;
 
 namespace Content.Server._WF.RadarMenu;
 
 /// <summary>
-/// The helm side of the radar menu's "Dock at": lists the free docks on a grid that the ship can dock with, flies the
-/// autopilot to the chosen one, and docks on arrival. If it cannot dock when it gets there, the autopilot stays off and
-/// the pilot is told why.
+/// The helm side of the radar menu's "Dock at": lists the free docks on a grid the ship can dock with, then flies the
+/// ship in and docks it the way the NPC boarding pilots do, with their planner and settings: out to a standoff in front
+/// of the port with a clear lane, settle there turned to dock, creep in port to port and dock once the ports line up,
+/// as the Dock key does. A bump or a stall goes back out and tries again; after three tries it stops and says why.
 /// </summary>
 public sealed class WFAutoDockSystem : EntitySystem
 {
     [Dependency] private DockingSystem _docking = default!;
     [Dependency] private IGameTiming _timing = default!;
     [Dependency] private IPlayerManager _players = default!;
-    [Dependency] private SharedPhysicsSystem _physics = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private SharedTransformSystem _xform = default!;
-    [Dependency] private ShuttleSystem _shuttles = default!;
+    [Dependency] private ShipSteeringSystem _steering = default!;
+    [Dependency] private WFPilotDutySystem _pilots = default!;
 
     /// <summary>How far, in metres, a grid may be for its docks to be listed or flown to.</summary>
     public const float MaxRange = 6000f;
 
-    /// <summary>
-    /// How far, in metres, the ship may have stopped from its docked place for the docking clamps to pull it in. The
-    /// helm's autopilot stops within 40 m of its target.
-    /// </summary>
-    public const float SnapRange = 50f;
-
     /// <summary>The most docks listed for one grid.</summary>
     public const int MaxOptions = 12;
 
-    private static readonly TimeSpan RequestLife = TimeSpan.FromMinutes(10);
+    /// <summary>Tries before giving up, as an NPC pilot.</summary>
+    public const int MaxAttempts = 3;
+
+    /// <summary>The NPC pilots' docking settings, flown as a veteran would.</summary>
+    private static readonly WFCrewNavigationSettings Navigation = new();
+
+    private static readonly TimeSpan CheckGap = TimeSpan.FromSeconds(0.1);
     private static readonly TimeSpan OptionsGap = TimeSpan.FromSeconds(0.5);
 
     private readonly Dictionary<EntityUid, TimeSpan> _nextOptions = new();
@@ -60,9 +63,10 @@ public sealed class WFAutoDockSystem : EntitySystem
             subs.Event<WFAutopilotCancelMessage>(OnCancel);
         });
 
-        SubscribeLocalEvent<WFAutoDockComponent, SteeringDoneEvent>(OnSteeringDone);
         // A new autopilot target from the map or a waypoint replaces the docking.
         SubscribeLocalEvent<WFAutoDockComponent, ShuttleConsoleAutopilotPositionMessage>(OnOtherAutopilot);
+        SubscribeLocalEvent<WFAutoDockComponent, PilotedShuttleRelayedEvent<StartCollideEvent>>(OnCollide);
+        SubscribeLocalEvent<WFAutoDockComponent, ComponentShutdown>(OnShutdown);
         SubscribeLocalEvent<Content.Shared.GameTicking.RoundRestartCleanupEvent>(_ => _nextOptions.Clear());
     }
 
@@ -80,7 +84,7 @@ public sealed class WFAutoDockSystem : EntitySystem
         RaiseNetworkEvent(new WFAutoDockOptionsEvent(GetNetEntity(ent), args.Grid, options), session);
     }
 
-    /// <summary>The free docks on a grid that the helm's ship can dock with now, nearest first.</summary>
+    /// <summary>The free docks on a grid that the helm's ship can dock with and reach by a clear lane, nearest first.</summary>
     public List<WFDockOption> Options(EntityUid console, EntityUid grid)
     {
         var options = new List<WFDockOption>();
@@ -94,7 +98,7 @@ public sealed class WFAutoDockSystem : EntitySystem
             if (dock.Comp.Docked)
                 continue;
             unnamed++;
-            if (ConfigAt(ship, grid, dock) == null)
+            if (!_pilots.TryPlanDock(ship, grid, Navigation.DockStandoff, out _, dock.Owner))
                 continue;
 
             var name = dock.Comp.Name is { } label
@@ -123,14 +127,11 @@ public sealed class WFAutoDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Sends the helm's autopilot to dock at a grid: at one dock, or at the nearest free one that fits. False, with the
-    /// pilot told why, when there is no such dock.
+    /// Sends the ship in to dock at a grid: at one dock, or at the nearest free one that fits. False, with the pilot
+    /// told why, when there is no such dock.
     /// </summary>
     public bool TryStart(Entity<ShuttleConsoleComponent> console, EntityUid grid, EntityUid? dock, EntityUid? pilot)
     {
-        if (!TryComp<HTNComponent>(console, out var htn))
-            return false;
-
         if (!TryGetShip(console, grid, out var ship))
         {
             Tell(console, pilot, "wf-radar-menu-dock-out-of-reach");
@@ -143,85 +144,245 @@ public sealed class WFAutoDockSystem : EntitySystem
             return false;
         }
 
-        var config = Plan(ship, grid, dock);
-        if (config == null)
+        if (!_pilots.TryPlanDock(ship, grid, Navigation.DockStandoff, out var plan, dock))
         {
             Tell(console, pilot, "wf-radar-menu-dock-none");
             return false;
         }
 
-        // Aim for the ship's docked place, turned as it will sit there.
-        var heading = config.Angle + _xform.GetWorldRotation(config.Coordinates.EntityId);
-        htn.Blackboard.SetValue(console.Comp.AutopilotTargetKey, config.Coordinates);
-        htn.Blackboard.SetValue(console.Comp.AutopilotRotationKey, heading + MathF.PI);
-
+        // The helm's own autopilot lets go; the docking flies the ship itself from here.
+        StopAutopilot(console);
         var request = EnsureComp<WFAutoDockComponent>(console);
         request.TargetGrid = grid;
-        request.Dock = dock ?? config.Docks[0].DockBUid;
+        request.RequestedDock = dock;
+        request.Plan = plan;
+        request.Attempts = 0;
         request.Pilot = pilot;
-        request.Expires = _timing.CurTime + RequestLife;
+        SetPhase(console, request, WFAutoDockPhase.Approach);
 
         Tell(console, pilot, "wf-radar-menu-dock-started", ("grid", Name(grid)));
         return true;
     }
 
-    private void OnSteeringDone(Entity<WFAutoDockComponent> ent, ref SteeringDoneEvent args)
+    public override void Update(float frameTime)
     {
-        var request = ent.Comp;
-        RemCompDeferred<WFAutoDockComponent>(ent);
-        if (_timing.CurTime > request.Expires)
-            return;
-
-        if (!TryFinish(ent, request, out var reason))
+        base.Update(frameTime);
+        var now = _timing.CurTime;
+        var query = EntityQueryEnumerator<WFAutoDockComponent>();
+        while (query.MoveNext(out var uid, out var request))
         {
-            StopAutopilot(ent);
-            Tell(ent, request.Pilot, reason);
+            if (now < request.NextCheck)
+                continue;
+            request.NextCheck = now + CheckGap;
+
+            if (Advance(uid, request) is { } reason)
+            {
+                RemCompDeferred<WFAutoDockComponent>(uid);
+                if (reason.Length > 0)
+                    Tell(uid, request.Pilot, reason);
+            }
         }
     }
 
-    /// <summary>Docks a ship that has arrived. False with the reason when it cannot.</summary>
-    public bool TryFinish(EntityUid console, WFAutoDockComponent request, out string reason)
+    /// <summary>
+    /// Moves a docking on one step, as an NPC pilot's Dock order does. Null while it carries on; once it ends, the
+    /// message for the pilot, or an empty string when docked.
+    /// </summary>
+    public string? Advance(EntityUid console, WFAutoDockComponent request)
     {
-        reason = "wf-radar-menu-dock-failed-gone";
-        if (TerminatingOrDeleted(request.TargetGrid) || !TryGetShip(console, request.TargetGrid, out var ship))
-            return false;
+        var plan = request.Plan;
+        if (TerminatingOrDeleted(request.TargetGrid) || !TryGetShip(console, request.TargetGrid, out var ship)
+            || Transform(ship).MapUid is not { } map)
+            return Fail(console, "wf-radar-menu-dock-failed-gone");
 
-        // The dock asked for if it is still free, else any other that fits.
-        var config = Plan(ship, request.TargetGrid, request.Dock) ?? Plan(ship, request.TargetGrid, null);
-        if (config == null)
+        // Something else took the controls: the steering was stopped, or someone flies the ship by hand.
+        if (!TryComp<ShipSteererComponent>(console, out var steerer)
+            || TryComp<PilotedShuttleComponent>(ship, out var piloted) && piloted.ActiveSources > 1)
+            return Fail(console, "wf-radar-menu-dock-failed-cancelled");
+
+        if (!TryFreeDock(plan.OwnDock, out var ownDock) || !TryFreeDock(plan.TargetDock, out var targetDock))
+            return Retry(console, request, ship, "wf-radar-menu-dock-failed-taken");
+
+        var collision = request.Collision;
+        request.Collision = null;
+        var elapsed = (float) (_timing.CurTime - request.PhaseStart).TotalSeconds;
+        var heading = _pilots.DockHeading(plan, request.TargetGrid);
+        var shipPosition = _xform.GetWorldPosition(ship);
+        var standoff = _xform.ToMapCoordinates(plan.Standoff).Position;
+
+        switch (request.Phase)
         {
-            reason = "wf-radar-menu-dock-failed-taken";
-            return false;
+            case WFAutoDockPhase.Approach:
+            {
+                // Far out it cruises with the helm's north forward; near the standoff it turns to dock.
+                var cruising = (standoff - shipPosition).Length() > MathF.Max(Navigation.DockAlignmentRange, Navigation.DockStandoff * 2f);
+                steerer.Coordinates = _pilots.InDockCorridor(ship, request.TargetGrid, plan, Transform(ship).MapID,
+                    shipPosition, standoff, Navigation.DockStandoff)
+                    ? plan.Standoff
+                    : _pilots.StandoffOnMap(plan, map);
+                steerer.InRangeRotation = cruising ? null : heading;
+                steerer.AlwaysFaceTarget = true;
+                steerer.TargetRotation = cruising ? HelmOffset(console, ship) : _pilots.CreepHeadingOffset(steerer, heading, ship);
+                if ((standoff - shipPosition).Length() <= Navigation.DockStandoff)
+                    steerer.AvoidCollisions = false;
+
+                if (elapsed >= Navigation.DockApproachTimeout + (standoff - shipPosition).Length() / 5f)
+                    return Retry(console, request, ship, "wf-radar-menu-dock-failed-short");
+                if (steerer.Status == ShipSteeringStatus.InRange)
+                    SetPhase(console, request, WFAutoDockPhase.Settle);
+                return null;
+            }
+            case WFAutoDockPhase.Settle:
+            {
+                if (_pilots.Settled(ship, request.TargetGrid, Navigation))
+                    SetPhase(console, request, WFAutoDockPhase.Creep);
+                else if (elapsed >= Navigation.DockSettleTimeout)
+                    return Retry(console, request, ship, "wf-radar-menu-dock-failed-align");
+                return null;
+            }
+            case WFAutoDockPhase.Creep:
+            {
+                steerer.TargetRotation = _pilots.CreepHeadingOffset(steerer, heading, ship);
+                if (_docking.CanDock((plan.OwnDock, ownDock), (plan.TargetDock, targetDock)))
+                {
+                    _docking.Dock((plan.OwnDock, ownDock), (plan.TargetDock, targetDock));
+                    _steering.Stop(console);
+                    Tell(console, request.Pilot, "wf-radar-menu-dock-done", ("grid", Name(request.TargetGrid)));
+                    return string.Empty;
+                }
+
+                // Touching the target with the ports this close is the ports mating, not a bump.
+                var portGap = Vector2.Distance(_xform.GetWorldPosition(plan.OwnDock), _xform.GetWorldPosition(plan.TargetDock));
+                var bumped = collision is { } hit && (hit != request.TargetGrid || portGap > 2.5f);
+                if (bumped || elapsed >= Navigation.DockCreepTimeout)
+                    return Retry(console, request, ship, "wf-radar-menu-dock-failed-align");
+                return null;
+            }
         }
 
-        var docked = _xform.ToMapCoordinates(config.Coordinates);
-        if (Vector2.Distance(_xform.GetWorldPosition(ship), docked.Position) > SnapRange)
-        {
-            reason = "wf-radar-menu-dock-failed-short";
-            return false;
-        }
+        return null;
+    }
 
-        _physics.SetLinearVelocity(ship, Vector2.Zero);
-        _physics.SetAngularVelocity(ship, 0f);
-        _shuttles.FTLDock((ship, Transform(ship)), config);
-        Tell(console, request.Pilot, "wf-radar-menu-dock-done", ("grid", Name(request.TargetGrid)));
-        reason = string.Empty;
-        return true;
+    /// <summary>Points the steering at a phase, with the NPC pilots' docking settings, and starts its clock.</summary>
+    private void SetPhase(EntityUid console, WFAutoDockComponent request, WFAutoDockPhase phase)
+    {
+        request.Phase = phase;
+        request.PhaseStart = _timing.CurTime;
+        request.NextCheck = _timing.CurTime;
+        if (Transform(console).GridUid is not { } ship || Transform(ship).MapUid is not { } map)
+            return;
+
+        var plan = request.Plan;
+        var heading = _pilots.DockHeading(plan, request.TargetGrid);
+        var target = phase == WFAutoDockPhase.Creep ? plan.Final : _pilots.StandoffOnMap(plan, map);
+        if (_steering.Steer(console, target) is not { } steerer)
+            return;
+
+        steerer.Mode = ShipSteeringMode.GoToRange;
+        steerer.RangeTolerance = null;
+        steerer.AvoidProjectiles = false;
+        steerer.EvasionBuffer = Navigation.DockEvasionBuffer;
+        steerer.BaseEvasionTime = Navigation.DockEvasionLookahead;
+        steerer.RotationCompensation = 0f;
+        steerer.RotationCompensationGain = 0f;
+        steerer.InRangeRotation = heading;
+        steerer.Status = ShipSteeringStatus.Moving;
+        switch (phase)
+        {
+            case WFAutoDockPhase.Approach:
+                steerer.Range = Navigation.DockStandoffRange;
+                steerer.InRangeMaxSpeed = Navigation.DockApproachSpeed;
+                steerer.AvoidCollisions = true;
+                steerer.FinishOnCollide = true;
+                steerer.AlwaysFaceTarget = true;
+                steerer.MaxRotateRate = null;
+                break;
+            case WFAutoDockPhase.Settle:
+                steerer.Range = Navigation.DockStandoffRange;
+                steerer.InRangeMaxSpeed = Navigation.DockSettleSpeed;
+                steerer.AvoidCollisions = false;
+                steerer.FinishOnCollide = true;
+                steerer.AlwaysFaceTarget = false;
+                steerer.MaxRotateRate = Navigation.DockSettleTurnRate;
+                break;
+            case WFAutoDockPhase.Creep:
+                // On the target grid, so the docked pose moves with it; avoidance would refuse to touch it.
+                steerer.Range = Navigation.DockCreepRange;
+                steerer.InRangeMaxSpeed = Navigation.DockCreepSpeed;
+                steerer.AvoidCollisions = false;
+                steerer.FinishOnCollide = false;
+                steerer.AlwaysFaceTarget = true;
+                steerer.MaxRotateRate = null;
+                steerer.TargetRotation = _pilots.CreepHeadingOffset(steerer, heading, ship);
+                break;
+        }
+    }
+
+    /// <summary>A failed try: back out to the standoff with a fresh plan, or stop once the tries are spent.</summary>
+    private string? Retry(EntityUid console, WFAutoDockComponent request, EntityUid ship, string reason)
+    {
+        request.Attempts++;
+        if (request.Attempts >= MaxAttempts
+            || !_pilots.TryPlanDock(ship, request.TargetGrid, Navigation.DockStandoff, out var plan, request.RequestedDock)
+            && !_pilots.TryPlanDock(ship, request.TargetGrid, Navigation.DockStandoff, out plan))
+            return Fail(console, reason);
+
+        request.Plan = plan;
+        SetPhase(console, request, WFAutoDockPhase.Approach);
+        return null;
+    }
+
+    /// <summary>Ends a docking that cannot go on: the ship lets go of the controls.</summary>
+    private string Fail(EntityUid console, string reason)
+    {
+        _steering.Stop(console);
+        return reason;
+    }
+
+    /// <summary>The helm's north against the hull, for cruising nose first as a pilot sat there would.</summary>
+    private float HelmOffset(EntityUid console, EntityUid ship)
+    {
+        return (float) (_xform.GetWorldRotation(ship) - _xform.GetWorldRotation(console)).Degrees;
+    }
+
+    private bool TryFreeDock(EntityUid uid, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out DockingComponent? dock)
+    {
+        dock = null;
+        return !TerminatingOrDeleted(uid) && Transform(uid).Anchored && TryComp(uid, out dock) && dock.DockedWith == null;
+    }
+
+    private void OnCollide(Entity<WFAutoDockComponent> ent, ref PilotedShuttleRelayedEvent<StartCollideEvent> args)
+    {
+        var other = args.Args.OtherEntity;
+        if (ent.Comp.Phase != WFAutoDockPhase.Creep || !HasComp<MapGridComponent>(other))
+            return;
+
+        // A hit on anything but the target outweighs touching the target.
+        if (ent.Comp.Collision == null || ent.Comp.Collision == ent.Comp.TargetGrid)
+            ent.Comp.Collision = other;
     }
 
     private void OnOtherAutopilot(Entity<WFAutoDockComponent> ent, ref ShuttleConsoleAutopilotPositionMessage args)
     {
+        _steering.Stop(ent.Owner);
         RemCompDeferred<WFAutoDockComponent>(ent);
+    }
+
+    private void OnShutdown(Entity<WFAutoDockComponent> ent, ref ComponentShutdown args)
+    {
+        _nextOptions.Remove(ent);
     }
 
     private void OnCancel(Entity<ShuttleConsoleComponent> ent, ref WFAutopilotCancelMessage args)
     {
+        if (HasComp<WFAutoDockComponent>(ent))
+            _steering.Stop(ent.Owner);
         RemCompDeferred<WFAutoDockComponent>(ent);
         StopAutopilot(ent);
         Tell(ent, args.Actor, "wf-radar-menu-autopilot-cancelled");
     }
 
-    /// <summary>Clears the helm's autopilot target, which ends the flight on the planner's next update.</summary>
+    /// <summary>Clears the helm's autopilot target, which ends its flight on the planner's next update.</summary>
     public void StopAutopilot(EntityUid console)
     {
         if (!TryComp<HTNComponent>(console, out var htn) || !TryComp<ShuttleConsoleComponent>(console, out var helm))
@@ -229,32 +390,6 @@ public sealed class WFAutoDockSystem : EntitySystem
 
         htn.Blackboard.Remove<EntityCoordinates>(helm.AutopilotTargetKey);
         htn.Blackboard.Remove<Angle>(helm.AutopilotRotationKey);
-    }
-
-    /// <summary>The docking config for one dock of a grid, or for any of its free docks when none is named.</summary>
-    private DockingConfig? Plan(EntityUid ship, EntityUid grid, EntityUid? dock)
-    {
-        if (dock == null)
-            return _docking.GetDockingConfig(ship, grid);
-
-        if (!TryComp<DockingComponent>(dock, out var gridDock) || gridDock.Docked || Transform(dock.Value).GridUid != grid)
-            return null;
-
-        return ConfigAt(ship, grid, (dock.Value, gridDock));
-    }
-
-    /// <summary>A config docking any of the ship's free docks to this one, or null when none fits.</summary>
-    private DockingConfig? ConfigAt(EntityUid ship, EntityUid grid, Entity<DockingComponent> gridDock)
-    {
-        foreach (var own in _docking.GetDocks(ship))
-        {
-            if (own.Comp.Docked)
-                continue;
-            if (_docking.GetDockingConfig(ship, grid, own, own.Comp, gridDock, gridDock.Comp) is { } config)
-                return config;
-        }
-
-        return null;
     }
 
     /// <summary>The ship a helm flies, when it can reach the grid: same map, in range, not in FTL, and not the grid itself.</summary>

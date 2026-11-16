@@ -178,28 +178,30 @@ public partial class ShuttleNavControl
     }
 
     /// <summary>
-    /// Opens the signal list of the world under a click. False when nothing was hit, the press was a drag, this radar's
-    /// clicks aim guns, or a grid is under the click: a ship or drone over a world's circle is what was clicked.
+    /// Answers a left click: the signal list of the world under it, else the radar menu (RadarMenu). False when the
+    /// press was a drag or this radar's clicks aim guns. A ship or drone over a world's circle is what was clicked.
     /// </summary>
     private bool WfTryOpenPlanetSignals(Vector2 pixel, Vector2 relative)
     {
         var pressed = _wfPressedAt;
         _wfPressedAt = null;
-        if (OnRadarClick != null || pressed is not { } down || (down - pixel).Length() > 6f * UIScale
-            || WfGridUnderClick(relative))
+        if (OnRadarClick != null || pressed is not { } down || (down - pixel).Length() > 6f * UIScale)
             return false;
 
-        foreach (var (body, centre, radius, label) in _wfPlanetHits)
+        if (!WfGridUnderClick(relative))
         {
-            if ((pixel - centre).Length() > radius && !label.Contains(pixel))
-                continue;
+            foreach (var (body, centre, radius, label) in _wfPlanetHits)
+            {
+                if ((pixel - centre).Length() > radius && !label.Contains(pixel))
+                    continue;
 
-            _wfSignalsWindow ??= new WFPlanetSignalsWindow();
-            _wfSignalsWindow.Show(body, WfOurGrid());
-            return true;
+                _wfSignalsWindow ??= new WFPlanetSignalsWindow();
+                _wfSignalsWindow.Show(body, WfOurGrid());
+                return true;
+            }
         }
 
-        return false;
+        return WfOpenRadarMenu(relative);
     }
 
     /// <summary>

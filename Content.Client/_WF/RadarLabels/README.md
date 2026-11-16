@@ -12,7 +12,9 @@ ships within 750 m, the hovered contact, waypoints, beacons, your expedition, ci
 admin crew tags. Every other contact is a blip, with a `×N` count where several crowd together. Round the cursor a faint lens
 (32 px) shows every tag, stacking as above, and the tag nearest the cursor alone shows its detail lines (company,
 coordinates, track ID, a world's signals). Tags fade in and out over 0.15 s. Only contacts on the scope get a tag:
-one pinned to the rim keeps its blip. Player radars mark no docks; only the admin radar has a docks toggle. The
+one pinned to the rim keeps its blip. Every radar marks docks, pink squares that keep a minimum size on screen so
+they read from afar; dock names show only once the radar is zoomed in (`ShuttleNavControl.Docks.cs`). Only the
+admin radar has a docks toggle. The
 `wf.radar_smart_tags` option (Options, Wolfgate) turns all of this off, so every tag sits whole by its contact as
 before.
 
@@ -47,10 +49,10 @@ Entry points: `WFRadarTagLayout` (the grouping, pure geometry) and `ShuttleNavCo
 
 ## Non-modular edits
 
-- [`Content.Client/_Mono/FireControl/UI/FireControlWindow.xaml`](../../_Mono/FireControl/UI/FireControlWindow.xaml): radars mark no docks, so there is nothing to toggle
-- [`Content.Client/_Mono/FireControl/UI/FireControlWindow.xaml.cs`](../../_Mono/FireControl/UI/FireControlWindow.xaml.cs): radars mark no docks, so there is nothing to toggle
-- [`Content.Client/Shuttles/UI/NavScreen.xaml`](../../Shuttles/UI/NavScreen.xaml): radars mark no docks, so there is nothing to toggle
-- [`Content.Client/Shuttles/UI/NavScreen.xaml.cs`](../../Shuttles/UI/NavScreen.xaml.cs): radars mark no docks, so there is nothing to toggle
+- [`Content.Client/_Mono/FireControl/UI/FireControlWindow.xaml`](../../_Mono/FireControl/UI/FireControlWindow.xaml): radars always mark docks, so there is nothing to toggle
+- [`Content.Client/_Mono/FireControl/UI/FireControlWindow.xaml.cs`](../../_Mono/FireControl/UI/FireControlWindow.xaml.cs): radars always mark docks, so there is nothing to toggle
+- [`Content.Client/Shuttles/UI/NavScreen.xaml`](../../Shuttles/UI/NavScreen.xaml): radars always mark docks, so there is nothing to toggle
+- [`Content.Client/Shuttles/UI/NavScreen.xaml.cs`](../../Shuttles/UI/NavScreen.xaml.cs): radars always mark docks, so there is nothing to toggle
 - [`Content.Client/Shuttles/UI/ShuttleNavControl.FarHorizons.xaml.cs`](../../Shuttles/UI/ShuttleNavControl.FarHorizons.xaml.cs)
   - the old test called beacons on the scope's diagonals outside it
   - a beacon pinned to the rim keeps its blip, still clickable for a world, but no tag

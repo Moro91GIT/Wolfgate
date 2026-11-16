@@ -1341,13 +1341,16 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                 //var color = Color.ToSrgb(Color.Magenta); // Frontier
                 var color = Color.ToSrgb(state.HighlightedRadarColor); // Frontier
 
-                var verts = new[]
-                {
-                    Vector2.Transform(position + new Vector2(-DockScale, -DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(DockScale, -DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(DockScale, DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(-DockScale, DockScale), gridToView),
-                };
+                // WOLFGATE(Shuttles) START: a dock marker keeps a minimum size on screen, so docks read from afar
+                // var verts = new[]
+                // {
+                //     Vector2.Transform(position + new Vector2(-DockScale, -DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(DockScale, -DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(DockScale, DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(-DockScale, DockScale), gridToView),
+                // };
+                var verts = WfDockVertices(position, positionInView, gridToView, DockScale);
+                // WOLFGATE END
 
                 handle.DrawPrimitives(DrawPrimitiveTopology.TriangleFan, verts, color.WithAlpha(0.8f));
                 handle.DrawPrimitives(DrawPrimitiveTopology.LineStrip, verts, color);
@@ -1359,6 +1362,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
             {
                 if (state.LabelName == null || labeled.Contains(state.LabelName))
                     continue;
+                if (!WfDockNamesShown(gridToView, DockScale)) // WOLFGATE(Shuttles): dock names only up close, so they don't crowd the contacts
+                    break;
 
                 var position = state.Coordinates.Position;
                 var uiPosition = Vector2.Transform(position, gridToView);

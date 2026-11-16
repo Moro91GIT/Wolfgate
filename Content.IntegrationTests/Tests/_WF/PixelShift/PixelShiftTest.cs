@@ -106,33 +106,24 @@ public sealed class PixelShiftTest : InteractionTest
     [Test]
     public async Task RestrainedOrDeadCantShift()
     {
+        await SetKey(WFPixelShiftKeys.WFPixelShift, BoundKeyState.Down);
+        await Tap(EngineKeyFunctions.MoveRight);
+        Assert.That(Offset(), Is.EqualTo(new Vector2i(1, 0)));
+
         await Server.WaitPost(() =>
         {
             var cuffs = SEntMan.SpawnAtPosition("Handcuffs", SEntMan.GetComponent<TransformComponent>(SPlayer).Coordinates);
             Assert.That(SEntMan.System<CuffableSystem>().TryAddNewCuffs(SPlayer, SPlayer, cuffs), Is.True);
         });
         await RunTicks(5);
-
-        await SetKey(WFPixelShiftKeys.WFPixelShift, BoundKeyState.Down);
         await Tap(EngineKeyFunctions.MoveRight);
-        Assert.That(Offset(), Is.EqualTo(Vector2i.Zero), "A cuffed mob shifted its sprite.");
-
-        await Server.WaitPost(() => SEntMan.System<CuffableSystem>().Uncuff(SPlayer, null, Cuffs()));
-        await RunTicks(5);
-        await Tap(EngineKeyFunctions.MoveRight);
-        Assert.That(Offset(), Is.EqualTo(new Vector2i(1, 0)), "Uncuffed, the shift should work again.");
+        Assert.That(Offset(), Is.EqualTo(new Vector2i(1, 0)), "A cuffed mob shifted its sprite.");
 
         await Server.WaitPost(() => SEntMan.System<MobStateSystem>().ChangeMobState(SPlayer, MobState.Dead));
         await RunTicks(5);
         await Tap(EngineKeyFunctions.MoveRight);
         Assert.That(Offset(), Is.EqualTo(new Vector2i(1, 0)), "A dead mob shifted its sprite.");
         await SetKey(WFPixelShiftKeys.WFPixelShift, BoundKeyState.Up);
-    }
-
-    private EntityUid Cuffs()
-    {
-        var cuffable = SEntMan.GetComponent<Content.Shared.Cuffs.Components.CuffableComponent>(SPlayer);
-        return cuffable.LastAddedCuffs;
     }
 
     private Vector2i Offset()

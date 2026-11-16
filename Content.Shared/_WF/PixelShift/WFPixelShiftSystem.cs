@@ -57,16 +57,31 @@ public sealed class WFPixelShiftSystem : EntitySystem
     {
         if (!held)
         {
-            // Releasing the other key leaves this one held.
-            if (TryComp<WFPixelShiftHeldComponent>(uid, out var current) && current.Mode == mode)
+            if (!TryComp<WFPixelShiftHeldComponent>(uid, out var current))
+                return;
+
+            SetKey(current, mode, false);
+            if (!current.Shift && !current.Tilt)
                 RemComp<WFPixelShiftHeldComponent>(uid);
+            else
+                current.Mode = current.Shift ? WFPixelShiftMode.Shift : WFPixelShiftMode.Tilt; // The key still down.
             return;
         }
 
         var wasHeld = HasComp<WFPixelShiftHeldComponent>(uid);
-        EnsureComp<WFPixelShiftHeldComponent>(uid).Mode = mode;
+        var keys = EnsureComp<WFPixelShiftHeldComponent>(uid);
+        SetKey(keys, mode, true);
+        keys.Mode = mode;
         if (!wasHeld)
             _mover.WfReleaseDirections(uid, subTick);
+    }
+
+    private static void SetKey(WFPixelShiftHeldComponent keys, WFPixelShiftMode mode, bool down)
+    {
+        if (mode == WFPixelShiftMode.Shift)
+            keys.Shift = down;
+        else
+            keys.Tilt = down;
     }
 
     /// <summary>

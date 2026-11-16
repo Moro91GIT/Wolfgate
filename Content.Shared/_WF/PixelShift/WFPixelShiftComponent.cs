@@ -3,7 +3,7 @@ using Robust.Shared.GameStates;
 
 namespace Content.Shared._WF.PixelShift;
 
-/// <summary>A mob's own sprite shift and tilt, seen by everyone. Kept until reset; walking doesn't clear it.</summary>
+/// <summary>A mob's own sprite shift and tilt, seen by everyone. Kept until reset or a step.</summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class WFPixelShiftComponent : Component
 {
@@ -32,10 +32,17 @@ public sealed partial class WFPixelShiftComponent : Component
     public Angle WrittenRotation;
 }
 
-/// <summary>Which pixel shift key an entity's player is holding. Not networked, like the turn key.</summary>
+/// <summary>Which pixel shift keys an entity's player is holding. Not networked, like the turn key.</summary>
 [RegisterComponent]
 public sealed partial class WFPixelShiftHeldComponent : Component
 {
+    [ViewVariables]
+    public bool Shift;
+
+    [ViewVariables]
+    public bool Tilt;
+
+    /// <summary>What movement keys do: the latest of the held keys.</summary>
     [ViewVariables]
     public WFPixelShiftMode Mode;
 }

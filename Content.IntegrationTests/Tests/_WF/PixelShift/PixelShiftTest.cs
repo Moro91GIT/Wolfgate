@@ -65,6 +65,21 @@ public sealed class PixelShiftTest : InteractionTest
     }
 
     [Test]
+    public async Task ReleasingOneKeyKeepsTheOther()
+    {
+        await SetKey(WFPixelShiftKeys.WFPixelShift, BoundKeyState.Down);
+        await SetKey(WFPixelShiftKeys.WFPixelTilt, BoundKeyState.Down);
+        await Tap(EngineKeyFunctions.MoveLeft);
+        await SetKey(WFPixelShiftKeys.WFPixelTilt, BoundKeyState.Up);
+        await Tap(EngineKeyFunctions.MoveRight);
+        await SetKey(WFPixelShiftKeys.WFPixelShift, BoundKeyState.Up);
+
+        var shift = SEntMan.GetComponent<WFPixelShiftComponent>(SPlayer);
+        Assert.That(shift.Tilt, Is.EqualTo(WFPixelShiftSystem.TiltStep), "The later key didn't take over.");
+        Assert.That(shift.Offset, Is.EqualTo(new Vector2i(1, 0)), "Releasing tilt dropped the held shift key.");
+    }
+
+    [Test]
     public async Task WalkingClearsTheShift()
     {
         var start = Transform.GetWorldPosition(SPlayer);

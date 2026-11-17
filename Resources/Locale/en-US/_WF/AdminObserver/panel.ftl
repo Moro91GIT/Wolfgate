@@ -1,0 +1,24 @@
+# The observer panel.
+cmd-observerpanel-desc = Opens the admin observer panel.
+wf-admin-tab-observer-panel = Observer Panel
+wf-observer-action-panel-desc = Avatars, staff marker, kit and tools.
+wf-observer-action-panel-name = Observer panel
+wf-observer-panel-hide-button = Hide
+wf-observer-panel-manifest-button = Manifest
+wf-observer-panel-marker-colour = Colour
+wf-observer-panel-marker-visuals = Visuals
+wf-observer-panel-marker-wording = Shown as
+wf-observer-panel-section-entry = Arrival
+wf-observer-panel-section-marker = Staff marker
+wf-observer-panel-section-presets = Avatars
+wf-observer-panel-state-hidden = Hidden from players
+wf-observer-panel-state-manifested = Visible to players as {$name}
+wf-observer-panel-tab-kit = Kit
+wf-observer-panel-tab-people = People
+wf-observer-panel-tab-presence = Presence
+wf-observer-panel-tab-tools = Tools
+wf-observer-panel-title = Admin Observer
+wf-observer-panel-tool-orbit = Orbit menu
+wf-observer-panel-tool-radar = Mass scanner
+ent-WFActionObserverPanel = { wf-observer-action-panel-name }
+    .desc = { wf-observer-action-panel-desc }

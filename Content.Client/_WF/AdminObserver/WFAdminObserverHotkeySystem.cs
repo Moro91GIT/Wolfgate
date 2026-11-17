@@ -17,6 +17,7 @@ public sealed partial class WFAdminObserverHotkeySystem : EntitySystem
     [Dependency] private SharedPopupSystem _popup = default!;
 
     [Dependency] private WFManifestClientSystem _manifest = default!;
+    [Dependency] private WFObserverPanelClientSystem _panel = default!;
 
     private const string AghostCommand = "aghost";
     private const string ManifestCommand = "manifest";
@@ -30,6 +31,8 @@ public sealed partial class WFAdminObserverHotkeySystem : EntitySystem
             .Bind(WFAdminObserverKeys.WFToggleAghost, InputCmdHandler.FromDelegate(_ => ToggleAghost(), handle: true,
                 outsidePrediction: true))
             .Bind(WFAdminObserverKeys.WFToggleManifest, InputCmdHandler.FromDelegate(_ => ToggleManifest(), handle: true,
+                outsidePrediction: true))
+            .Bind(WFAdminObserverKeys.WFOpenObserverPanel, InputCmdHandler.FromDelegate(_ => _panel.Toggle(), handle: true,
                 outsidePrediction: true))
             .Register<WFAdminObserverHotkeySystem>();
     }

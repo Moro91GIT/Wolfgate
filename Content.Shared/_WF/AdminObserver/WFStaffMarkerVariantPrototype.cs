@@ -42,6 +42,10 @@ public sealed partial class WFStaffMarkerVariantPrototype : IPrototype
     [DataField]
     public bool Default;
 
+    /// <summary>The look's name in the admin's list. A look with a sprite is shown as its picture and needs none.</summary>
+    [DataField]
+    public LocId? Name;
+
     /// <summary>The look's place in the admin's list.</summary>
     [DataField]
     public int Order;

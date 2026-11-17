@@ -45,6 +45,7 @@ public sealed partial class WFManifestSystem : EntitySystem
     private void OnMapInit(Entity<WFAdminObserverComponent> ent, ref MapInitEvent args)
     {
         _actions.AddAction(ent, ref ent.Comp.ManifestActionEntity, ent.Comp.ManifestAction);
+        _actions.AddAction(ent, ref ent.Comp.PanelActionEntity, ent.Comp.PanelAction);
     }
 
     private void OnToggle(Entity<WFAdminObserverComponent> ent, ref WFToggleManifestEvent args)

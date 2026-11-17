@@ -101,13 +101,31 @@ The body must never count as a person:
 
 A new admin's document starts with two presets: Ghost, and My character (their selected character).
 
-Not in this module yet: the observer panel, which will hold the preset editor and the Dress and Save buttons;
-what the observer holds is not drawn on an avatar; MODsuits on avatars.
+## Observer panel
+
+`observerpanel`, the Observer panel action on the observer, the panel key (unbound by default) and a button on
+the Wolfgate admin tab open one window with four tabs:
+
+- Presence: the manifest toggle; the avatar presets, with New, Edit, Make default and Delete; the editor of the
+  selected preset (kind, the name and description players see, the prototype, character or outfit, Dress avatar
+  and Save outfit, how it arrives); and the staff marker (wording, each visual and its look, colour).
+- Kit: the Kit window's contents.
+- Tools: the mass scanner, the orbit menu and the observer's other built-in consoles.
+- People: Spawn as Outfit at the admin's position, and the ERT builder.
+
+Every choice is sent as it is made and `WFObserverPanelSystem` writes it to the saved document at once; there is
+no Save button. A marker change shows at once on an admin who is marked. A preset is known by the name players
+will see where it has one and that name is free; a new one is numbered until then. Ring and glyph looks are
+picked by their pictures, shield and aura looks by name. Only a holder of the `Host` flag gets the colour field.
+
+Not in this module: Offer to Ghosts and Second Chance stay right-click verbs, since each acts on a body; what the
+observer holds is not drawn on an avatar; MODsuits on avatars.
 
 Entry points: `WFAdminObserverKeys` (the key functions), `WFAdminObserverHotkeySystem` (client),
 `WFManifestSystem` (`TryManifest`, `TryUnmanifest`), `WFStaffMarkerSystem` (`Mark`), `ManifestCommand`,
 `WFStaffMarkerVisualsSystem` and `WFAvatarVisualsSystem` (client), `WFAvatarBodySystem` (`Ensure`, `OpenDresser`,
-`SaveOutfit`),
+`SaveOutfit`), `WFObserverPanelSystem` (`SetMarker`, `SavePreset`, `DeletePreset`, `SetDefault`, `OpenTool`),
+`WFObserverPanelWindow` and `WFObserverPresenceTab` (client),
 `WFAdminObserverStore` (`Get`, `Change`), `WFAdminObserverSerializer` (storage format and clean-up),
 `WFAdminObserverKitSystem` (`Snapshot`, `Restore`, `Give`, `PutAway`), `WFAdminKitCatalogueSystem`, `AdminKitCommand`
 and `WFAdminKitControl` (client).
@@ -121,12 +139,14 @@ and `WFAdminKitControl` (client).
 
 - [`Content.Server/_WF/AdminObserver/Commands/AdminKitCommand.cs`](Commands/AdminKitCommand.cs)
 - [`Content.Server/_WF/AdminObserver/Commands/ManifestCommands.cs`](Commands/ManifestCommands.cs)
+- [`Content.Server/_WF/AdminObserver/Commands/ObserverPanelCommand.cs`](Commands/ObserverPanelCommand.cs)
 - [`Content.Server/_WF/AdminObserver/ServerDbManager.AdminObserver.cs`](ServerDbManager.AdminObserver.cs)
 - [`Content.Server/_WF/AdminObserver/WFAdminObserverKitSystem.cs`](WFAdminObserverKitSystem.cs)
 - [`Content.Server/_WF/AdminObserver/WFAdminObserverSerializer.cs`](WFAdminObserverSerializer.cs)
 - [`Content.Server/_WF/AdminObserver/WFAdminObserverStore.cs`](WFAdminObserverStore.cs)
 - [`Content.Server/_WF/AdminObserver/WFAvatarBodySystem.cs`](WFAvatarBodySystem.cs)
 - [`Content.Server/_WF/AdminObserver/WFManifestSystem.cs`](WFManifestSystem.cs)
+- [`Content.Server/_WF/AdminObserver/WFObserverPanelSystem.cs`](WFObserverPanelSystem.cs)
 - [`Content.Server/_WF/AdminObserver/WFStaffMarkerSystem.cs`](WFStaffMarkerSystem.cs)
 
 ### Shared
@@ -139,6 +159,7 @@ and `WFAdminKitControl` (client).
 - [`Content.Shared/_WF/AdminObserver/WFAdminObserverKeys.cs`](../../../Content.Shared/_WF/AdminObserver/WFAdminObserverKeys.cs)
 - [`Content.Shared/_WF/AdminObserver/WFAvatarBodyComponent.cs`](../../../Content.Shared/_WF/AdminObserver/WFAvatarBodyComponent.cs)
 - [`Content.Shared/_WF/AdminObserver/WFManifestedComponent.cs`](../../../Content.Shared/_WF/AdminObserver/WFManifestedComponent.cs)
+- [`Content.Shared/_WF/AdminObserver/WFObserverPanelEvents.cs`](../../../Content.Shared/_WF/AdminObserver/WFObserverPanelEvents.cs)
 - [`Content.Shared/_WF/AdminObserver/WFStaffMarkerComponent.cs`](../../../Content.Shared/_WF/AdminObserver/WFStaffMarkerComponent.cs)
 - [`Content.Shared/_WF/AdminObserver/WFStaffMarkerVariantPrototype.cs`](../../../Content.Shared/_WF/AdminObserver/WFStaffMarkerVariantPrototype.cs)
 
@@ -152,12 +173,15 @@ and `WFAdminKitControl` (client).
 - [`Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFAdminKitWindow.xaml.cs)
 - [`Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml`](../../../Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml)
 - [`Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFAvatarPickerWindow.xaml.cs)
+- [`Content.Client/_WF/AdminObserver/UI/WFObserverPanelWindow.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFObserverPanelWindow.cs)
+- [`Content.Client/_WF/AdminObserver/UI/WFObserverPresenceTab.cs`](../../../Content.Client/_WF/AdminObserver/UI/WFObserverPresenceTab.cs)
 - [`Content.Client/_WF/AdminObserver/WFAdminKitClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminKitClientSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFAdminObserverClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminObserverClientSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFAdminObserverHotkeySystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAdminObserverHotkeySystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFAvatarVisualsComponent.cs`](../../../Content.Client/_WF/AdminObserver/WFAvatarVisualsComponent.cs)
 - [`Content.Client/_WF/AdminObserver/WFAvatarVisualsSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFAvatarVisualsSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFManifestClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFManifestClientSystem.cs)
+- [`Content.Client/_WF/AdminObserver/WFObserverPanelClientSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFObserverPanelClientSystem.cs)
 - [`Content.Client/_WF/AdminObserver/WFStaffMarkerOverlay.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerOverlay.cs)
 - [`Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsComponent.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsComponent.cs)
 - [`Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsSystem.cs`](../../../Content.Client/_WF/AdminObserver/WFStaffMarkerVisualsSystem.cs)
@@ -176,6 +200,7 @@ and `WFAdminKitControl` (client).
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestPermissionTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestPermissionTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestSpeechTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestSpeechTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestVisibilityTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ManifestVisibilityTest.cs)
+- [`Content.IntegrationTests/Tests/_WF/AdminObserver/ObserverPanelRequestsTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/ObserverPanelRequestsTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerFloorTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerFloorTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerVisualsTest.cs`](../../../Content.IntegrationTests/Tests/_WF/AdminObserver/StaffMarkerVisualsTest.cs)
 
@@ -196,6 +221,7 @@ and `WFAdminKitControl` (client).
 - [`Resources/Locale/en-US/_WF/AdminObserver/kit.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/kit.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/marker.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/marker.ftl)
+- [`Resources/Locale/en-US/_WF/AdminObserver/panel.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/panel.ftl)
 
 ### Textures
 
@@ -206,6 +232,7 @@ and `WFAdminKitControl` (client).
 - [`Content.Client/Chat/Managers/ChatManager.cs`](../../../Content.Client/Chat/Managers/ChatManager.cs): a manifested admin observer's say is in character, so its dead chat goes by dsay
 - [`Content.Client/Input/ContentContexts.cs`](../../../Content.Client/Input/ContentContexts.cs)
   - the manifest key works in the admin observer
+  - the observer panel key works in the admin observer
   - the admin ghost key works from any body
 - [`Content.Client/Options/UI/Tabs/KeyRebindTab.xaml.cs`](../../../Content.Client/Options/UI/Tabs/KeyRebindTab.xaml.cs): admin ghost, manifest and observer panel keys
 - [`Content.Client/UserInterface/Systems/Chat/ChatUIController.cs`](../../../Content.Client/UserInterface/Systems/Chat/ChatUIController.cs)

@@ -170,6 +170,7 @@
 # Shields.
 - type: wfStaffMarkerVariant
   id: WFStaffShieldBubble
+  name: wf-staff-marker-variant-shield-bubble
   visual: Shield
   default: true
   order: 0
@@ -180,6 +181,7 @@
 
 - type: wfStaffMarkerVariant
   id: WFStaffShieldSkin
+  name: wf-staff-marker-variant-shield-skin
   visual: Shield
   kind: Shader
   order: 1
@@ -188,6 +190,7 @@
 # Auras.
 - type: wfStaffMarkerVariant
   id: WFStaffAuraLight
+  name: wf-staff-marker-variant-aura-light
   visual: Aura
   kind: Light
   default: true
@@ -195,6 +198,7 @@
 
 - type: wfStaffMarkerVariant
   id: WFStaffAuraOutline
+  name: wf-staff-marker-variant-aura-outline
   visual: Aura
   kind: Shader
   order: 1

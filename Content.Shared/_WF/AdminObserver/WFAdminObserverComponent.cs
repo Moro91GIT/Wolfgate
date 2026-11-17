@@ -34,6 +34,13 @@ public sealed partial class WFAdminObserverComponent : Component
     [ViewVariables]
     public EntityUid? ManifestActionEntity;
 
+    /// <summary>The action that opens the observer panel.</summary>
+    [DataField]
+    public EntProtoId PanelAction = "WFActionObserverPanel";
+
+    [ViewVariables]
+    public EntityUid? PanelActionEntity;
+
     /// <summary>The humanoid carried for the last character avatar, kept so it can be dressed while hidden.</summary>
     [ViewVariables]
     public EntityUid? AvatarBody;

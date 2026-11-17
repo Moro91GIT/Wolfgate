@@ -59,6 +59,7 @@ public sealed partial class DefaultGameScreen : InGameScreen
     {
         var marginBottom = Chat.GetValue<float>(MarginBottomProperty);
         SetMarginTop(Alerts, marginBottom);
+        WfPlaceAlerts(); // WOLFGATE(UserInterface): move the alerts beside a chat that leaves no room under it.
     }
 
     public override ChatBox ChatBox => Chat;
@@ -69,5 +70,6 @@ public sealed partial class DefaultGameScreen : InGameScreen
         SetMarginBottom(Chat, size.X);
         SetMarginLeft(Chat, size.Y);
         SetMarginTop(Alerts, size.X);
+        WfPlaceAlerts(); // WOLFGATE(UserInterface): move the alerts beside a chat that leaves no room under it.
     }
 }

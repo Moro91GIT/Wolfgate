@@ -59,7 +59,8 @@ public sealed partial class WGTugSystem : EntitySystem
 
     private void OnTugMapInit(Entity<WGTugComponent> ent, ref MapInitEvent args)
     {
-        if (!TryComp(ent, out GridVehicleMoverComponent? mover))
+        // A tug loaded from a save already knows its bases; the mover may hold a towing penalty.
+        if (ent.Comp.BaseMaxSpeed > 0f || !TryComp(ent, out GridVehicleMoverComponent? mover))
             return;
 
         ent.Comp.BaseMaxSpeed = mover.MaxSpeed;

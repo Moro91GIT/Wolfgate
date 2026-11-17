@@ -52,14 +52,14 @@ public sealed partial class WGTugComponent : Component
     [ViewVariables]
     public Vector2 LastFreePosition;
 
-    /// <summary>The mover's tuning before towing penalties, read at map init.</summary>
-    [ViewVariables]
+    /// <summary>The mover's tuning before towing penalties, read once at map init and saved, since the mover's own fields hold the penalised values while towing.</summary>
+    [DataField]
     public float BaseMaxSpeed;
 
-    [ViewVariables]
+    [DataField]
     public float BaseMaxReverseSpeed;
 
-    [ViewVariables]
+    [DataField]
     public float BaseAcceleration;
 }
 

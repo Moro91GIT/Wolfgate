@@ -12,6 +12,12 @@ using Content.Shared.Buckle.Components;
 using Content.Shared._WG.Vehicles.Core;
 using Content.Shared.Damage;
 using Content.Shared.Stunnable;
+using Content.Shared.Movement.Pulling.Components;
+using Content.Shared.Movement.Pulling.Systems;
+using Content.Shared.Verbs;
+using Robust.Shared.Localization;
+using Robust.Shared.Timing;
+using System.Linq;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
 using Robust.Shared.GameObjects;
@@ -375,6 +381,97 @@ public sealed class LuggageTugTest
         {
             Assert.That(Tug(pair, rig).Comp.Trolleys, Is.Empty, "The train stayed coupled to a tug that left its grid.");
             Assert.That(Trolley(pair, rig.Trolleys[0]).Comp.Tug, Is.Null);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    private static Verb? FindVerb(TestPair pair, EntityUid target, EntityUid user, string key)
+    {
+        var server = pair.Server;
+        var text = server.ResolveDependency<ILocalizationManager>().GetString(key);
+        return server.System<SharedVerbSystem>().GetLocalVerbs(target, user, typeof(AlternativeVerb), force: true).FirstOrDefault(v => v.Text == text);
+    }
+
+    private static int Ticks(TestPair pair, double seconds) => (int) Math.Ceiling(seconds * pair.Server.Timing.TickRate);
+
+    /// <summary>Strapping a crate on and off goes through the verbs and their do-afters: not from too far, and not while the train moves.</summary>
+    [Test]
+    public async Task CargoVerbsNeedReachAndAStoppedTrain()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var rig = await Build(pair);
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var trolleyUid = rig.Trolleys[0];
+        EntityUid user = default, crate = default;
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(server.System<WGTugSystem>().TryCouple(Tug(pair, rig), Trolley(pair, trolleyUid)), Is.True);
+            user = entMan.SpawnEntity("MobHuman", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1f, StartY + 1f));
+            crate = entMan.SpawnEntity("CrateGeneric", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1f, StartY + 2f));
+            entMan.RemoveComponent<Content.Server.Atmos.Components.BarotraumaComponent>(user);
+            entMan.RemoveComponent<Content.Server.Body.Components.RespiratorComponent>(user);
+        });
+        await server.WaitRunTicks(2);
+
+        // Too far away, no verb; pulling the crate next to the trolley, the verb is offered.
+        await server.WaitAssertion(() =>
+        {
+            server.System<SharedTransformSystem>().SetCoordinates(user, new EntityCoordinates(rig.Map.Grid.Owner, StartX + 4f, StartY + 1f));
+            server.System<SharedTransformSystem>().SetCoordinates(crate, new EntityCoordinates(rig.Map.Grid.Owner, StartX + 4f, StartY + 2f));
+            Assert.That(server.System<PullingSystem>().TryStartPull(user, crate), Is.True, "Test setup: the user could not pull the crate.");
+            Assert.That(FindVerb(pair, trolleyUid, user, "wg-trolley-verb-load"), Is.Null, "A crate was offered for strapping from too far away.");
+
+            server.System<SharedTransformSystem>().SetCoordinates(user, new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1f, StartY + 1f));
+            server.System<SharedTransformSystem>().SetCoordinates(crate, new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1f, StartY + 2f));
+            if (!entMan.GetComponent<PullerComponent>(user).Pulling.HasValue)
+                Assert.That(server.System<PullingSystem>().TryStartPull(user, crate), Is.True, "Test setup: the user could not pull the crate again.");
+            var load = FindVerb(pair, trolleyUid, user, "wg-trolley-verb-load");
+            Assert.That(load, Is.Not.Null, "The pulled crate was not offered for strapping.");
+            server.System<SharedVerbSystem>().ExecuteVerb(load!, user, trolleyUid, forced: true);
+        });
+
+        // The train sets off before the do-after ends: the crate stays loose.
+        await Ride(pair, rig);
+        await server.WaitPost(() => entMan.GetComponent<InputMoverComponent>(rig.Driver).HeldMoveButtons = MoveButtons.Up);
+        await server.WaitRunTicks(Ticks(pair, 2.5));
+        // Without a parking brake the tug coasts a good while before it rests.
+        await server.WaitPost(() => entMan.GetComponent<InputMoverComponent>(rig.Driver).HeldMoveButtons = MoveButtons.None);
+        await server.WaitRunTicks(Ticks(pair, 8));
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(Trolley(pair, trolleyUid).Comp.Cargo!.ContainedEntity, Is.Null, "A crate was strapped onto a moving train.");
+            var mover = entMan.GetComponent<GridVehicleMoverComponent>(rig.Tug);
+            Assert.That(mover.IsMoving || MathF.Abs(mover.CurrentSpeed) > 0.05f, Is.False, "Test setup: the tug is still rolling.");
+
+            // Stopped again: bring the crate alongside and strap it on through the do-after.
+            var trolleyPos = Local(pair, trolleyUid);
+            server.System<SharedTransformSystem>().SetCoordinates(user, new EntityCoordinates(rig.Map.Grid.Owner, trolleyPos + new Vector2(1f, 0f)));
+            server.System<SharedTransformSystem>().SetCoordinates(crate, new EntityCoordinates(rig.Map.Grid.Owner, trolleyPos + new Vector2(1f, 1f)));
+            if (!entMan.GetComponent<PullerComponent>(user).Pulling.HasValue)
+                Assert.That(server.System<PullingSystem>().TryStartPull(user, crate), Is.True, "Test setup: the user could not pull the crate again.");
+            var load = FindVerb(pair, trolleyUid, user, "wg-trolley-verb-load");
+            Assert.That(load, Is.Not.Null, "The crate was not offered for strapping once the train stopped.");
+            server.System<SharedVerbSystem>().ExecuteVerb(load!, user, trolleyUid, forced: true);
+        });
+        await server.WaitRunTicks(Ticks(pair, 2.5));
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(Trolley(pair, trolleyUid).Comp.Cargo!.ContainedEntity, Is.EqualTo(crate), "The do-after did not strap the crate on.");
+            var unload = FindVerb(pair, trolleyUid, user, "wg-trolley-verb-unload");
+            Assert.That(unload, Is.Not.Null, "No verb to take the crate off.");
+            server.System<SharedVerbSystem>().ExecuteVerb(unload!, user, trolleyUid, forced: true);
+        });
+        await server.WaitRunTicks(Ticks(pair, 2.5));
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(Trolley(pair, trolleyUid).Comp.Cargo!.ContainedEntity, Is.Null, "The do-after did not take the crate off.");
+            Assert.That(entMan.GetComponent<TransformComponent>(crate).ParentUid, Is.EqualTo(rig.Map.Grid.Owner));
         });
 
         await pair.CleanReturnAsync();

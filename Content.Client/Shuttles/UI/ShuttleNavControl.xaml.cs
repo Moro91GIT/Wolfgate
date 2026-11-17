@@ -304,6 +304,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         _radarModeButtons.AddChild(_radarAnchorButton);
         _radarModeButtons.AddChild(_radarResetButton);
         AddWfZoomToMouseButton(_radarModeButtons); // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        AddWfAllNamesButton(_radarModeButtons); // WOLFGATE(RadarLabels): every contact named toggle.
 
         parent.AddChild(_radarModeButtons);
         AddWfTerrainButton(parent); // WOLFGATE(Planets): terrain toggle overlays the radar, not the settings column.
@@ -346,7 +347,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         Rotation,
         Anchor,
         Reset,
-        WfZoomToMouse // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        WfZoomToMouse, // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        WfAllNames // WOLFGATE(RadarLabels): every contact named toggle.
     }
 
     public sealed partial class RadarModeButton : BaseButton // WOLFGATE(CombatConsole): theme the original radar mode controls.
@@ -452,6 +454,9 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                 // WOLFGATE(Shuttles) START: zoom toward the cursor toggle.
                 case RadarModeButtonIcon.WfZoomToMouse:
                     WfDrawZoomToMouse(handle, center, radius, Color.Lime.WithAlpha(0.95f));
+                    break;
+                case RadarModeButtonIcon.WfAllNames: // WOLFGATE(RadarLabels): every contact named toggle
+                    WfDrawAllNames(handle, center, radius, Color.Lime.WithAlpha(0.95f));
                     break;
                 // WOLFGATE END
                 default:
@@ -742,6 +747,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
         // Mono edited: Frontier - collect blip location data outside foreach - more changes ahead
         _tempBlipDataList.Clear();
+        WfGatherEncounterGrids(); // WOLFGATE(RadarLabels): encounter ships draw as ships
 
         _visibleGridsSet.Clear();
 
@@ -970,7 +976,10 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                     var uiX = uiXCentre * uiXOffset / uiDistance;
                     var uiY = uiYCentre * uiYOffset / uiDistance;
 
-                    var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+                    // WOLFGATE(RadarLabels) START: the old test called contacts on the scope's diagonals outside it
+                    // var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+                    var isOutsideRadarCircle = !WfOnScope(uiPosition * UIScale);
+                    // WOLFGATE END
                     if (isOutsideRadarCircle)
                     {
                         // 0.95f for offsetting the icons slightly away from edge of radar so it doesnt clip.
@@ -990,7 +999,10 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
                     var distance = Vector2.Distance(gridMapPos, mapPos.Position);
 
-                    if (!isOutsideRadarCircle || isDistantPOI || isMouseOver)
+                    // WOLFGATE(RadarLabels) START: only contacts on the scope get a tag; one pinned to the rim keeps just its blip unless hovered
+                    // if (!isOutsideRadarCircle || isDistantPOI || isMouseOver)
+                    if (!isOutsideRadarCircle || isMouseOver)
+                    // WOLFGATE END
                     {
                         // Shows decimal when distance is < 50m, otherwise pointless to show it.
                         var displayedDistance = distance < 50f ? $"{distance:0.0}" : distance < 1000 ? $"{distance:0}" : $"{distance / 1000:0.0}k";
@@ -1060,7 +1072,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                         var mainLabel = lines[0];
 
                         // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
-                        WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, isMouseOver ? 3 : isPlayerShuttle ? 2 : 1);
+                        WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, isMouseOver ? 3 : isPlayerShuttle ? 2 : 1,
+                            always: isMouseOver && WfHoverReveal || distance <= WfTagCloseRange, key: gUid.Id); // a ship this close keeps its name: it could be shooting
                         WfTagLine(handle, mainLabel, UIScale * 0.9f, displayColor);
                         if (shouldDrawDetailedIFF)
                         {
@@ -1103,7 +1116,9 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                         // WOLFGATE END
                     }
 
-                    NfAddBlipToList(_tempBlipDataList, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, labelColor, hideLabel ? default : gUid); // Frontier code
+                    // WOLFGATE(RadarLabels): a contact on the scope is drawn as what it is; at the rim, or unknown, it keeps the triangle
+                    if (isOutsideRadarCircle || !WfQueueContactIcon(gUid, uiPosition, curGridToView, labelColor, hideLabel || blipOnly))
+                        NfAddBlipToList(_tempBlipDataList, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, labelColor, hideLabel ? default : gUid); // Frontier code
                                                                                                                                                         // End Frontier: IFF drawing functions
                 }
 
@@ -1148,6 +1163,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         WfFlushGrids(handle);
         if (!renderFill)
             NfDrawBlips(handle, _tempBlipDataList);
+        WfDrawContactIcons(handle, !renderFill); // WOLFGATE(RadarLabels): contacts on the scope, by what they are
 
         // If we've set the controlling console, and it's on a different grid
         // to the shuttle itself, then draw an additional marker to help the
@@ -1325,13 +1341,17 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                 //var color = Color.ToSrgb(Color.Magenta); // Frontier
                 var color = Color.ToSrgb(state.HighlightedRadarColor); // Frontier
 
-                var verts = new[]
-                {
-                    Vector2.Transform(position + new Vector2(-DockScale, -DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(DockScale, -DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(DockScale, DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(-DockScale, DockScale), gridToView),
-                };
+                // WOLFGATE(Shuttles) START: a dock marker keeps a small minimum size on screen, and hides when zoomed far out
+                // var verts = new[]
+                // {
+                //     Vector2.Transform(position + new Vector2(-DockScale, -DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(DockScale, -DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(DockScale, DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(-DockScale, DockScale), gridToView),
+                // };
+                if (WfDockVertices(position, positionInView, gridToView, DockScale) is not { } verts)
+                    break;
+                // WOLFGATE END
 
                 handle.DrawPrimitives(DrawPrimitiveTopology.TriangleFan, verts, color.WithAlpha(0.8f));
                 handle.DrawPrimitives(DrawPrimitiveTopology.LineStrip, verts, color);
@@ -1343,6 +1363,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
             {
                 if (state.LabelName == null || labeled.Contains(state.LabelName))
                     continue;
+                if (!WfDockNamesShown(gridToView, DockScale)) // WOLFGATE(Shuttles): dock names only up close, so they don't crowd the contacts
+                    break;
 
                 var position = state.Coordinates.Position;
                 var uiPosition = Vector2.Transform(position, gridToView);

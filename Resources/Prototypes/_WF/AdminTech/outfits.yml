@@ -1,0 +1,48 @@
+# What a Bluespace or Subspace Technician spawns in, through Spawn as Outfit or as a character avatar. The Subspace
+# Technician carries the heavier tool set.
+- type: startingGear
+  id: WFAdminTechBluespace
+  equipment:
+    jumpsuit: WFAdminTechUniformBluespace
+    outerClothing: WFAdminTechJacketBluespace
+    head: WFAdminTechVisorBluespace
+    mask: WFAdminTechMaskBluespace
+    eyes: WFAdminTechContacts
+    ears: WFAdminTechHeadsetBluespace
+    gloves: WFAdminTechGauntletsBluespace
+    shoes: WFAdminTechMagbootsBluespace
+    neck: WFAdminTechShieldProjectorBluespace
+    neck2: WFAdminTechCytothecaBluespace
+    belt: WFAdminTechSatchelBluespace
+    id: WFAdminTechIdBluespace
+    pocket1: WFAdminTechPocketBluespace
+
+- type: startingGear
+  id: WFAdminTechSubspace
+  equipment:
+    jumpsuit: WFAdminTechUniformSubspace
+    outerClothing: WFAdminTechJacketSubspace
+    head: WFAdminTechVisorSubspace
+    mask: WFAdminTechMaskSubspace
+    eyes: WFAdminTechContacts
+    ears: WFAdminTechHeadsetSubspace
+    gloves: WFAdminTechGauntletsSubspace
+    shoes: WFAdminTechMagbootsSubspace
+    neck: WFAdminTechShieldProjectorSubspace
+    neck2: WFAdminTechCytothecaSubspace
+    belt: WFAdminTechSatchelSubspace
+    id: WFAdminTechIdSubspace
+    pocket1: WFAdminTechPocketSubspace
+
+# Name and description come from Fluent (ent-WFActionReturn).
+- type: entity
+  id: WFActionReturn
+  components:
+  - type: InstantAction
+    icon:
+      sprite: Mobs/Ghosts/ghost_human.rsi
+      state: animated
+    keywords: [ "admin", "return", "ghost", "observer" ]
+    priority: -4
+    checkCanInteract: false
+    event: !type:WFReturnToObserverEvent

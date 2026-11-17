@@ -1,4 +1,5 @@
-# What an admin observer carries when its admin has no saved layout.
+# What an admin observer carries when its admin has no saved layout: a satchel of holding with one pouch per kit
+# category, each holding that category's everyday tools. The pouches are the AdminTech module's subspace pouch.
 - type: startingGear
   id: WFAdminObserverGear
   equipment:
@@ -6,38 +7,98 @@
     id: NFAdminPDA
   storage:
     back:
-    - Omnitool
-    - ToolDebug
-    - JawsOfLife
-    - WelderExperimental
-    - Multitool
-    - GasAnalyzer
-    - trayScanner
-    - ShipRepairDeviceAdmin
-    - FireExtinguisherBluespace
-    - HolofanProjector
-    - RPED
-    - AdminHypo
-    - HandheldHealthAnalyzer
-    - BluespaceBeaker
-    - SyringeBluespace
-    - UniversalIDCard
-    - AccessConfiguratorUniversal
-    - DoorRemoteAll
-    - EmagUnlimited
-    - DemagUnlimited
-    - AccessBreakerUnlimited
-    - PinpointerUniversalDebug
-    - ImplanterAdmeme
-    - RCDExperimental
-    - LightReplacer
-    - HoloprojectorField
-    - HandTeleporterAdmin
-    - WeaponTetherGunAdmin
-    - WeaponForceGunAdmin
+    - WFAdminKitPouchEngineering
+    - WFAdminKitPouchMedical
+    - WFAdminKitPouchAccess
+    - WFAdminKitPouchBuilding
+    - WFAdminKitPouchMovement
+    - WFAdminKitPouchWeapons
+    - WFAdminKitPouchFun
+
+- type: entity
+  abstract: true
+  parent: WFAdminTechPouch
+  id: WFAdminKitPouchBase
+  components:
+  - type: Storage
+    maxItemSize: Huge
+    grid:
+    - 0,0,9,5
+
+- type: entity
+  parent: WFAdminKitPouchBase
+  id: WFAdminKitPouchEngineering
+  components:
+  - type: StorageFill
+    contents:
+    - id: Omnitool
+    - id: ToolDebug
+    - id: JawsOfLife
+    - id: WelderExperimental
+    - id: Multitool
+    - id: GasAnalyzer
+    - id: trayScanner
+    - id: ShipRepairDeviceAdmin
+    - id: FireExtinguisherBluespace
+    - id: HolofanProjector
+    - id: RPED
+
+- type: entity
+  parent: WFAdminKitPouchBase
+  id: WFAdminKitPouchMedical
+  components:
+  - type: StorageFill
+    contents:
+    - id: AdminHypo
+    - id: HandheldHealthAnalyzer
+    - id: BluespaceBeaker
+    - id: SyringeBluespace
+
+- type: entity
+  parent: WFAdminKitPouchBase
+  id: WFAdminKitPouchAccess
+  components:
+  - type: StorageFill
+    contents:
+    - id: UniversalIDCard
+    - id: AccessConfiguratorUniversal
+    - id: DoorRemoteAll
+    - id: EmagUnlimited
+    - id: DemagUnlimited
+    - id: AccessBreakerUnlimited
+    - id: PinpointerUniversalDebug
+    - id: ImplanterAdmeme
+
+- type: entity
+  parent: WFAdminKitPouchBase
+  id: WFAdminKitPouchBuilding
+  components:
+  - type: StorageFill
+    contents:
+    - id: RCDExperimental
+    - id: LightReplacer
+    - id: HoloprojectorField
+
+- type: entity
+  parent: WFAdminKitPouchBase
+  id: WFAdminKitPouchMovement
+  components:
+  - type: StorageFill
+    contents:
+    - id: HandTeleporterAdmin
+    - id: WeaponTetherGunAdmin
+    - id: WeaponForceGunAdmin
+
+- type: entity
+  parent: WFAdminKitPouchBase
+  id: WFAdminKitPouchWeapons
+
+- type: entity
+  parent: WFAdminKitPouchBase
+  id: WFAdminKitPouchFun
 
 # The kit catalogue: what the Kit window offers, adminkit give hands out, and a layout keeps for an admin without
-# the Spawn flag. Everything in WFAdminObserverGear is listed.
+# the Spawn flag. Everything in WFAdminObserverGear is listed, and so are the AdminTech module's tools.
 - type: wfAdminKitCategory
   id: WFAdminKitEngineering
   name: wf-observer-kit-category-engineering
@@ -55,6 +116,13 @@
   - FireExtinguisherBluespace
   - HolofanProjector
   - RPED
+  - WFAdminKitPouchEngineering
+  - WFAdminTechMultitool
+  - WFAdminTechRped
+  - WFAdminTechPouch
+  - WFAdminTechPocketBluespace
+  - WFAdminTechPocketSubspace
+  - WFAdminTechBox
 
 - type: wfAdminKitCategory
   id: WFAdminKitMedical
@@ -66,6 +134,16 @@
   - BluespaceBeaker
   - SyringeBluespace
   - WeaponStaffHealing
+  - WFAdminKitPouchMedical
+  - WFAdminTechHealthAnalyzer
+  - WFAdminTechBeakerSmall
+  - WFAdminTechBeakerStasis
+  - WFAdminTechBeakerSmallStasis
+  - WFAdminTechPatch
+  - WFAdminTechPatchInstant
+  - WFAdminTechShard
+  - WFAdminTechShardGel
+  - WFAdminTechSurgeryTray
 
 - type: wfAdminKitCategory
   id: WFAdminKitAccess
@@ -81,6 +159,11 @@
   - AccessBreakerUnlimited
   - PinpointerUniversalDebug
   - ImplanterAdmeme
+  - WFAdminKitPouchAccess
+  - WFAdminTechIdAdmin
+  - WFAdminTechIdBluespace
+  - WFAdminTechIdSubspace
+  - WFAdminTechIdCentCom
 
 - type: wfAdminKitCategory
   id: WFAdminKitBuilding
@@ -90,6 +173,14 @@
   - RCDExperimental
   - LightReplacer
   - HoloprojectorField
+  - WFAdminKitPouchBuilding
+  - WFAdminTechConstructionBagBluespace
+  - WFAdminTechConstructionBagSubspace
+  - WFAdminTechTankOxygen
+  - WFAdminTechTankNitrogen
+  - WFAdminTechTankPlasma
+  - WFAdminTechTankTritium
+  - WFAdminTechTankFrezon
 
 - type: wfAdminKitCategory
   id: WFAdminKitMovement
@@ -99,6 +190,7 @@
   - HandTeleporterAdmin
   - WeaponTetherGunAdmin
   - WeaponForceGunAdmin
+  - WFAdminKitPouchMovement
 
 - type: wfAdminKitCategory
   id: WFAdminKitWeapons
@@ -108,6 +200,8 @@
   - WeaponPulseRifle
   - WeaponWandDeath
   - WeaponImprovisedPneumaticCannonAdmeme
+  - WFAdminKitPouchWeapons
+  - WFAdminTechCarbine
 
 - type: wfAdminKitCategory
   id: WFAdminKitFun
@@ -117,3 +211,4 @@
   - SoapOmega
   - AdvMopItem
   - SpaceCash50000
+  - WFAdminKitPouchFun

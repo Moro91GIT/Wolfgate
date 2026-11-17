@@ -161,7 +161,10 @@ public sealed partial class WFAdminObserverStore : EntitySystem
         Loaded?.Invoke(session);
     }
 
-    /// <summary>A new admin's document: the plain ghost, and their selected character in what it would spawn in.</summary>
+    /// <summary>
+    /// A new admin's document: the plain ghost, their selected character in what it would spawn in, and that
+    /// character as a Bluespace and a Subspace Technician (the AdminTech module's outfits).
+    /// </summary>
     private WFAdminObserverData Stock()
     {
         var data = new WFAdminObserverData();
@@ -170,6 +173,18 @@ public sealed partial class WFAdminObserverStore : EntitySystem
         {
             Name = Loc.GetString("wf-observer-preset-stock-own"),
             Kind = WFAvatarKind.Character,
+        });
+        data.Presets.Add(new WFAvatarPreset
+        {
+            Name = Loc.GetString("wf-observer-preset-stock-bluespace"),
+            Kind = WFAvatarKind.Character,
+            Outfit = "WFAdminTechBluespace",
+        });
+        data.Presets.Add(new WFAvatarPreset
+        {
+            Name = Loc.GetString("wf-observer-preset-stock-subspace"),
+            Kind = WFAvatarKind.Character,
+            Outfit = "WFAdminTechSubspace",
         });
         return data;
     }

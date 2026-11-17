@@ -13,6 +13,7 @@ using Content.Server.Chat.Managers;
 using Content.Server.GameTicking;
 using Content.Shared._WF.Encounters;
 using Content.Shared.CartridgeLoader;
+using Content.Shared.Chat;
 using Content.Shared._WF.JudgeLine;
 using Content.Shared.Damage;
 using Content.Shared.Database;
@@ -29,6 +30,7 @@ using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
+using Robust.Shared.Utility;
 
 namespace Content.Server._WF.JudgeLine;
 
@@ -403,8 +405,11 @@ public sealed partial class WFJudgeLineSystem : EntitySystem
     private void Notify(WFJudgeLineCall call, string message)
     {
         call.Status = message;
-        if (TryComp<ActorComponent>(call.Caller, out var actor))
-            _chat.DispatchServerMessage(actor.PlayerSession, Loc.GetString("wf-judgeline-chat", ("message", message)));
+        if (!TryComp<ActorComponent>(call.Caller, out var actor))
+            return;
+
+        var wrapped = Loc.GetString("wf-judgeline-chat", ("message", FormattedMessage.EscapeText(message)));
+        _chat.ChatMessageToOne(ChatChannel.Server, message, wrapped, default, false, actor.PlayerSession.Channel);
     }
 
     public string KindName(WFJudgeLineKind kind)

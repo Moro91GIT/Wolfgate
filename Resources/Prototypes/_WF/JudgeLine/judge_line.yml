@@ -62,7 +62,8 @@
     deckhands: 0
     guards: 2
     captain: false
-    roles: [ WFCrewPilot, WFCrewGunner, WFCrewParamedic ]
+    roles: [ WFCrewPilot, WFCrewGunner, WFCrewDeckhand, WFCrewEngineer, WFCrewParamedic ] # deckhand posts become the guards
+    extra: [ WFCrewParamedic ] # no judge ship has a medbay post
     side: judges
     faction: WFCrew
     company: WFJudges

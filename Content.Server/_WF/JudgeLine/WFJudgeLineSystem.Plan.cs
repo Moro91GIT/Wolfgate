@@ -49,6 +49,7 @@ public sealed partial class WFJudgeLineSystem
     [Dependency] private NpcFactionSystem _factions = default!;
     [Dependency] private WFCrewAlertSystem _alerts = default!;
     [Dependency] private WFCrewEscortSystem _escorts = default!;
+    [Dependency] private WFCrewWorkSystem _work = default!;
     [Dependency] private WFShipAccessServerSystem _shipAccess = default!;
 
     private static readonly ProtoId<RadioChannelPrototype> Channel = "Common";
@@ -76,6 +77,9 @@ public sealed partial class WFJudgeLineSystem
 
     /// <summary>How long a stranded crew has to fix their ship with the relief crate before the responder leaves.</summary>
     private static readonly TimeSpan StrandedLimit = TimeSpan.FromMinutes(5);
+
+    /// <summary>How long the judges' engineer has to fuel a stranded ship's plant before they fill it themselves.</summary>
+    private static readonly TimeSpan RefuelGrace = TimeSpan.FromSeconds(90);
 
     /// <summary>How long a picked-up caller has to disembark at the station.</summary>
     private static readonly TimeSpan DisembarkLimit = TimeSpan.FromMinutes(3);
@@ -172,7 +176,7 @@ public sealed partial class WFJudgeLineSystem
             WFJudgeLineKind.UnderFire => target is { } grid && Attackers(grid, HitMemory).Count > 0,
             WFJudgeLineKind.Boarded => target is { } grid && Hostiles(call, grid).Count > 0,
             WFJudgeLineKind.Medical => Patients(call, target).Count > 0,
-            WFJudgeLineKind.Stranded => target is { } grid && !HasThrust(grid),
+            WFJudgeLineKind.Stranded => target is { } grid && (!HasThrust(grid) || _work.PlantDry(grid)),
             WFJudgeLineKind.Adrift => Transform(call.Caller).GridUid == null,
             WFJudgeLineKind.Assault => Assailants(call).Count > 0,
             _ => false,
@@ -306,8 +310,21 @@ public sealed partial class WFJudgeLineSystem
                     return true;
                 call.Docked ??= now;
                 if (!call.Relief)
+                {
                     HandOverRelief(call, ship, grid);
-                return now - call.Docked < StrandedLimit && !HasThrust(grid);
+                    SendEngineer(call, ship, grid);
+                }
+
+                var dry = _work.PlantDry(grid);
+                if (dry && !call.Refuelled && now - call.Docked >= RefuelGrace)
+                {
+                    call.Refuelled = true;
+                    _work.Refuel(grid);
+                    Notify(call, Loc.GetString("wf-judgeline-status-refuelled"));
+                    dry = _work.PlantDry(grid);
+                }
+
+                return now - call.Docked < StrandedLimit && (dry || !HasThrust(grid));
 
             default:
                 return Pickup(call, ship);
@@ -380,6 +397,22 @@ public sealed partial class WFJudgeLineSystem
         foreach (var member in crew)
         {
             if (member.Comp.Role != GuardRole)
+                continue;
+            if (!call.Posted.ContainsKey(member.Owner))
+                call.Posted[member.Owner] = member.Comp.Post;
+            member.Comp.Post = post;
+        }
+    }
+
+    /// <summary>Posts the responder's engineer at a stranded ship's plant, where he fuels it from the relief crate.</summary>
+    private void SendEngineer(WFJudgeLineCall call, WFEncounterShipState ship, EntityUid grid)
+    {
+        if (!_work.TryFindPost(grid, out var post))
+            return;
+
+        foreach (var member in Crew(ship))
+        {
+            if (member.Comp.Role != WFCrewRoles.Engineer)
                 continue;
             if (!call.Posted.ContainsKey(member.Owner))
                 call.Posted[member.Owner] = member.Comp.Post;
@@ -462,11 +495,21 @@ public sealed partial class WFJudgeLineSystem
                 continue;
             }
 
-            if (HasComp<NpcFactionMemberComponent>(uid) && !_factions.IsEntityFriendly(uid, call.Caller))
+            if (IsHostileTo(uid, call.Caller))
                 found.Add(uid);
         }
 
         return found;
+    }
+
+    /// <summary>Whether an NPC's factions are set against someone's: a mouse or a pet is no boarder.</summary>
+    private bool IsHostileTo(EntityUid npc, EntityUid target)
+    {
+        if (!TryComp<NpcFactionMemberComponent>(npc, out var member) || !TryComp<NpcFactionMemberComponent>(target, out var other))
+            return false;
+
+        var hostile = member.HostileFactions;
+        return hostile.Overlaps(other.Factions);
     }
 
     /// <summary>Whoever is attacking the caller in person: those who hurt them lately and hostile NPCs close by.</summary>
@@ -494,7 +537,7 @@ public sealed partial class WFJudgeLineSystem
                 continue;
             if (TryComp<WFCrewComponent>(uid, out var crew) && responder != null && crew.Group == responder.Group)
                 continue;
-            if (HasComp<NpcFactionMemberComponent>(uid) && !_factions.IsEntityFriendly(uid, call.Caller))
+            if (IsHostileTo(uid, call.Caller))
                 found.Add(uid);
         }
 

@@ -1,9 +1,11 @@
 #nullable enable
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Content.Server._WF.Encounters.Components;
 using Content.Server._WF.Encounters.Systems;
 using Content.Server._WF.JudgeLine;
+using Content.Server._WF.NpcCrew.Components;
 using Content.Server._WF.NpcCrew.Systems;
 using Content.Server._NF.Bank;
 using Content.Server.Mind;
@@ -96,6 +98,16 @@ public sealed partial class WFEncounterTest
                 Assert.That(call.Kind, Is.EqualTo(WFJudgeLineKind.UnderFire), "It deals with the real emergency.");
                 Assert.That(escorts.AreInFormation(ship!.Grid, caller), Is.True, "It sides with the caller's ship.");
                 Assert.That(alerts.IsHostileShip(ship.Grid, ship.Group, raider), Is.True, "It takes the attacker for hostile.");
+                var roles = new List<string>();
+                var crew = SEntMan.EntityQueryEnumerator<WFCrewComponent>();
+                while (crew.MoveNext(out var member))
+                {
+                    if (member.Group == ship.Group && member.Role is { } role)
+                        roles.Add(role.Id);
+                }
+
+                Assert.That(roles.Count(role => role == "WFCrewMarine"), Is.EqualTo(2), $"Two guards aboard: {string.Join(", ", roles)}.");
+                Assert.That(roles, Does.Contain("WFCrewParamedic"), "A paramedic aboard.");
                 Server.System<WFEncounterSystem>().End(call.Encounter!.Value);
             });
         });

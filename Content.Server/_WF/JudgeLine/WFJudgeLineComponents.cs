@@ -74,6 +74,9 @@ public sealed class WFJudgeLineCall
     /// <summary>Whether the relief crate has been handed over.</summary>
     public bool Relief;
 
+    /// <summary>Whether the judges have filled the stranded ship's plant themselves.</summary>
+    public bool Refuelled;
+
     /// <summary>The latest line from the responder, shown in the app.</summary>
     public string? Status;
 }

@@ -23,3 +23,4 @@ wf-observer-preset-stock-bluespace = Bluespace Technician
 wf-observer-preset-stock-ghost = Ghost
 wf-observer-preset-stock-own = My character
 wf-observer-preset-stock-subspace = Subspace Technician
+wf-observer-preset-pick-outfit-confirm = Use this outfit

@@ -129,9 +129,15 @@ public sealed partial class WFManifestSystem : EntitySystem
     /// <summary>Hides a player's admin observer from the living again.</summary>
     public bool TryUnmanifest(ICommonSession player, out string message)
     {
-        if (player.AttachedEntity is not { } uid || !HasComp<WFManifestedComponent>(uid))
+        if (player.AttachedEntity is not { } uid || !HasComp<WFAdminObserverComponent>(uid))
         {
             message = Loc.GetString("wf-observer-manifest-not-observer");
+            return false;
+        }
+
+        if (!HasComp<WFManifestedComponent>(uid))
+        {
+            message = Loc.GetString("wf-observer-manifest-not-manifested");
             return false;
         }
 

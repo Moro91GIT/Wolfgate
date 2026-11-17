@@ -7,7 +7,7 @@ using DrawDepth = Content.Shared.DrawDepth.DrawDepth;
 namespace Content.Client._WG.Tugs;
 
 /// <summary>Draws a tug over its rider when it faces up or down the screen, and under them side-on, like the ride-on ATV.</summary>
-public sealed class WFTugVisualsSystem : EntitySystem
+public sealed class WGTugVisualsSystem : EntitySystem
 {
     [Dependency] private IEyeManager _eye = default!;
     [Dependency] private SpriteSystem _sprite = default!;
@@ -18,7 +18,7 @@ public sealed class WFTugVisualsSystem : EntitySystem
         base.FrameUpdate(frameTime);
 
         var eyeRotation = _eye.CurrentEye.Rotation;
-        var query = EntityQueryEnumerator<WFTugComponent, SpriteComponent, TransformComponent>();
+        var query = EntityQueryEnumerator<WGTugComponent, SpriteComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out _, out var sprite, out var xform))
         {
             var direction = SpriteComponent.Layer.GetDirection(RsiDirectionType.Dir4, _transform.GetWorldRotation(xform) + eyeRotation);

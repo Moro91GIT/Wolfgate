@@ -1,23 +1,23 @@
 # Tugs
 
-Airport-style luggage tugs. `WFLuggageTug` is a sit-on vehicle that uses the CMU grid mover (`RMCVehicle` +
+Airport-style luggage tugs. `WGLuggageTug` is a sit-on vehicle that uses the CMU grid mover (`RMCVehicle` +
 `GridVehicleMover`) without an interior: buckling into it makes the rider the operator, and unbuckling hands it back.
-It tows up to five `WFLuggageTrolley`s, and each trolley carries one crate strapped to its bed.
+It tows up to five `WGLuggageTrolley`s, and each trolley carries one crate strapped to its bed.
 
 Players pull a trolley right behind the tug (or the last trolley) and use its "Couple to tug" alt-verb; "Uncouple"
 drops that trolley and every car behind it. To strap on a crate, pull it next to a trolley and use "Strap crate on";
 "Take crate off" sets it down again. All of these need the tug stopped. A strapped crate stays visible on the bed but
 can't be opened until it is taken off. Admins spawn both by ID.
 
-`WFTugSeatSystem` (shared) does the seat: the rider becomes the operator, and the tug never shoves its own rider off.
-`WFTugSystem` (server) does the coupling and the cargo. The tug lays a trail of its positions in its grid's
+`WGTugSeatSystem` (shared) does the seat: the rider becomes the operator, and the tug never shoves its own rider off.
+`WGTugSystem` (server) does the coupling and the cargo. The tug lays a trail of its positions in its grid's
 frame; each tick every towed trolley is placed on that trail at its distance behind the tug, facing along it, so the
 cars go where the tug went. Backing up runs the trail backwards, and past the end of the trail the cars run straight
 on. Towed trolleys are kinematic and don't collide; each one costs the tug some top speed and acceleration. A tug that
 leaves its grid (falls, jumps, drives onto another ship) leaves its train behind.
 
 The tug is tgstation's ATV and the trolley is DS13's cargo trolley (Daedalus Dock art), both four-directional. The tug is
-drawn over its rider when it faces up or down the screen, the way the ride-on ATV is (client `WFTugVisualsSystem`).
+drawn over its rider when it faces up or down the screen, the way the ride-on ATV is (client `WGTugVisualsSystem`).
 The tug's own collision sweep skips whatever is parented to it, so it never runs over its rider, and a rider on a
 driven vehicle is shoved by nothing but bullets and thrown things (`SharedBuckleSystem.Seats.cs`). Dismounting puts
 the rider on free floor beside the tug.
@@ -29,18 +29,18 @@ the rider on free floor beside the tug.
 
 ### Server
 
-- [`Content.Server/_WG/Tugs/WFTugSystem.Cargo.cs`](WFTugSystem.Cargo.cs)
-- [`Content.Server/_WG/Tugs/WFTugSystem.cs`](WFTugSystem.cs)
+- [`Content.Server/_WG/Tugs/WGTugSystem.Cargo.cs`](WGTugSystem.Cargo.cs)
+- [`Content.Server/_WG/Tugs/WGTugSystem.cs`](WGTugSystem.cs)
 
 ### Shared
 
-- [`Content.Shared/_WG/Tugs/WFTugComponent.cs`](../../../Content.Shared/_WG/Tugs/WFTugComponent.cs)
-- [`Content.Shared/_WG/Tugs/WFTugEvents.cs`](../../../Content.Shared/_WG/Tugs/WFTugEvents.cs)
-- [`Content.Shared/_WG/Tugs/WFTugSeatSystem.cs`](../../../Content.Shared/_WG/Tugs/WFTugSeatSystem.cs)
+- [`Content.Shared/_WG/Tugs/WGTugComponent.cs`](../../../Content.Shared/_WG/Tugs/WGTugComponent.cs)
+- [`Content.Shared/_WG/Tugs/WGTugEvents.cs`](../../../Content.Shared/_WG/Tugs/WGTugEvents.cs)
+- [`Content.Shared/_WG/Tugs/WGTugSeatSystem.cs`](../../../Content.Shared/_WG/Tugs/WGTugSeatSystem.cs)
 
 ### Client
 
-- [`Content.Client/_WG/Tugs/WFTugVisualsSystem.cs`](../../../Content.Client/_WG/Tugs/WFTugVisualsSystem.cs)
+- [`Content.Client/_WG/Tugs/WGTugVisualsSystem.cs`](../../../Content.Client/_WG/Tugs/WGTugVisualsSystem.cs)
 
 ### Integration tests
 

@@ -20,11 +20,11 @@ public sealed partial class SharedCMUCargoVehicleSystem : EntitySystem
         SubscribeLocalEvent<CMUCargoVehicleComponent, VehicleCanRunEvent>(OnVehicleCanRun);
         SubscribeLocalEvent<CMUCargoVehicleComponent, VehicleCollisionEvent>(OnVehicleCollision);
         SubscribeLocalEvent<CMUCargoVehicleComponent, CanDropTargetEvent>(OnCanDropTarget);
-        SubscribeLocalEvent<WFWarheadComponent, CanDragEvent>(OnWarheadCanDrag);
+        SubscribeLocalEvent<WGWarheadComponent, CanDragEvent>(OnWarheadCanDrag);
     }
 
     /// <summary>A warhead can be dragged with the mouse, so it can be dropped onto a carrier.</summary>
-    private void OnWarheadCanDrag(Entity<WFWarheadComponent> ent, ref CanDragEvent args)
+    private void OnWarheadCanDrag(Entity<WGWarheadComponent> ent, ref CanDragEvent args)
     {
         args.Handled = true;
     }
@@ -34,7 +34,7 @@ public sealed partial class SharedCMUCargoVehicleSystem : EntitySystem
     {
         if (!ent.Comp.CarriesWarheads ||
             ent.Comp.ArmingMode != CMUCargoVehicleArmingMode.None ||
-            !HasComp<WFWarheadComponent>(args.Dragged) ||
+            !HasComp<WGWarheadComponent>(args.Dragged) ||
             Transform(args.Dragged).Anchored)
         {
             return;

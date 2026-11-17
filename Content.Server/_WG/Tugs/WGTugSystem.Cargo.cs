@@ -11,17 +11,17 @@ using Robust.Shared.Prototypes;
 namespace Content.Server._WG.Tugs;
 
 /// <summary>Strapping a pulled crate to a trolley's bed and taking it off.</summary>
-public sealed partial class WFTugSystem
+public sealed partial class WGTugSystem
 {
     /// <summary>How close the user and the crate must be to the trolley.</summary>
     private const float CargoReach = 2f;
 
-    private void OnTrolleyInit(Entity<WFTugTrolleyComponent> ent, ref ComponentInit args)
+    private void OnTrolleyInit(Entity<WGTugTrolleyComponent> ent, ref ComponentInit args)
     {
         ent.Comp.Cargo = _containers.EnsureContainer<ContainerSlot>(ent, ent.Comp.ContainerId);
     }
 
-    private void AddCargoVerbs(Entity<WFTugTrolleyComponent> ent, EntityUid user, GetVerbsEvent<AlternativeVerb> args)
+    private void AddCargoVerbs(Entity<WGTugTrolleyComponent> ent, EntityUid user, GetVerbsEvent<AlternativeVerb> args)
     {
         // Pulling a crate puts a virtual item in the user's hand; that is not a held item.
         if (args.Using is { } held && !HasComp<VirtualItemComponent>(held))
@@ -31,7 +31,7 @@ public sealed partial class WFTugSystem
         {
             args.Verbs.Add(new AlternativeVerb
             {
-                Text = Loc.GetString("wf-trolley-verb-unload"),
+                Text = Loc.GetString("wg-trolley-verb-unload"),
                 Priority = 2,
                 Act = () => StartCargoDoAfter(ent, user, null),
             });
@@ -43,19 +43,19 @@ public sealed partial class WFTugSystem
 
         args.Verbs.Add(new AlternativeVerb
         {
-            Text = Loc.GetString("wf-trolley-verb-load"),
+            Text = Loc.GetString("wg-trolley-verb-load"),
             Priority = 2,
             Act = () => StartCargoDoAfter(ent, user, crate),
         });
     }
 
     /// <summary>Starts strapping the crate on, or taking the current one off when no crate is given.</summary>
-    private void StartCargoDoAfter(Entity<WFTugTrolleyComponent> trolley, EntityUid user, EntityUid? crate)
+    private void StartCargoDoAfter(Entity<WGTugTrolleyComponent> trolley, EntityUid user, EntityUid? crate)
     {
         if (crate is { } c ? !CanLoad(trolley, user, c) : !CanUnload(trolley, user))
             return;
 
-        DoAfterEvent ev = crate == null ? new WFTrolleyUnloadDoAfterEvent() : new WFTrolleyLoadDoAfterEvent();
+        DoAfterEvent ev = crate == null ? new WGTrolleyUnloadDoAfterEvent() : new WGTrolleyLoadDoAfterEvent();
         var doAfter = new DoAfterArgs(EntityManager, user, trolley.Comp.CargoDelay, ev, trolley, target: trolley, used: crate)
         {
             BreakOnDamage = true,
@@ -65,10 +65,10 @@ public sealed partial class WFTugSystem
         };
 
         if (_doAfter.TryStartDoAfter(doAfter))
-            Popup(trolley, user, crate == null ? "wf-trolley-unload-start" : "wf-trolley-load-start");
+            Popup(trolley, user, crate == null ? "wg-trolley-unload-start" : "wg-trolley-load-start");
     }
 
-    private void OnLoadDoAfter(Entity<WFTugTrolleyComponent> ent, ref WFTrolleyLoadDoAfterEvent args)
+    private void OnLoadDoAfter(Entity<WGTugTrolleyComponent> ent, ref WGTrolleyLoadDoAfterEvent args)
     {
         if (args.Handled || args.Cancelled || args.Used is not { } crate)
             return;
@@ -80,7 +80,7 @@ public sealed partial class WFTugSystem
         TryLoad(ent, crate);
     }
 
-    private void OnUnloadDoAfter(Entity<WFTugTrolleyComponent> ent, ref WFTrolleyUnloadDoAfterEvent args)
+    private void OnUnloadDoAfter(Entity<WGTugTrolleyComponent> ent, ref WGTrolleyUnloadDoAfterEvent args)
     {
         if (args.Handled || args.Cancelled)
             return;
@@ -95,7 +95,7 @@ public sealed partial class WFTugSystem
     }
 
     /// <summary>Straps a crate to the trolley's bed.</summary>
-    public bool TryLoad(Entity<WFTugTrolleyComponent> trolley, EntityUid crate)
+    public bool TryLoad(Entity<WGTugTrolleyComponent> trolley, EntityUid crate)
     {
         if (trolley.Comp.Cargo is not { ContainedEntity: null } slot || !IsCargo(trolley, crate))
             return false;
@@ -107,7 +107,7 @@ public sealed partial class WFTugSystem
     }
 
     /// <summary>Takes the trolley's crate off and sets it down at the given place.</summary>
-    public bool TryUnload(Entity<WFTugTrolleyComponent> trolley, EntityCoordinates coordinates)
+    public bool TryUnload(Entity<WGTugTrolleyComponent> trolley, EntityCoordinates coordinates)
     {
         if (trolley.Comp.Cargo?.ContainedEntity is not { } crate || !_containers.Remove(crate, trolley.Comp.Cargo))
             return false;
@@ -116,7 +116,7 @@ public sealed partial class WFTugSystem
         return true;
     }
 
-    private bool CanLoad(Entity<WFTugTrolleyComponent> trolley, EntityUid user, EntityUid crate)
+    private bool CanLoad(Entity<WGTugTrolleyComponent> trolley, EntityUid user, EntityUid crate)
     {
         return trolley.Comp.Cargo is { ContainedEntity: null } slot &&
                !TerminatingOrDeleted(crate) &&
@@ -127,13 +127,13 @@ public sealed partial class WFTugSystem
                _containers.CanInsert(crate, slot);
     }
 
-    private bool CanUnload(Entity<WFTugTrolleyComponent> trolley, EntityUid user)
+    private bool CanUnload(Entity<WGTugTrolleyComponent> trolley, EntityUid user)
     {
         return trolley.Comp.Cargo?.ContainedEntity != null && !IsTrainMoving(trolley) && IsNear(user, trolley);
     }
 
     /// <summary>Cargo is a closed, loose crate: an entity storage whose prototype is, or inherits from, one of the trolley's crate parents.</summary>
-    private bool IsCargo(Entity<WFTugTrolleyComponent> trolley, EntityUid uid)
+    private bool IsCargo(Entity<WGTugTrolleyComponent> trolley, EntityUid uid)
     {
         if (Transform(uid).Anchored ||
             !TryComp(uid, out EntityStorageComponent? storage) || storage.Open ||
@@ -151,7 +151,7 @@ public sealed partial class WFTugSystem
         return false;
     }
 
-    private bool IsTrainMoving(Entity<WFTugTrolleyComponent> trolley)
+    private bool IsTrainMoving(Entity<WGTugTrolleyComponent> trolley)
     {
         return trolley.Comp.Tug is { } tug && IsMoving(tug);
     }

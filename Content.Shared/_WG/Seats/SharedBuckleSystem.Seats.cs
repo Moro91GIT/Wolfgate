@@ -1,5 +1,5 @@
 using Content.Shared.Buckle.Components;
-using Content.Shared._WF.Vehicles.Grid.Components;
+using Content.Shared._WG.Vehicles.Grid.Components;
 using Content.Shared.Climbing.Components;
 using Content.Shared.Projectiles;
 using Content.Shared.Throwing;

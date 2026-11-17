@@ -6,7 +6,7 @@ namespace Content.Shared._WG.Tugs;
 
 /// <summary>A sit-on luggage tug: whoever buckles into it drives it, and it tows a train of trolleys along its path.</summary>
 [RegisterComponent]
-public sealed partial class WFTugComponent : Component
+public sealed partial class WGTugComponent : Component
 {
     /// <summary>Most trolleys the tug can tow.</summary>
     [DataField]
@@ -48,6 +48,10 @@ public sealed partial class WFTugComponent : Component
     [ViewVariables]
     public Vector2 TailForward;
 
+    /// <summary>Where the tug last stood with its train on free floor, to back out of a wall to.</summary>
+    [ViewVariables]
+    public Vector2 LastFreePosition;
+
     /// <summary>The mover's tuning before towing penalties, read at map init.</summary>
     [ViewVariables]
     public float BaseMaxSpeed;
@@ -61,10 +65,10 @@ public sealed partial class WFTugComponent : Component
 
 /// <summary>A luggage trolley: couples behind a tug and carries one crate strapped to its bed.</summary>
 [RegisterComponent]
-public sealed partial class WFTugTrolleyComponent : Component
+public sealed partial class WGTugTrolleyComponent : Component
 {
     [DataField]
-    public string ContainerId = "wf-trolley-cargo";
+    public string ContainerId = "wg-trolley-cargo";
 
     /// <summary>A closed entity storage whose prototype is, or inherits from, one of these can be strapped to the bed.</summary>
     [DataField]

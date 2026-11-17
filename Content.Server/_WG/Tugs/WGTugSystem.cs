@@ -22,7 +22,7 @@ using Robust.Shared.Random;
 namespace Content.Server._WG.Tugs;
 
 /// <summary>Luggage tugs: the trolley train that follows the tug's path, and the crates strapped to the trolleys.</summary>
-public sealed partial class WFTugSystem : EntitySystem
+public sealed partial class WGTugSystem : EntitySystem
 {
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private SharedPhysicsSystem _physics = default!;
@@ -43,21 +43,21 @@ public sealed partial class WFTugSystem : EntitySystem
 
     public override void Initialize()
     {
-        SubscribeLocalEvent<WFTugComponent, MapInitEvent>(OnTugMapInit);
-        SubscribeLocalEvent<WFTugComponent, ComponentShutdown>(OnTugShutdown);
-        SubscribeLocalEvent<WFTugComponent, ExaminedEvent>(OnTugExamined);
+        SubscribeLocalEvent<WGTugComponent, MapInitEvent>(OnTugMapInit);
+        SubscribeLocalEvent<WGTugComponent, ComponentShutdown>(OnTugShutdown);
+        SubscribeLocalEvent<WGTugComponent, ExaminedEvent>(OnTugExamined);
 
-        SubscribeLocalEvent<WFTugTrolleyComponent, ComponentInit>(OnTrolleyInit);
-        SubscribeLocalEvent<WFTugTrolleyComponent, ComponentStartup>(OnTrolleyStartup);
-        SubscribeLocalEvent<WFTugTrolleyComponent, ComponentShutdown>(OnTrolleyShutdown);
-        SubscribeLocalEvent<WFTugTrolleyComponent, GetVerbsEvent<AlternativeVerb>>(OnTrolleyGetVerbs);
-        SubscribeLocalEvent<WFTugTrolleyComponent, BeingPulledAttemptEvent>(OnTrolleyPullAttempt);
-        SubscribeLocalEvent<WFTugTrolleyComponent, ExaminedEvent>(OnTrolleyExamined);
-        SubscribeLocalEvent<WFTugTrolleyComponent, WFTrolleyLoadDoAfterEvent>(OnLoadDoAfter);
-        SubscribeLocalEvent<WFTugTrolleyComponent, WFTrolleyUnloadDoAfterEvent>(OnUnloadDoAfter);
+        SubscribeLocalEvent<WGTugTrolleyComponent, ComponentInit>(OnTrolleyInit);
+        SubscribeLocalEvent<WGTugTrolleyComponent, ComponentStartup>(OnTrolleyStartup);
+        SubscribeLocalEvent<WGTugTrolleyComponent, ComponentShutdown>(OnTrolleyShutdown);
+        SubscribeLocalEvent<WGTugTrolleyComponent, GetVerbsEvent<AlternativeVerb>>(OnTrolleyGetVerbs);
+        SubscribeLocalEvent<WGTugTrolleyComponent, BeingPulledAttemptEvent>(OnTrolleyPullAttempt);
+        SubscribeLocalEvent<WGTugTrolleyComponent, ExaminedEvent>(OnTrolleyExamined);
+        SubscribeLocalEvent<WGTugTrolleyComponent, WGTrolleyLoadDoAfterEvent>(OnLoadDoAfter);
+        SubscribeLocalEvent<WGTugTrolleyComponent, WGTrolleyUnloadDoAfterEvent>(OnUnloadDoAfter);
     }
 
-    private void OnTugMapInit(Entity<WFTugComponent> ent, ref MapInitEvent args)
+    private void OnTugMapInit(Entity<WGTugComponent> ent, ref MapInitEvent args)
     {
         if (!TryComp(ent, out GridVehicleMoverComponent? mover))
             return;
@@ -67,20 +67,20 @@ public sealed partial class WFTugSystem : EntitySystem
         ent.Comp.BaseAcceleration = mover.Acceleration;
     }
 
-    private void OnTugShutdown(Entity<WFTugComponent> ent, ref ComponentShutdown args)
+    private void OnTugShutdown(Entity<WGTugComponent> ent, ref ComponentShutdown args)
     {
         UncoupleFrom(ent, 0);
     }
 
-    private void OnTugExamined(Entity<WFTugComponent> ent, ref ExaminedEvent args)
+    private void OnTugExamined(Entity<WGTugComponent> ent, ref ExaminedEvent args)
     {
-        args.PushMarkup(Loc.GetString("wf-tug-examine-trolleys",
+        args.PushMarkup(Loc.GetString("wg-tug-examine-trolleys",
             ("count", ent.Comp.Trolleys.Count),
             ("max", ent.Comp.MaxTrolleys)));
     }
 
     /// <summary>A trolley saved mid-tow loads without its tug; it is put back to free physics.</summary>
-    private void OnTrolleyStartup(Entity<WFTugTrolleyComponent> ent, ref ComponentStartup args)
+    private void OnTrolleyStartup(Entity<WGTugTrolleyComponent> ent, ref ComponentStartup args)
     {
         if (!ent.Comp.Towed || ent.Comp.Tug != null)
             return;
@@ -88,9 +88,9 @@ public sealed partial class WFTugSystem : EntitySystem
         SetTowedPhysics(ent, false);
     }
 
-    private void OnTrolleyShutdown(Entity<WFTugTrolleyComponent> ent, ref ComponentShutdown args)
+    private void OnTrolleyShutdown(Entity<WGTugTrolleyComponent> ent, ref ComponentShutdown args)
     {
-        if (ent.Comp.Tug is not { } tug || !TryComp(tug, out WFTugComponent? tugComp))
+        if (ent.Comp.Tug is not { } tug || !TryComp(tug, out WGTugComponent? tugComp))
             return;
 
         var index = tugComp.Trolleys.IndexOf(ent.Owner);
@@ -98,22 +98,22 @@ public sealed partial class WFTugSystem : EntitySystem
             UncoupleFrom((tug, tugComp), index);
     }
 
-    private void OnTrolleyPullAttempt(Entity<WFTugTrolleyComponent> ent, ref BeingPulledAttemptEvent args)
+    private void OnTrolleyPullAttempt(Entity<WGTugTrolleyComponent> ent, ref BeingPulledAttemptEvent args)
     {
         if (ent.Comp.Tug != null)
             args.Cancel();
     }
 
-    private void OnTrolleyExamined(Entity<WFTugTrolleyComponent> ent, ref ExaminedEvent args)
+    private void OnTrolleyExamined(Entity<WGTugTrolleyComponent> ent, ref ExaminedEvent args)
     {
         if (ent.Comp.Tug != null)
-            args.PushMarkup(Loc.GetString("wf-trolley-examine-coupled"));
+            args.PushMarkup(Loc.GetString("wg-trolley-examine-coupled"));
 
         if (ent.Comp.Cargo?.ContainedEntity is { } cargo)
-            args.PushMarkup(Loc.GetString("wf-trolley-examine-cargo", ("cargo", cargo)));
+            args.PushMarkup(Loc.GetString("wg-trolley-examine-cargo", ("cargo", cargo)));
     }
 
-    private void OnTrolleyGetVerbs(Entity<WFTugTrolleyComponent> ent, ref GetVerbsEvent<AlternativeVerb> args)
+    private void OnTrolleyGetVerbs(Entity<WGTugTrolleyComponent> ent, ref GetVerbsEvent<AlternativeVerb> args)
     {
         if (!args.CanInteract || !args.CanAccess)
             return;
@@ -123,7 +123,7 @@ public sealed partial class WFTugSystem : EntitySystem
         {
             args.Verbs.Add(new AlternativeVerb
             {
-                Text = Loc.GetString("wf-trolley-verb-uncouple"),
+                Text = Loc.GetString("wg-trolley-verb-uncouple"),
                 Priority = 1,
                 Act = () => TryUncouple(ent, user),
             });
@@ -132,7 +132,7 @@ public sealed partial class WFTugSystem : EntitySystem
         {
             args.Verbs.Add(new AlternativeVerb
             {
-                Text = Loc.GetString("wf-trolley-verb-couple"),
+                Text = Loc.GetString("wg-trolley-verb-couple"),
                 Priority = 1,
                 Act = () => TryCouple(candidate, ent, user),
             });
@@ -142,27 +142,27 @@ public sealed partial class WFTugSystem : EntitySystem
     }
 
     /// <summary>Hitches a trolley behind the last car of a stationary tug's train.</summary>
-    public bool TryCouple(Entity<WFTugComponent> tug, Entity<WFTugTrolleyComponent> trolley, EntityUid? user = null)
+    public bool TryCouple(Entity<WGTugComponent> tug, Entity<WGTugTrolleyComponent> trolley, EntityUid? user = null)
     {
         if (trolley.Comp.Tug != null)
             return false;
 
         if (tug.Comp.Trolleys.Count >= tug.Comp.MaxTrolleys)
         {
-            Popup(trolley, user, "wf-trolley-couple-full");
+            Popup(trolley, user, "wg-trolley-couple-full");
             return false;
         }
 
         if (IsMoving(tug))
         {
-            Popup(trolley, user, "wf-trolley-moving");
+            Popup(trolley, user, "wg-trolley-moving");
             return false;
         }
 
         var tugXform = Transform(tug);
         if (Transform(trolley).GridUid is not { } grid || tugXform.ParentUid != grid || !InCoupleRange(tug, trolley))
         {
-            Popup(trolley, user, "wf-trolley-couple-far");
+            Popup(trolley, user, "wg-trolley-couple-far");
             return false;
         }
 
@@ -174,19 +174,19 @@ public sealed partial class WFTugSystem : EntitySystem
         SetTowedPhysics(trolley, true);
         RebuildTrail(tug, grid);
         RefreshSpeed(tug);
-        Popup(trolley, user, "wf-trolley-coupled");
+        Popup(trolley, user, "wg-trolley-coupled");
         return true;
     }
 
     /// <summary>Unhitches a trolley, and every car behind it, from its tug.</summary>
-    public bool TryUncouple(Entity<WFTugTrolleyComponent> trolley, EntityUid? user = null)
+    public bool TryUncouple(Entity<WGTugTrolleyComponent> trolley, EntityUid? user = null)
     {
-        if (trolley.Comp.Tug is not { } tug || !TryComp(tug, out WFTugComponent? tugComp))
+        if (trolley.Comp.Tug is not { } tug || !TryComp(tug, out WGTugComponent? tugComp))
             return false;
 
         if (IsMoving(tug))
         {
-            Popup(trolley, user, "wf-trolley-moving");
+            Popup(trolley, user, "wg-trolley-moving");
             return false;
         }
 
@@ -195,19 +195,19 @@ public sealed partial class WFTugSystem : EntitySystem
             return false;
 
         UncoupleFrom((tug, tugComp), index);
-        Popup(trolley, user, "wf-trolley-uncoupled");
+        Popup(trolley, user, "wg-trolley-uncoupled");
         return true;
     }
 
     /// <summary>Drops every trolley from the given position in the train back.</summary>
-    private void UncoupleFrom(Entity<WFTugComponent> tug, int index)
+    private void UncoupleFrom(Entity<WGTugComponent> tug, int index)
     {
         for (var i = tug.Comp.Trolleys.Count - 1; i >= index; i--)
         {
             var car = tug.Comp.Trolleys[i];
             tug.Comp.Trolleys.RemoveAt(i);
 
-            if (!TryComp(car, out WFTugTrolleyComponent? trolley))
+            if (!TryComp(car, out WGTugTrolleyComponent? trolley))
                 continue;
 
             trolley.Tug = null;
@@ -263,7 +263,7 @@ public sealed partial class WFTugSystem : EntitySystem
     }
 
     /// <summary>A towed trolley is placed by the train, so it neither collides nor drifts.</summary>
-    private void SetTowedPhysics(Entity<WFTugTrolleyComponent> trolley, bool towed)
+    private void SetTowedPhysics(Entity<WGTugTrolleyComponent> trolley, bool towed)
     {
         trolley.Comp.Towed = towed;
         if (!TryComp(trolley, out PhysicsComponent? body))
@@ -276,7 +276,7 @@ public sealed partial class WFTugSystem : EntitySystem
     }
 
     /// <summary>Each trolley costs the tug some top speed and acceleration.</summary>
-    private void RefreshSpeed(Entity<WFTugComponent> tug)
+    private void RefreshSpeed(Entity<WGTugComponent> tug)
     {
         if (!TryComp(tug, out GridVehicleMoverComponent? mover) || tug.Comp.BaseMaxSpeed <= 0f)
             return;
@@ -297,9 +297,9 @@ public sealed partial class WFTugSystem : EntitySystem
     }
 
     /// <summary>The tug whose train ends close enough to this trolley to take it, if any.</summary>
-    private Entity<WFTugComponent>? FindCouplingTug(Entity<WFTugTrolleyComponent> trolley)
+    private Entity<WGTugComponent>? FindCouplingTug(Entity<WGTugTrolleyComponent> trolley)
     {
-        var query = EntityQueryEnumerator<WFTugComponent>();
+        var query = EntityQueryEnumerator<WGTugComponent>();
         while (query.MoveNext(out var uid, out var tug))
         {
             if (tug.Trolleys.Count < tug.MaxTrolleys && InCoupleRange((uid, tug), trolley))
@@ -310,7 +310,7 @@ public sealed partial class WFTugSystem : EntitySystem
     }
 
     /// <summary>The trolley stands behind the back of the train, on its grid, within range and not far off its line.</summary>
-    private bool InCoupleRange(Entity<WFTugComponent> tug, EntityUid trolley)
+    private bool InCoupleRange(Entity<WGTugComponent> tug, EntityUid trolley)
     {
         var back = tug.Comp.Trolleys.Count > 0 ? tug.Comp.Trolleys[^1] : tug.Owner;
         var backXform = Transform(back);
@@ -327,7 +327,7 @@ public sealed partial class WFTugSystem : EntitySystem
     }
 
     /// <summary>Lays the trail through the cars where they stand, so a fresh coupling settles in place.</summary>
-    private void RebuildTrail(Entity<WFTugComponent> tug, EntityUid grid)
+    private void RebuildTrail(Entity<WGTugComponent> tug, EntityUid grid)
     {
         tug.Comp.Trail.Clear();
         tug.Comp.TrailGrid = grid;
@@ -345,7 +345,7 @@ public sealed partial class WFTugSystem : EntitySystem
     {
         base.Update(frameTime);
 
-        var query = EntityQueryEnumerator<WFTugComponent, TransformComponent>();
+        var query = EntityQueryEnumerator<WGTugComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var tug, out var xform))
         {
             if (tug.Trolleys.Count == 0)
@@ -355,7 +355,7 @@ public sealed partial class WFTugSystem : EntitySystem
         }
     }
 
-    private void UpdateTrain(Entity<WFTugComponent> tug, TransformComponent xform)
+    private void UpdateTrain(Entity<WGTugComponent> tug, TransformComponent xform)
     {
         // A tug that leaves its grid (a fall, a jump, another ship) leaves its train behind.
         if (tug.Comp.TrailGrid is not { } grid || xform.ParentUid != grid)
@@ -405,12 +405,19 @@ public sealed partial class WFTugSystem : EntitySystem
             var tile = _maps.TileIndicesFor(grid, gridComp, new EntityCoordinates(grid, lastPoint));
             if (_turf.IsTileBlocked(grid, tile, CollisionGroup.Impassable, gridComp))
             {
+                // Back where the train last stood free, or the tug would creep into its own cars tick by tick.
+                var last = tug.Comp.LastFreePosition;
                 mover.CurrentSpeed = 0f;
                 mover.TravelVelocity = Vector2.Zero;
+                mover.Position = last;
+                mover.TargetPosition = last;
                 Dirty(tug, mover);
+                _transform.SetLocalPosition(tug, last, xform);
                 return;
             }
         }
+
+        tug.Comp.LastFreePosition = pos;
         var needed = tug.Comp.HitchDistance + (tug.Comp.Trolleys.Count - 1) * tug.Comp.TrolleySpacing;
 
         for (var i = 0; i < tug.Comp.Trolleys.Count; i++)
@@ -457,7 +464,7 @@ public sealed partial class WFTugSystem : EntitySystem
         return (front - forward * remaining, forward);
     }
 
-    private static void TrimTrail(Entity<WFTugComponent> tug, Vector2 head, List<Vector2> trail, float keep)
+    private static void TrimTrail(Entity<WGTugComponent> tug, Vector2 head, List<Vector2> trail, float keep)
     {
         var front = head;
         var total = 0f;

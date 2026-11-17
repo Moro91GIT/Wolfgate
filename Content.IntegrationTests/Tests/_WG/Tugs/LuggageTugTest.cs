@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Content.IntegrationTests.Pair;
@@ -57,12 +58,15 @@ public sealed class LuggageTugTest
                 }
             }
 
-            rig.Tug = entMan.SpawnEntity("WFLuggageTug", new EntityCoordinates(map.Grid.Owner, StartX, StartY));
+            rig.Tug = entMan.SpawnEntity("WGLuggageTug", new EntityCoordinates(map.Grid.Owner, StartX, StartY));
             rig.Driver = entMan.SpawnEntity("MobHuman", new EntityCoordinates(map.Grid.Owner, StartX, StartY));
+            // The test map has no air; the rider's health is about the tug, not the vacuum.
+            entMan.RemoveComponent<Content.Server.Atmos.Components.BarotraumaComponent>(rig.Driver);
+            entMan.RemoveComponent<Content.Server.Body.Components.RespiratorComponent>(rig.Driver);
 
             for (var i = 1; i <= 6; i++)
             {
-                rig.Trolleys.Add(entMan.SpawnEntity("WFLuggageTrolley", new EntityCoordinates(map.Grid.Owner, StartX, StartY + i)));
+                rig.Trolleys.Add(entMan.SpawnEntity("WGLuggageTrolley", new EntityCoordinates(map.Grid.Owner, StartX, StartY + i)));
             }
         });
         await server.WaitRunTicks(5);
@@ -70,14 +74,14 @@ public sealed class LuggageTugTest
         return rig;
     }
 
-    private static Entity<WFTugComponent> Tug(TestPair pair, Rig rig)
+    private static Entity<WGTugComponent> Tug(TestPair pair, Rig rig)
     {
-        return (rig.Tug, pair.Server.EntMan.GetComponent<WFTugComponent>(rig.Tug));
+        return (rig.Tug, pair.Server.EntMan.GetComponent<WGTugComponent>(rig.Tug));
     }
 
-    private static Entity<WFTugTrolleyComponent> Trolley(TestPair pair, EntityUid uid)
+    private static Entity<WGTugTrolleyComponent> Trolley(TestPair pair, EntityUid uid)
     {
-        return (uid, pair.Server.EntMan.GetComponent<WFTugTrolleyComponent>(uid));
+        return (uid, pair.Server.EntMan.GetComponent<WGTugTrolleyComponent>(uid));
     }
 
     private static Vector2 Local(TestPair pair, EntityUid uid)
@@ -136,7 +140,7 @@ public sealed class LuggageTugTest
 
         await server.WaitAssertion(() =>
         {
-            var tugs = server.System<WFTugSystem>();
+            var tugs = server.System<WGTugSystem>();
             var mover = entMan.GetComponent<GridVehicleMoverComponent>(rig.Tug);
             var baseSpeed = mover.MaxSpeed;
 
@@ -184,7 +188,8 @@ public sealed class LuggageTugTest
             Assert.That(entMan.GetComponent<DamageableComponent>(rig.Driver).TotalDamage.Value, Is.Zero, "The tug hurt its own rider.");
             Assert.That(entMan.HasComponent<VehicleRunoverComponent>(rig.Driver), Is.False, "The tug ran over its own rider.");
             Assert.That(entMan.HasComponent<KnockedDownComponent>(rig.Driver), Is.False, "The rider was knocked down.");
-            Assert.That(Local(pair, rig.Driver).Length(), Is.LessThan(0.05f), "The rider was shoved off the seat's centre.");
+            var seat = entMan.GetComponent<StrapComponent>(rig.Tug).BuckleOffset;
+            Assert.That((Local(pair, rig.Driver) - seat).Length(), Is.LessThan(0.05f), "The rider was shoved off the seat.");
         }
     }
 
@@ -263,7 +268,7 @@ public sealed class LuggageTugTest
         });
         await server.WaitAssertion(() =>
         {
-            Assert.That(server.System<WFTugSystem>().TryCouple(Tug(pair, rig), Trolley(pair, rig.Trolleys[0])), Is.True);
+            Assert.That(server.System<WGTugSystem>().TryCouple(Tug(pair, rig), Trolley(pair, rig.Trolleys[0])), Is.True);
         });
         await Ride(pair, rig);
 
@@ -299,10 +304,10 @@ public sealed class LuggageTugTest
 
         await server.WaitAssertion(() =>
         {
-            var tugs = server.System<WFTugSystem>();
-            var beside = entMan.SpawnEntity("WFLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1f, StartY));
-            var inFront = entMan.SpawnEntity("WFLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX, StartY - 1f));
-            var askew = entMan.SpawnEntity("WFLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 0.8f, StartY + 1f));
+            var tugs = server.System<WGTugSystem>();
+            var beside = entMan.SpawnEntity("WGLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1f, StartY));
+            var inFront = entMan.SpawnEntity("WGLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX, StartY - 1f));
+            var askew = entMan.SpawnEntity("WGLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 0.8f, StartY + 1f));
 
             using (Assert.EnterMultipleScope())
             {
@@ -327,7 +332,7 @@ public sealed class LuggageTugTest
 
         await server.WaitAssertion(() =>
         {
-            var tugs = server.System<WFTugSystem>();
+            var tugs = server.System<WGTugSystem>();
             for (var i = 0; i < 3; i++)
             {
                 Assert.That(tugs.TryCouple(Tug(pair, rig), Trolley(pair, rig.Trolleys[i])), Is.True);
@@ -386,7 +391,7 @@ public sealed class LuggageTugTest
 
         await server.WaitAssertion(() =>
         {
-            var tugs = server.System<WFTugSystem>();
+            var tugs = server.System<WGTugSystem>();
             var trolley = Trolley(pair, rig.Trolleys[0]);
             var crate = entMan.SpawnEntity("CrateGeneric", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1, StartY + 1));
             var mob = entMan.SpawnEntity("MobHuman", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1, StartY + 2));

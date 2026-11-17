@@ -68,9 +68,9 @@ works (`CMUCargoVehicleSystem.Interior.cs`).
 ## Cargo
 
 The cargo rides in view on the bed (`cargoOffset`, in the carrier's frame), drawn above the carrier
-(`CMUCargoOnBed`, client `CMUCargoOnBedSystem`). A loose (unanchored) nuclear warhead (`WFWarhead`) is cargo too
+(`CMUCargoOnBed`, client `CMUCargoOnBedSystem`). A loose (unanchored) nuclear warhead (`WGWarhead`) is cargo too
 (`carriesWarheads`): drag it onto the carrier with the mouse and the bay opens and loading starts. When the carrier blows
-up a warhead on the bed is set down where it stood, not torn open like a crate. The biggest chassis, `WFWarheadStrategic`,
+up a warhead on the bed is set down where it stood, not torn open like a crate. The biggest chassis, `WGWarheadStrategic`,
 overhangs the bed.
 
 

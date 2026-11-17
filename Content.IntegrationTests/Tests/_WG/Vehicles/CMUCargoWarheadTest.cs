@@ -16,7 +16,7 @@ namespace Content.IntegrationTests.Tests._WG.Vehicles;
 public sealed class CMUCargoWarheadTest
 {
     private const string CarrierId = "CMUCargoCarrier";
-    private const string WarheadId = "WFWarheadTactical";
+    private const string WarheadId = "WGWarheadTactical";
 
     private static async Task<(TestMapData Map, EntityUid Carrier)> Build(Pair.TestPair pair)
     {

@@ -2,8 +2,8 @@
 
 # A sit-on tug driven by the CMU grid mover. It has no interior: whoever buckles into it is the operator.
 - type: entity
-  id: WFLuggageTug
-  categories: [ WFVehicles ]
+  id: WGLuggageTug
+  categories: [ WGVehicles ]
   save: false
   components:
   - type: CleanupImmune
@@ -46,7 +46,7 @@
   - type: Damageable
     damageContainer: StructuralInorganic
     damageModifierSet: StructuralMetallic
-  # A full-speed wall hit costs about 55 (WFVehicleImpactDamageSystem, Light), so a dozen wreck it.
+  # A full-speed wall hit costs about 55 (WGVehicleImpactDamageSystem, Light), so a dozen wreck it.
   - type: Destructible
     thresholds:
     - trigger:
@@ -55,7 +55,7 @@
       behaviors:
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  # Drawn over the rider when it faces up or down the screen, like the ride-on ATV (WFTugVisualsSystem).
+  # Drawn over the rider when it faces up or down the screen, like the ride-on ATV (WGTugVisualsSystem).
   - type: Sprite
     drawdepth: Objects
     sprite: _WG/Tugs/tug.rsi
@@ -95,11 +95,11 @@
       params:
         volume: -4
     collisionSoundCooldown: 1.5
-  - type: WFTug
+  - type: WGTug
 
 # A trolley that couples behind a tug and carries one strapped crate.
 - type: entity
-  id: WFLuggageTrolley
+  id: WGLuggageTrolley
   placement:
     mode: SnapgridCenter
   components:
@@ -144,6 +144,6 @@
         acts: [ "Destruction" ]
   - type: ContainerContainer
     containers:
-      wf-trolley-cargo: !type:ContainerSlot
+      wg-trolley-cargo: !type:ContainerSlot
         showEnts: True
-  - type: WFTugTrolley
+  - type: WGTugTrolley

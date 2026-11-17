@@ -238,7 +238,7 @@ public sealed partial class CMUCargoVehicleSystem
         if (Transform(uid).Anchored)
             return false;
 
-        if (vehicle.Comp.CarriesWarheads && HasComp<WFWarheadComponent>(uid))
+        if (vehicle.Comp.CarriesWarheads && HasComp<WGWarheadComponent>(uid))
             return true;
 
         if (!HasComp<EntityStorageComponent>(uid) ||
@@ -268,7 +268,7 @@ public sealed partial class CMUCargoVehicleSystem
         var coords = Transform(vehicle.Owner).Coordinates;
 
         // A warhead survives the carrier: it is dropped where the carrier stood.
-        if (HasComp<WFWarheadComponent>(crate))
+        if (HasComp<WGWarheadComponent>(crate))
         {
             _transform.SetCoordinates(crate, coords);
             return;

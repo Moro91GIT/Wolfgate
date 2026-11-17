@@ -14,3 +14,4 @@ wf-observer-manifest-hidden = You are ghosted again.
 wf-observer-manifest-no-permission = You are not cool enough to manifest.
 wf-observer-manifest-not-observer = Only an admin observer can manifest.
 wf-observer-manifest-unknown-preset = You have no avatar preset called "{$name}".
+wf-observer-manifest-not-manifested = You are already demanifested.

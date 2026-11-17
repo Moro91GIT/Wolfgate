@@ -33,7 +33,7 @@ public sealed partial class AdminKitCommand : LocalizedCommands
 
         if (!kit.TryGetObserver(player, out var observer))
         {
-            shell.WriteError(LocalizationManager.GetString("shell-must-be-attached-to-entity"));
+            shell.WriteError(LocalizationManager.GetString("wf-observer-kit-not-observer"));
             return;
         }
 

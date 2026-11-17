@@ -1,13 +1,14 @@
 # The staff marker's visuals. Every sprite is used where it already is; none is copied.
 
-# The sigil beside the head: by rank, never chosen.
+# The sigil beside the head: by rank, never chosen. Its priority stays above the new-player mark's, which has to
+# be drawn before every other icon of the right-hand column (MarkTakesNoHudSlotTest).
 - type: ssdIcon
   id: WFStaffSigilAdmin
   icon:
     sprite: /Textures/Interface/Misc/job_icons.rsi
     state: Admin
   locationPreference: Right
-  priority: -2
+  priority: 0
 
 - type: ssdIcon
   id: WFStaffSigilHost
@@ -15,7 +16,7 @@
     sprite: /Textures/Interface/Misc/job_icons.rsi
     state: MindShield
   locationPreference: Right
-  priority: -2
+  priority: 0
 
 - type: shader
   id: WFStaffMarkerTint

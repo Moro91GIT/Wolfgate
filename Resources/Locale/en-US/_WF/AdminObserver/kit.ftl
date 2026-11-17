@@ -16,3 +16,4 @@ wf-observer-kit-category-building = Building
 wf-observer-kit-category-movement = Movement
 wf-observer-kit-category-weapons = Weapons
 wf-observer-kit-category-fun = Fun
+wf-observer-kit-not-observer = You need to be an admin observer ghost to get an admin kit, silly.

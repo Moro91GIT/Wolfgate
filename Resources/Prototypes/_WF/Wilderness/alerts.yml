@@ -39,6 +39,7 @@
 
 - type: alert
   id: WFMarked
+  category: WFZone
   icons:
   - sprite: /Textures/_WF/Wilderness/zones.rsi
     state: marked

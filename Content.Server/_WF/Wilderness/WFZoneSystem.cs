@@ -10,7 +10,6 @@ using Content.Shared._WF.Wilderness;
 using Content.Shared.Alert;
 using Content.Shared.Chat;
 using Content.Shared.Ghost;
-using Content.Shared.Popups;
 using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Map;
@@ -33,7 +32,6 @@ public sealed partial class WFZoneSystem : EntitySystem
     [Dependency] private IChatManager _chat = default!;
     [Dependency] private MetaDataSystem _metaData = default!;
     [Dependency] private IPlayerManager _player = default!;
-    [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private IPrototypeManager _proto = default!;
     [Dependency] private SectorServiceSystem _sector = default!;
     [Dependency] private IGameTiming _timing = default!;
@@ -42,6 +40,7 @@ public sealed partial class WFZoneSystem : EntitySystem
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan RingInterval = TimeSpan.FromSeconds(5);
     private static readonly ProtoId<AlertPrototype> MarkedAlert = "WFMarked";
+    private static readonly ProtoId<AlertCategoryPrototype> ZoneCategory = "WFZone";
 
     private TimeSpan _next;
     private TimeSpan _nextRings;
@@ -82,10 +81,7 @@ public sealed partial class WFZoneSystem : EntitySystem
 
     private void OnDetached(Entity<WFInZoneComponent> ent, ref PlayerDetachedEvent args)
     {
-        if (_proto.TryIndex(ent.Comp.Zone, out var zone) && zone.Alert is { } alert)
-            _alerts.ClearAlert(ent, alert);
-
-        _alerts.ClearAlert(ent, MarkedAlert);
+        _alerts.ClearAlertCategory(ent, ZoneCategory);
         RemComp<WFInZoneComponent>(ent);
     }
 
@@ -126,12 +122,33 @@ public sealed partial class WFZoneSystem : EntitySystem
 
             var found = FindZone(mob, subject);
             Apply(session, mob, found, hot);
-
-            if (HasComp<WFSkullComponent>(subject))
-                _alerts.ShowAlert(mob, MarkedAlert);
-            else
-                _alerts.ClearAlert(mob, MarkedAlert);
+            UpdateAlert(mob, subject, found?.Zone);
         }
+    }
+
+    /// <summary>
+    /// The one zone alert a player sees: the mark, running down its time once out of the Wilderness, over the
+    /// zone's own, which in a Wilderness counts down to the mark.
+    /// </summary>
+    private void UpdateAlert(EntityUid mob, EntityUid subject, WFZonePrototype? zone)
+    {
+        if (TryComp<WFSkullComponent>(subject, out var skull))
+        {
+            (TimeSpan, TimeSpan)? left = skull.ExpiresAt is { } expires ? (expires - _skullLength, expires) : null;
+            _alerts.ShowAlert(mob, MarkedAlert, cooldown: left);
+            return;
+        }
+
+        if (zone?.Alert is not { } alert)
+        {
+            _alerts.ClearAlertCategory(mob, ZoneCategory);
+            return;
+        }
+
+        (TimeSpan, TimeSpan)? marking = zone.Skulls && TryComp<WFWildernessDwellComponent>(subject, out var dwell)
+            ? (dwell.Since, dwell.Since + _dwell)
+            : null;
+        _alerts.ShowAlert(mob, alert, cooldown: marking);
     }
 
     /// <summary>Sets a player's zone, and tells them when it changes.</summary>
@@ -146,9 +163,6 @@ public sealed partial class WFZoneSystem : EntitySystem
         {
             if (current == null)
                 return;
-
-            if (old?.Alert is { } oldAlert)
-                _alerts.ClearAlert(mob, oldAlert);
 
             if (old != null)
                 Tell(session, Loc.GetString(old.Left, ("place", current.Place)), old.Color);
@@ -170,21 +184,13 @@ public sealed partial class WFZoneSystem : EntitySystem
             return;
         }
 
-        if (old?.Alert is { } previous && previous != zone.Alert)
-            _alerts.ClearAlert(mob, previous);
-
         current ??= AddComp<WFInZoneComponent>(mob);
         current.Zone = zone.ID;
         current.Place = place;
         current.Hot = hot;
         Dirty(mob, current);
 
-        if (zone.Alert is { } alert)
-            _alerts.ShowAlert(mob, alert);
-
-        var title = WFZoneText.Title(zone, hot);
         Tell(session, Loc.GetString(zone.Entered, ("place", place), ("summary", WFZoneText.Summary(zone, hot, _cfg.GetCVar(WildernessCVars.OpenToAll)))), zone.Color);
-        _popup.PopupEntity(title, mob, session, zone.Kind == WFZoneKind.Safe ? PopupType.Large : PopupType.LargeCaution);
     }
 
     private void Tell(ICommonSession session, string message, Color color)

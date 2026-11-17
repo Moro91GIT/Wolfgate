@@ -56,7 +56,7 @@ public sealed class WFZoneTitleOverlay : Overlay
 {
     [Dependency] private IResourceCache _cache = default!;
 
-    private const int FontSize = 48;
+    private const int FontSize = 36;
 
     public override OverlaySpace Space => OverlaySpace.ScreenSpace;
 
@@ -81,11 +81,19 @@ public sealed class WFZoneTitleOverlay : Overlay
     {
         var handle = args.ScreenHandle;
         var box = WFZoneScreen.Of(args);
-        var scale = Math.Clamp(box.Height / 1080f, 0.6f, 1.6f);
+        var scale = Math.Clamp(box.Height / 1080f, 0.5f, 1.2f);
         var centre = box.Left + box.Width / 2f;
-        var y = box.Top + box.Height * 0.26f;
+        var y = box.Top + box.Height * 0.22f;
 
         var size = handle.GetDimensions(_font, Title, scale);
+        // Narrow views shrink the title to fit rather than cut it off.
+        var widest = box.Width * 0.7f;
+        if (size.X > widest)
+        {
+            scale *= widest / size.X;
+            size = handle.GetDimensions(_font, Title, scale);
+        }
+
         var subSize = Sub.Length > 0 ? handle.GetDimensions(_subFont, Sub, scale) : Vector2.Zero;
         var width = MathF.Max(size.X, subSize.X) + 48f * scale;
         var back = new UIBox2(centre - width / 2f, y - 12f * scale, centre + width / 2f, y + size.Y + subSize.Y + 16f * scale);

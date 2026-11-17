@@ -69,6 +69,9 @@ wf-zone-banner-marking = { $ship ->
 } in {$seconds} s. Leave now to avoid it.
 wf-zone-banner-overridden = Your mark overrides this Safe Zone: you have no protection here.
 wf-zone-banner-hint = Click for the rules.
+wf-zone-pill-marked = MARKED {$time}
+wf-zone-pill-marked-held = MARKED
+wf-zone-pill-marking = Marked in {$seconds} s
 wf-zone-banner-title = {$title}  ·  {$place}
 wf-zone-title-entering = ENTERING {$title}
 wf-zone-title-leaving = LEAVING {$title}
@@ -86,11 +89,11 @@ wf-alert-zone-safe-desc = Policy protects you here: no theft, no unprovoked atta
 wf-alert-zone-outpost-name = Faction outpost
 wf-alert-zone-outpost-desc = Within 256 m of a faction outpost: protected from port strikes while the war is COLD, open to them while it is HOT.
 wf-alert-zone-wilderness-name = Wilderness
-wf-alert-zone-wilderness-desc = No policy protection: fighting here needs no escalation. Stay and you, or your ship, are marked.
+wf-alert-zone-wilderness-desc = No policy protection: fighting here needs no escalation. Stay and you, or your ship, are marked; the sweep over this icon counts down to it.
 wf-alert-zone-notsafe-name = Not a Safe Zone
 wf-alert-zone-notsafe-desc = This station is not a Safe Zone. Ordinary rules and escalation apply.
 wf-alert-marked-name = Marked
-wf-alert-marked-desc = You, or your ship, stayed in a Wilderness. Until the mark runs out you have no protection anywhere, Safe Zone included. Others see the skull on radar.
+wf-alert-marked-desc = You, or your ship, stayed in a Wilderness. Until the mark runs out you have no protection anywhere, Safe Zone included. Others see the skull on radar. It holds while you stay; once you leave, the sweep over this icon counts down what is left.
 
 ## Guidebook
 

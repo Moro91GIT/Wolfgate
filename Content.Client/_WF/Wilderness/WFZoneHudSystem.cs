@@ -1,4 +1,5 @@
 using Content.Client._WF.Announcements;
+using Content.Client.UserInterface.Systems.MenuBar.Widgets;
 using Content.Client.UserInterface.Systems.Guidebook;
 using Content.Shared._WF.Vehicles.Core;
 using Content.Shared._WF.Wilderness;
@@ -42,7 +43,8 @@ public sealed class WFZoneHudSystem : EntitySystem
     private static readonly SoundSpecifier MarkedSound = new SoundPathSpecifier("/Audio/Effects/alert.ogg");
     private static readonly SpriteSpecifier MarkedIcon = new SpriteSpecifier.Rsi(new ResPath("/Textures/_WF/Wilderness/zones.rsi"), "marked");
 
-    private const float TitleHold = 3.5f;
+    private const float TitleHold = 2.5f;
+    private const float DetailsOpen = 8f;
     private const float TitleFade = 0.8f;
     private const float BannerTop = 8f;
     private const float ChipGap = 8f;
@@ -56,6 +58,9 @@ public sealed class WFZoneHudSystem : EntitySystem
     private string? _lastZone;
     private bool _lastMarked;
     private float _pulse;
+
+    /// <summary>Seconds the banner's details stay open after the zone or mark changes.</summary>
+    private float _openFor;
 
     public override void Initialize()
     {
@@ -111,7 +116,7 @@ public sealed class WFZoneHudSystem : EntitySystem
         var wave = reduced ? 1f : 0.65f + 0.35f * MathF.Abs(MathF.Sin(_pulse * 2.4f));
 
         Announce(zone, inZone, skull != null, ship);
-        UpdateBanner(zone, inZone, skull, dwell, ship, wave);
+        UpdateBanner(zone, inZone, skull, dwell, ship, wave, frameTime);
         UpdateBorder(zone, skull != null, wave);
         UpdateTitle(frameTime);
     }
@@ -183,6 +188,7 @@ public sealed class WFZoneHudSystem : EntitySystem
         _title.Sub = sub;
         _title.Color = color;
         _titleAge = 0f;
+        _openFor = DetailsOpen;
     }
 
     private void UpdateTitle(float frameTime)
@@ -195,7 +201,7 @@ public sealed class WFZoneHudSystem : EntitySystem
     }
 
     private void UpdateBanner(WFZonePrototype? zone, WFInZoneComponent? inZone, WFSkullComponent? skull, WFWildernessDwellComponent? dwell,
-        bool ship, float wave)
+        bool ship, float wave, float frameTime)
     {
         if (zone == null && skull == null)
         {
@@ -206,17 +212,30 @@ public sealed class WFZoneHudSystem : EntitySystem
         var banner = EnsureBanner();
         var shipArg = ship ? "yes" : "no";
         string? mark = null;
+        string? markDetail = null;
         if (skull != null)
         {
-            mark = skull.ExpiresAt is { } expires
-                ? Loc.GetString("wf-zone-banner-marked", ("ship", shipArg), ("time", WFZoneText.Clock(expires - _timing.CurTime)))
-                : Loc.GetString("wf-zone-banner-marked-held", ("ship", shipArg), ("minutes", _cfg.GetCVar(WildernessCVars.SkullMinutes)));
+            if (skull.ExpiresAt is { } expires)
+            {
+                var time = WFZoneText.Clock(expires - _timing.CurTime);
+                mark = Loc.GetString("wf-zone-pill-marked", ("time", time));
+                markDetail = Loc.GetString("wf-zone-banner-marked", ("ship", shipArg), ("time", time));
+            }
+            else
+            {
+                mark = Loc.GetString("wf-zone-pill-marked-held");
+                markDetail = Loc.GetString("wf-zone-banner-marked-held", ("ship", shipArg), ("minutes", _cfg.GetCVar(WildernessCVars.SkullMinutes)));
+            }
         }
         else if (dwell != null)
         {
-            var left = _cfg.GetCVar(WildernessCVars.DwellSeconds) - (float) (_timing.CurTime - dwell.Since).TotalSeconds;
-            mark = Loc.GetString("wf-zone-banner-marking", ("ship", shipArg), ("seconds", (int) MathF.Ceiling(MathF.Max(left, 0f))));
+            var left = (int) MathF.Ceiling(MathF.Max(_cfg.GetCVar(WildernessCVars.DwellSeconds) - (float) (_timing.CurTime - dwell.Since).TotalSeconds, 0f));
+            mark = Loc.GetString("wf-zone-pill-marking", ("seconds", left));
+            markDetail = Loc.GetString("wf-zone-banner-marking", ("ship", shipArg), ("seconds", left));
         }
+
+        _openFor = MathF.Max(0f, _openFor - frameTime);
+        banner.HoldOpen = _openFor > 0f;
 
         var open = _cfg.GetCVar(WildernessCVars.OpenToAll);
         if (zone != null && inZone != null)
@@ -230,21 +249,27 @@ public sealed class WFZoneHudSystem : EntitySystem
             if (inZone.Place.Length > 0)
                 title = Loc.GetString("wf-zone-banner-title", ("title", title), ("place", inZone.Place));
 
-            banner.Set(color, zone.Icon != null ? _sprite.Frame0(zone.Icon) : null, title, summary, mark,
-                zone.Kind == WFZoneKind.Wilderness || skull != null, zone.Guide != null);
+            banner.Set(color, zone.Icon != null ? _sprite.Frame0(zone.Icon) : null, title, summary, mark, markDetail,
+                zone.Kind == WFZoneKind.Wilderness || skull != null);
         }
         else
         {
             banner.Set(MarkColor, _sprite.Frame0(MarkedIcon),
-                Loc.GetString("wf-zone-title-marked"), Loc.GetString("wf-zone-title-marked-sub"), mark, true, true);
+                Loc.GetString("wf-zone-title-marked"), Loc.GetString("wf-zone-title-marked-sub"), mark, markDetail, true);
         }
 
         var urgent = zone?.Kind == WFZoneKind.Wilderness || skull != null;
         banner.Pulse(urgent ? wave : 1f);
         banner.Visible = true;
-        _chips.TopMargin = BannerTop + banner.Size.Y + ChipGap;
-    }
 
+        // Under the top menu, so it never covers its buttons.
+        var top = BannerTop;
+        if (_ui.ActiveScreen?.GetWidget<GameTopMenuBar>() is { Visible: true } bar)
+            top = MathF.Max(top, bar.GlobalPosition.Y + bar.Size.Y + BannerTop);
+
+        LayoutContainer.SetMarginTop(banner, top);
+        _chips.TopMargin = top + banner.Size.Y + ChipGap;
+    }
     private void UpdateBorder(WFZonePrototype? zone, bool marked, float wave)
     {
         var show = _cfg.GetCVar(WildernessCVars.Border) && (marked || zone?.Border == true);

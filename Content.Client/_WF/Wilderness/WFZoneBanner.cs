@@ -9,21 +9,25 @@ using Robust.Shared.Utility;
 namespace Content.Client._WF.Wilderness;
 
 /// <summary>
-/// The banner at the top of the screen while in a zone or marked: its icon, title and what it means, and the mark's
-/// countdown. Click it for the rule.
+/// A one-line pill under the top menu: the zone's icon, title and place, and the mark's state. It opens to say what
+/// the zone means for a few seconds after anything changes, and while the cursor is over it. Click it for the rule.
 /// </summary>
 public sealed class WFZoneBanner : PanelContainer
 {
     private readonly StyleBoxFlat _box = new();
     private readonly TextureRect _icon;
     private readonly Label _title;
-    private readonly RichTextLabel _summary;
     private readonly Label _mark;
-    private readonly Label _hint;
-    private readonly WFHazardStripe _top;
-    private readonly WFHazardStripe _bottom;
+    private readonly BoxContainer _details;
+    private readonly RichTextLabel _summary;
+    private readonly RichTextLabel _markDetail;
+    private readonly WFHazardStripe _stripe;
 
     private Color _color = Color.White;
+    private bool _hovered;
+
+    /// <summary>Whether the details show whatever the cursor does; set by the HUD while it holds them open.</summary>
+    public bool HoldOpen;
 
     /// <summary>Raised when the banner is clicked.</summary>
     public event Action? Clicked;
@@ -31,50 +35,64 @@ public sealed class WFZoneBanner : PanelContainer
     public WFZoneBanner()
     {
         var cache = IoCManager.Resolve<IResourceCache>();
-        var bold = new VectorFont(cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Bold.ttf"), 18);
-        var markFont = new VectorFont(cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Bold.ttf"), 13);
+        var bold = new VectorFont(cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Bold.ttf"), 12);
         var small = new VectorFont(cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Regular.ttf"), 10);
 
         MouseFilter = MouseFilterMode.Stop;
         MaxWidth = 640;
         PanelOverride = _box;
-        _box.BackgroundColor = Color.Black.WithAlpha(0.85f);
-        _box.BorderThickness = new Thickness(3);
+        _box.BackgroundColor = Color.Black.WithAlpha(0.8f);
+        _box.BorderThickness = new Thickness(2);
+        _box.SetContentMarginOverride(StyleBox.Margin.All, 0);
 
-        _top = new WFHazardStripe { MinHeight = 6 };
-        _bottom = new WFHazardStripe { MinHeight = 6 };
         _icon = new TextureRect
         {
             Stretch = TextureRect.StretchMode.KeepAspectCentered,
-            TextureScale = new Vector2(1.5f),
-            MinSize = new Vector2(48, 48),
+            MinSize = new Vector2(20, 20),
+            SetSize = new Vector2(20, 20),
             VerticalAlignment = VAlignment.Center,
-            Margin = new Thickness(0, 0, 10, 0),
+            Margin = new Thickness(0, 0, 6, 0),
         };
-        _title = new Label { FontOverride = bold };
-        _summary = new RichTextLabel { HorizontalExpand = true };
-        _mark = new Label { FontOverride = markFont, FontColorOverride = Color.FromHex("#ff5a50"), Visible = false };
-        _hint = new Label { FontOverride = small, FontColorOverride = Color.FromHex("#9aa4ad"), Text = Loc.GetString("wf-zone-banner-hint") };
+        _title = new Label { FontOverride = bold, VerticalAlignment = VAlignment.Center, HorizontalExpand = true };
+        _mark = new Label
+        {
+            FontOverride = bold,
+            FontColorOverride = Color.FromHex("#ff5a50"),
+            VerticalAlignment = VAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0),
+            Visible = false,
+        };
 
-        var text = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Vertical, HorizontalExpand = true };
-        text.AddChild(_title);
-        text.AddChild(_summary);
-        text.AddChild(_mark);
-        text.AddChild(_hint);
-
-        var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, Margin = new Thickness(10, 6) };
+        var row = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal, Margin = new Thickness(6, 3, 8, 3) };
         row.AddChild(_icon);
-        row.AddChild(text);
+        row.AddChild(_title);
+        row.AddChild(_mark);
+
+        _summary = new RichTextLabel { HorizontalExpand = true };
+        _markDetail = new RichTextLabel { HorizontalExpand = true, Visible = false };
+        var hint = new Label { FontOverride = small, FontColorOverride = Color.FromHex("#9aa4ad"), Text = Loc.GetString("wf-zone-banner-hint") };
+        _details = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Vertical, Margin = new Thickness(8, 0, 8, 5), Visible = false };
+        _details.AddChild(_summary);
+        _details.AddChild(_markDetail);
+        _details.AddChild(hint);
+
+        _stripe = new WFHazardStripe { MinHeight = 3 };
 
         var column = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Vertical };
-        column.AddChild(_top);
         column.AddChild(row);
-        column.AddChild(_bottom);
+        column.AddChild(_details);
+        column.AddChild(_stripe);
         AddChild(column);
+
+        OnMouseEntered += _ => _hovered = true;
+        OnMouseExited += _ => _hovered = false;
     }
 
-    /// <summary>Fills the banner. <paramref name="mark"/> is the mark line, or null for none.</summary>
-    public void Set(Color color, Texture? icon, string title, string summary, string? mark, bool stripes, bool hint)
+    /// <summary>
+    /// Fills the banner. <paramref name="mark"/> is the short mark state on the pill, <paramref name="markDetail"/>
+    /// its explanation in the details; either may be null.
+    /// </summary>
+    public void Set(Color color, Texture? icon, string title, string summary, string? mark, string? markDetail, bool stripes)
     {
         _color = color;
         _box.BorderColor = color;
@@ -82,18 +100,26 @@ public sealed class WFZoneBanner : PanelContainer
         _icon.Visible = icon != null;
         _title.Text = title;
         _title.FontColorOverride = color;
+        _mark.Text = mark ?? string.Empty;
+        _mark.Visible = mark != null;
 
         var message = new FormattedMessage();
         message.AddText(summary);
         _summary.SetMessage(message);
 
-        _mark.Text = mark ?? string.Empty;
-        _mark.Visible = mark != null;
-        _hint.Visible = hint;
-        _top.Visible = stripes;
-        _bottom.Visible = stripes;
-        _top.Color = color;
-        _bottom.Color = color;
+        _markDetail.Visible = markDetail != null;
+        if (markDetail != null)
+        {
+            var detail = new FormattedMessage();
+            detail.PushColor(Color.FromHex("#ff5a50"));
+            detail.AddText(markDetail);
+            detail.Pop();
+            _markDetail.SetMessage(detail);
+        }
+
+        _stripe.Visible = stripes;
+        _stripe.Color = color;
+        _details.Visible = HoldOpen || _hovered;
     }
 
     /// <summary>Sets how strongly the border shows, for pulsing.</summary>
@@ -134,7 +160,7 @@ public sealed class WFHazardStripe : Control
 
         handle.DrawRect(new UIBox2(0, 0, size.X, size.Y), Color.Black);
         var height = (float) size.Y;
-        var step = height * 2f;
+        var step = MathF.Max(height * 2f, 6f);
         for (var x = -height; x < size.X; x += step * 2f)
         {
             _quad[0] = new Vector2(x, height);

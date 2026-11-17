@@ -13,8 +13,10 @@ that stays `wf.wilderness.dwell_seconds` (15) in a Wilderness gets `WFSkullCompo
 `wf.wilderness.open_to_all` says whether anyone or only TSF and PDV may fight there; `wf.wilderness.skull_on_foot`
 whether people on foot are marked. The guidebook's `<WFWildernessRule/>` writes both into the rules.
 
-The client (`WFZoneHudSystem`) shows a banner at the top of the screen that opens the rule when clicked, a large title
-on crossing in or out, a pulsing border in a Wilderness or while marked, and a skull over marked people. Radars draw
+The client (`WFZoneHudSystem`) shows a one-line pill under the top menu (zone, place, mark state) that opens to explain
+the zone for a few seconds after a change or under the cursor, and opens the rule when clicked; a title on crossing in or
+out; a pulsing border in a Wilderness or while marked; and a skull over marked people. The player gets one zone alert:
+the zone's, with a sweep counting down to the mark in a Wilderness, or the mark's, counting down once out. Radars draw
 each zone's edge and a skull by every marked ship (`ShuttleNavControl.Wilderness.cs`). Admins can check and set the
 mark with `wf_zone info|mark|clear`.
 
@@ -96,9 +98,7 @@ The zone icons are built by `Tools/_WF/Wilderness/make_icons.py` from the radar 
 - [`Resources/Prototypes/_NF/Events/nf_bluespace_dungeons_events.yml`](../../../Resources/Prototypes/_NF/Events/nf_bluespace_dungeons_events.yml): event sites are Wildernesses
 - [`Resources/Prototypes/_NF/Events/nf_bluespace_grids_events.yml`](../../../Resources/Prototypes/_NF/Events/nf_bluespace_grids_events.yml): event sites are Wildernesses
 - [`Resources/Prototypes/_NF/Events/nf_bluespace_salvage_events.yml`](../../../Resources/Prototypes/_NF/Events/nf_bluespace_salvage_events.yml): unclaimed wrecks are Wildernesses
-- [`Resources/Prototypes/Alerts/alerts.yml`](../../../Resources/Prototypes/Alerts/alerts.yml)
-  - a Wilderness mark sits high, where it is seen
-  - the zone you're in sits high, where it is seen
+- [`Resources/Prototypes/Alerts/alerts.yml`](../../../Resources/Prototypes/Alerts/alerts.yml): the zone you're in sits high, where it is seen
 - [`Resources/ServerInfo/_Mono/Guidebook/Rules/Conflict/One_RandomDeathmatch.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/Rules/Conflict/One_RandomDeathmatch.xml)
   - conflict zones are Wildernesses, with the mark
   - who may fight and the mark follow the server's settings

@@ -1,9 +1,12 @@
+using Content.Server.Storage.Components;
 using Content.Shared._WF.Tugs;
 using Content.Shared.DoAfter;
 using Content.Shared.Inventory.VirtualItem;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.Verbs;
 using Robust.Shared.Containers;
+using Robust.Shared.Map;
+using Robust.Shared.Prototypes;
 
 namespace Content.Server._WF.Tugs;
 
@@ -104,7 +107,7 @@ public sealed partial class WFTugSystem
     }
 
     /// <summary>Takes the trolley's crate off and sets it down at the given place.</summary>
-    public bool TryUnload(Entity<WFTugTrolleyComponent> trolley, Robust.Shared.Map.EntityCoordinates coordinates)
+    public bool TryUnload(Entity<WFTugTrolleyComponent> trolley, EntityCoordinates coordinates)
     {
         if (trolley.Comp.Cargo?.ContainedEntity is not { } crate || !_containers.Remove(crate, trolley.Comp.Cargo))
             return false;
@@ -129,12 +132,23 @@ public sealed partial class WFTugSystem
         return trolley.Comp.Cargo?.ContainedEntity != null && !IsTrainMoving(trolley) && IsNear(user, trolley);
     }
 
+    /// <summary>Cargo is a closed, loose crate: an entity storage whose prototype is, or inherits from, one of the trolley's crate parents.</summary>
     private bool IsCargo(Entity<WFTugTrolleyComponent> trolley, EntityUid uid)
     {
-        return !HasComp<WFTugTrolleyComponent>(uid) &&
-               !HasComp<WFTugComponent>(uid) &&
-               !Transform(uid).Anchored &&
-               _whitelist.IsWhitelistPass(trolley.Comp.CargoWhitelist, uid);
+        if (Transform(uid).Anchored ||
+            !TryComp(uid, out EntityStorageComponent? storage) || storage.Open ||
+            !TryComp(uid, out MetaDataComponent? meta) || meta.EntityPrototype is not { } prototype)
+        {
+            return false;
+        }
+
+        foreach (var (id, _) in _prototypes.EnumerateAllParents<EntityPrototype>(prototype.ID, includeSelf: true))
+        {
+            if (trolley.Comp.CrateParents.Contains(id))
+                return true;
+        }
+
+        return false;
     }
 
     private bool IsTrainMoving(Entity<WFTugTrolleyComponent> trolley)

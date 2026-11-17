@@ -1,6 +1,6 @@
 using System.Numerics;
-using Content.Shared.Whitelist;
 using Robust.Shared.Containers;
+using Robust.Shared.Prototypes;
 
 namespace Content.Shared._WF.Tugs;
 
@@ -44,6 +44,11 @@ public sealed partial class WFTugComponent : Component
     [ViewVariables]
     public EntityUid? TrailGrid;
 
+    /// <summary>The way the oldest part of the trail ran, so backing up past its start goes on straight.</summary>
+    [ViewVariables]
+    public Vector2 TailForward;
+
+    /// <summary>The mover's tuning before towing penalties, read at map init.</summary>
     [ViewVariables]
     public float BaseMaxSpeed;
 
@@ -61,9 +66,9 @@ public sealed partial class WFTugTrolleyComponent : Component
     [DataField]
     public string ContainerId = "wf-trolley-cargo";
 
-    /// <summary>What can be strapped to the bed.</summary>
+    /// <summary>A closed entity storage whose prototype is, or inherits from, one of these can be strapped to the bed.</summary>
     [DataField]
-    public EntityWhitelist? CargoWhitelist;
+    public List<EntProtoId> CrateParents = new() { "CrateGeneric" };
 
     /// <summary>Seconds to strap a crate on or take it off.</summary>
     [DataField]

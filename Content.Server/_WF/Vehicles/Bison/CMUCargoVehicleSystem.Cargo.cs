@@ -299,8 +299,17 @@ public sealed partial class CMUCargoVehicleSystem
             return;
 
         args.Handled = true;
-        if (ent.Comp.ArmingMode != CMUCargoVehicleArmingMode.None || ent.Comp.CargoContainer?.ContainedEntity != null)
+        if (ent.Comp.ArmingMode != CMUCargoVehicleArmingMode.None)
+        {
+            Popup(args.User, "cmu-cargo-vehicle-cargo-armed");
             return;
+        }
+
+        if (ent.Comp.CargoContainer?.ContainedEntity != null)
+        {
+            Popup(args.User, "cmu-cargo-vehicle-bed-full");
+            return;
+        }
 
         if (!ent.Comp.BayOpen)
             ToggleBay(ent, args.User);

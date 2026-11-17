@@ -46,14 +46,16 @@
   - type: Damageable
     damageContainer: StructuralInorganic
     damageModifierSet: StructuralMetallic
+  # A full-speed wall hit costs about 55 (WFVehicleImpactDamageSystem, Light), so a dozen wreck it.
   - type: Destructible
     thresholds:
     - trigger:
         !type:DamageTrigger
-        damage: 300
+        damage: 600
       behaviors:
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
+  # Drawn over the rider when it faces up or down the screen, like the ride-on ATV (WFTugVisualsSystem).
   - type: Sprite
     drawdepth: Objects
     sprite: _WF/Tugs/tug.rsi
@@ -61,8 +63,10 @@
   # A rider on a moving body gets nudged by physics; the default 3 mm tolerance would throw them off.
   - type: Strap
     position: Stand
+    buckleOffset: "0.1, -0.05"
     unbuckleDistanceSquared: 0.09
   - type: GridVehicleMover
+    weightClass: Light
     freeSteering: true
     maxRotationSpeedDegrees: 110
     rotationAccelerationDegrees: 220
@@ -107,7 +111,9 @@
   - type: Sprite
     drawdepth: SmallObjects
     sprite: _WF/Tugs/trolley.rsi
-    state: trolley
+    layers:
+    - state: trolley
+    - state: trolley_handlebars
   - type: InteractionOutline
   - type: Physics
     bodyType: Dynamic
@@ -141,6 +147,3 @@
       wf-trolley-cargo: !type:ContainerSlot
         showEnts: True
   - type: WFTugTrolley
-    cargoWhitelist:
-      components:
-      - EntityStorage

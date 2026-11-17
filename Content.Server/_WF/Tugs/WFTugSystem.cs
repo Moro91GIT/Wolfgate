@@ -3,17 +3,20 @@ using Content.Shared._WF.Tugs;
 using Content.Shared._WF.Vehicles.Grid.Components;
 using Content.Shared.DoAfter;
 using Content.Shared.Examine;
+using Content.Shared.Maps;
+using Content.Shared.Physics;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.Pulling.Events;
 using Content.Shared.Movement.Pulling.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Verbs;
-using Content.Shared.Whitelist;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 
 namespace Content.Server._WF.Tugs;
@@ -27,8 +30,10 @@ public sealed partial class WFTugSystem : EntitySystem
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private SharedContainerSystem _containers = default!;
     [Dependency] private SharedDoAfterSystem _doAfter = default!;
-    [Dependency] private EntityWhitelistSystem _whitelist = default!;
     [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private IPrototypeManager _prototypes = default!;
+    [Dependency] private SharedMapSystem _maps = default!;
+    [Dependency] private TurfSystem _turf = default!;
 
     /// <summary>The tug lays a trail point each time it has moved this far.</summary>
     private const float TrailStep = 0.1f;
@@ -206,8 +211,11 @@ public sealed partial class WFTugSystem : EntitySystem
                 continue;
 
             trolley.Tug = null;
-            if (!TerminatingOrDeleted(car))
-                SetTowedPhysics((car, trolley), false);
+            if (TerminatingOrDeleted(car))
+                continue;
+
+            SetTowedPhysics((car, trolley), false);
+            SettleOnFreeTile(car);
         }
 
         if (tug.Comp.Trolleys.Count == 0)
@@ -218,6 +226,40 @@ public sealed partial class WFTugSystem : EntitySystem
 
         if (!TerminatingOrDeleted(tug))
             RefreshSpeed(tug);
+    }
+
+    /// <summary>A released trolley that stands in a wall is moved to the nearest free tile before it collides again.</summary>
+    private void SettleOnFreeTile(EntityUid trolley)
+    {
+        var xform = Transform(trolley);
+        if (xform.GridUid is not { } grid || !TryComp(grid, out MapGridComponent? gridComp))
+            return;
+
+        var tile = _maps.TileIndicesFor(grid, gridComp, xform.Coordinates);
+        if (!_turf.IsTileBlocked(grid, tile, CollisionGroup.Impassable, gridComp))
+            return;
+
+        for (var ring = 1; ring <= 2; ring++)
+        {
+            for (var dx = -ring; dx <= ring; dx++)
+            {
+                for (var dy = -ring; dy <= ring; dy++)
+                {
+                    if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != ring)
+                        continue;
+
+                    var candidate = tile + new Vector2i(dx, dy);
+                    if (_turf.IsTileBlocked(grid, candidate, CollisionGroup.Impassable, gridComp) ||
+                        _maps.GetTileRef(grid, gridComp, candidate).Tile.IsEmpty)
+                    {
+                        continue;
+                    }
+
+                    _transform.SetCoordinates(trolley, _maps.GridTileToLocal(grid, gridComp, candidate));
+                    return;
+                }
+            }
+        }
     }
 
     /// <summary>A towed trolley is placed by the train, so it neither collides nor drifts.</summary>
@@ -267,13 +309,21 @@ public sealed partial class WFTugSystem : EntitySystem
         return null;
     }
 
+    /// <summary>The trolley stands behind the back of the train, on its grid, within range and not far off its line.</summary>
     private bool InCoupleRange(Entity<WFTugComponent> tug, EntityUid trolley)
     {
         var back = tug.Comp.Trolleys.Count > 0 ? tug.Comp.Trolleys[^1] : tug.Owner;
-        var a = _transform.GetMapCoordinates(back);
-        var b = _transform.GetMapCoordinates(trolley);
+        var backXform = Transform(back);
+        var trolleyXform = Transform(trolley);
+        if (!backXform.ParentUid.IsValid() || backXform.ParentUid != trolleyXform.ParentUid)
+            return false;
 
-        return a.MapId == b.MapId && (a.Position - b.Position).Length() <= tug.Comp.CoupleRange;
+        var backward = -backXform.LocalRotation.ToWorldVec();
+        var offset = trolleyXform.LocalPosition - backXform.LocalPosition;
+        var along = Vector2.Dot(offset, backward);
+        var aside = MathF.Abs(offset.X * backward.Y - offset.Y * backward.X);
+
+        return along >= 0.5f && along <= tug.Comp.CoupleRange && aside <= 0.5f;
     }
 
     /// <summary>Lays the trail through the cars where they stand, so a fresh coupling settles in place.</summary>
@@ -288,6 +338,7 @@ public sealed partial class WFTugSystem : EntitySystem
         }
 
         tug.Comp.Trail.Add(Transform(tug).LocalPosition);
+        tug.Comp.TailForward = Transform(tug).LocalRotation.ToWorldVec();
     }
 
     public override void Update(float frameTime)
@@ -315,6 +366,7 @@ public sealed partial class WFTugSystem : EntitySystem
 
         var trail = tug.Comp.Trail;
         var pos = xform.LocalPosition;
+        var reversing = TryComp(tug, out GridVehicleMoverComponent? mover) && mover.CurrentSpeed < 0f;
 
         // Backing up runs back along the trail.
         while (trail.Count >= 2)
@@ -325,13 +377,40 @@ public sealed partial class WFTugSystem : EntitySystem
             if (Vector2.Dot(pos - prev, seg) >= seg.LengthSquared())
                 break;
 
+            tug.Comp.TailForward = Vector2.Normalize(seg);
             trail.RemoveAt(trail.Count - 1);
         }
 
-        if (trail.Count == 0 || (pos - trail[^1]).Length() >= TrailStep)
+        if (trail.Count == 0)
+        {
             trail.Add(pos);
+        }
+        else if (trail.Count == 1 && Vector2.Dot(pos - trail[0], tug.Comp.TailForward) < 0f)
+        {
+            // Backed up past the start of the trail: it goes on straight back, the way it ran.
+            trail[0] = pos - tug.Comp.TailForward * TrailStep;
+        }
+        else if ((pos - trail[^1]).Length() >= TrailStep)
+        {
+            trail.Add(pos);
+        }
 
         var fallback = -xform.LocalRotation.ToWorldVec();
+
+        // The train cannot back through a wall: a car about to enter one stops the tug.
+        if (reversing && mover != null && TryComp(grid, out MapGridComponent? gridComp))
+        {
+            var lastDistance = tug.Comp.HitchDistance + (tug.Comp.Trolleys.Count - 1) * tug.Comp.TrolleySpacing;
+            var (lastPoint, _) = SampleTrail(pos, trail, lastDistance, fallback);
+            var tile = _maps.TileIndicesFor(grid, gridComp, new EntityCoordinates(grid, lastPoint));
+            if (_turf.IsTileBlocked(grid, tile, CollisionGroup.Impassable, gridComp))
+            {
+                mover.CurrentSpeed = 0f;
+                mover.TravelVelocity = Vector2.Zero;
+                Dirty(tug, mover);
+                return;
+            }
+        }
         var needed = tug.Comp.HitchDistance + (tug.Comp.Trolleys.Count - 1) * tug.Comp.TrolleySpacing;
 
         for (var i = 0; i < tug.Comp.Trolleys.Count; i++)
@@ -348,7 +427,7 @@ public sealed partial class WFTugSystem : EntitySystem
             PlaceCar(car, grid, point, forward.ToWorldAngle());
         }
 
-        TrimTrail(pos, trail, needed + TrailSlack);
+        TrimTrail(tug, pos, trail, needed + TrailSlack);
     }
 
     /// <summary>The point that lies a distance back along the path from the tug, and the way the path runs forward there.</summary>
@@ -378,7 +457,7 @@ public sealed partial class WFTugSystem : EntitySystem
         return (front - forward * remaining, forward);
     }
 
-    private static void TrimTrail(Vector2 head, List<Vector2> trail, float keep)
+    private static void TrimTrail(Entity<WFTugComponent> tug, Vector2 head, List<Vector2> trail, float keep)
     {
         var front = head;
         var total = 0f;
@@ -390,7 +469,12 @@ public sealed partial class WFTugSystem : EntitySystem
                 continue;
 
             if (i > 0)
+            {
+                var tail = trail[i] - trail[i - 1];
+                if (tail.LengthSquared() > 0.0001f)
+                    tug.Comp.TailForward = Vector2.Normalize(tail);
                 trail.RemoveRange(0, i);
+            }
             return;
         }
     }

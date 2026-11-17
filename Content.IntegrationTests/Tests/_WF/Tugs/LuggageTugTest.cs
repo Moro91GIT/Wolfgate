@@ -8,6 +8,9 @@ using Content.Shared._WF.Vehicles.Base;
 using Content.Shared._WF.Vehicles.Grid.Components;
 using Content.Shared.Buckle;
 using Content.Shared.Buckle.Components;
+using Content.Shared._WF.Vehicles.Core;
+using Content.Shared.Damage;
+using Content.Shared.Stunnable;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
 using Robust.Shared.GameObjects;
@@ -171,6 +174,148 @@ public sealed class LuggageTugTest
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>The rider is still in the seat, unhurt, standing, and not counted as run over by their own tug.</summary>
+    private static void AssertRiderUnharmed(TestPair pair, Rig rig)
+    {
+        var entMan = pair.Server.EntMan;
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(entMan.GetComponent<BuckleComponent>(rig.Driver).BuckledTo, Is.EqualTo(rig.Tug), "The rider fell off while driving.");
+            Assert.That(entMan.GetComponent<DamageableComponent>(rig.Driver).TotalDamage.Value, Is.Zero, "The tug hurt its own rider.");
+            Assert.That(entMan.HasComponent<VehicleRunoverComponent>(rig.Driver), Is.False, "The tug ran over its own rider.");
+            Assert.That(entMan.HasComponent<KnockedDownComponent>(rig.Driver), Is.False, "The rider was knocked down.");
+            Assert.That(Local(pair, rig.Driver).Length(), Is.LessThan(0.05f), "The rider was shoved off the seat's centre.");
+        }
+    }
+
+    private static async Task Ride(TestPair pair, Rig rig)
+    {
+        var server = pair.Server;
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(server.System<SharedBuckleSystem>().TryBuckle(rig.Driver, rig.Driver, rig.Tug), Is.True);
+        });
+        await server.WaitRunTicks(2);
+    }
+
+    /// <summary>Driving through a loose crate and over a bystander, the rider is neither hurt nor shoved off the seat.</summary>
+    [Test]
+    public async Task TheTugNeverHurtsItsOwnRider()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var rig = await Build(pair);
+        var server = pair.Server;
+        var entMan = server.EntMan;
+
+        await server.WaitPost(() =>
+        {
+            entMan.SpawnEntity("CrateGeneric", new EntityCoordinates(rig.Map.Grid.Owner, StartX, StartY - 3f));
+            entMan.SpawnEntity("MobHuman", new EntityCoordinates(rig.Map.Grid.Owner, StartX, StartY - 6f));
+        });
+        await Ride(pair, rig);
+
+        await server.WaitPost(() => entMan.GetComponent<InputMoverComponent>(rig.Driver).HeldMoveButtons = MoveButtons.Up);
+        await server.WaitRunTicks(240);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(Local(pair, rig.Tug).Y, Is.LessThan(StartY - 6f), "The tug was stopped on its way.");
+            AssertRiderUnharmed(pair, rig);
+        });
+
+        // Getting off puts the rider on free floor beside the tug, not inside its body.
+        await server.WaitPost(() => entMan.GetComponent<InputMoverComponent>(rig.Driver).HeldMoveButtons = MoveButtons.None);
+        await server.WaitRunTicks(120);
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(server.System<SharedBuckleSystem>().TryUnbuckle(rig.Driver, rig.Driver), Is.True);
+        });
+        await server.WaitRunTicks(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var gap = (Local(pair, rig.Driver) - Local(pair, rig.Tug)).Length();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entMan.GetComponent<TransformComponent>(rig.Driver).ParentUid, Is.EqualTo(rig.Map.Grid.Owner));
+                Assert.That(gap, Is.GreaterThan(0.6f).And.LessThan(2f), "The rider did not get off onto the floor beside the tug.");
+                Assert.That(entMan.HasComponent<KnockedDownComponent>(rig.Driver), Is.False, "Dismounting knocked the rider down.");
+            }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>Backing up past the start of the trail keeps the trolley behind the tug, and a wall behind the train stops it.</summary>
+    [Test]
+    public async Task ReversingKeepsTheTrainBehind()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var rig = await Build(pair);
+        var server = pair.Server;
+        var entMan = server.EntMan;
+
+        await server.WaitPost(() =>
+        {
+            // A wall across the grid five tiles behind the tug.
+            for (var x = -10; x < 20; x++)
+                entMan.SpawnEntity("WallSolid", new EntityCoordinates(rig.Map.Grid.Owner, x + 0.5f, StartY + 5f));
+        });
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(server.System<WFTugSystem>().TryCouple(Tug(pair, rig), Trolley(pair, rig.Trolleys[0])), Is.True);
+        });
+        await Ride(pair, rig);
+
+        // The tug faces south, so Down reverses it up the grid, past the one point its trail holds.
+        await server.WaitPost(() => entMan.GetComponent<InputMoverComponent>(rig.Driver).HeldMoveButtons = MoveButtons.Down);
+        await server.WaitRunTicks(240);
+
+        await server.WaitAssertion(() =>
+        {
+            var tug = Local(pair, rig.Tug);
+            var car = Local(pair, rig.Trolleys[0]);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(tug.Y, Is.GreaterThan(StartY + 1.5f), "The tug did not back up.");
+                Assert.That(car.Y - tug.Y, Is.EqualTo(1f).Within(0.15f), "Reversing moved the trolley off its spacing behind the tug.");
+                Assert.That(car.X, Is.EqualTo(tug.X).Within(0.2f));
+                Assert.That(car.Y, Is.LessThan(StartY + 4.6f), "The trolley was pushed into the wall.");
+                Assert.That(Tug(pair, rig).Comp.Trolleys, Has.Count.EqualTo(1), "The train came apart while reversing.");
+            }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>A trolley beside the tug, or across its line, cannot be coupled.</summary>
+    [Test]
+    public async Task OnlyATrolleyBehindTheTugCouples()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var rig = await Build(pair);
+        var server = pair.Server;
+        var entMan = server.EntMan;
+
+        await server.WaitAssertion(() =>
+        {
+            var tugs = server.System<WFTugSystem>();
+            var beside = entMan.SpawnEntity("WFLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1f, StartY));
+            var inFront = entMan.SpawnEntity("WFLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX, StartY - 1f));
+            var askew = entMan.SpawnEntity("WFLuggageTrolley", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 0.8f, StartY + 1f));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(tugs.TryCouple(Tug(pair, rig), Trolley(pair, beside)), Is.False, "A trolley beside the tug coupled.");
+                Assert.That(tugs.TryCouple(Tug(pair, rig), Trolley(pair, inFront)), Is.False, "A trolley in front of the tug coupled.");
+                Assert.That(tugs.TryCouple(Tug(pair, rig), Trolley(pair, askew)), Is.False, "A trolley off the tug's line coupled.");
+                Assert.That(tugs.TryCouple(Tug(pair, rig), Trolley(pair, rig.Trolleys[0])), Is.True, "The trolley right behind did not couple.");
+            }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
     /// <summary>Driving pulls the train along the tug's path at its spacing, and leaving the grid drops it.</summary>
     [Test]
     public async Task TrainFollowsTheTug()
@@ -200,7 +345,7 @@ public sealed class LuggageTugTest
         {
             var tug = Local(pair, rig.Tug);
             Assert.That(tug.Y, Is.LessThan(StartY - 3f), "The tug barely moved.");
-            Assert.That(entMan.GetComponent<BuckleComponent>(rig.Driver).BuckledTo, Is.EqualTo(rig.Tug), "The rider fell off while driving.");
+            AssertRiderUnharmed(pair, rig);
 
             for (var i = 0; i < 3; i++)
             {
@@ -245,10 +390,12 @@ public sealed class LuggageTugTest
             var trolley = Trolley(pair, rig.Trolleys[0]);
             var crate = entMan.SpawnEntity("CrateGeneric", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1, StartY + 1));
             var mob = entMan.SpawnEntity("MobHuman", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 1, StartY + 2));
+            var locker = entMan.SpawnEntity("LockerFreezer", new EntityCoordinates(rig.Map.Grid.Owner, StartX + 2, StartY + 2));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(tugs.TryLoad(trolley, mob), Is.False, "A mob was strapped on as cargo.");
+                Assert.That(tugs.TryLoad(trolley, locker), Is.False, "A locker was strapped on as cargo.");
                 Assert.That(tugs.TryLoad(trolley, crate), Is.True, "The crate did not strap on.");
                 Assert.That(trolley.Comp.Cargo!.ContainedEntity, Is.EqualTo(crate));
                 Assert.That(entMan.GetComponent<TransformComponent>(crate).ParentUid, Is.EqualTo(trolley.Owner));

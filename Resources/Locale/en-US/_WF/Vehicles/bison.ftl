@@ -28,6 +28,7 @@ cmu-cargo-vehicle-load-start = You begin loading the cargo.
 cmu-cargo-vehicle-load-finished = You load {$crate} into the carrier.
 cmu-cargo-vehicle-unload-start = You begin unloading the cargo.
 cmu-cargo-vehicle-unload-finished = You unload {$crate} from the carrier.
+cmu-cargo-vehicle-bed-full = The bed already holds something.
 cmu-cargo-vehicle-bay-opened = The cargo bay opens.
 cmu-cargo-vehicle-bay-closed = The cargo bay closes.
 cmu-cargo-vehicle-pair-success = The controller pairs with {$vehicle}.

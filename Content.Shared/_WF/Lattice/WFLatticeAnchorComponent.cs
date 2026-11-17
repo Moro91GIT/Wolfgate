@@ -15,9 +15,17 @@ public sealed partial class WFLatticeAnchorComponent : Component
     /// <summary>One of the Lattice's original anchors, whose loss is a breach.</summary>
     [DataField]
     public bool Primary;
+
+    /// <summary>How far round it corruption can't grow while it stands, in metres; 0 for none.</summary>
+    [DataField]
+    public float Ward;
 }
 
-/// <summary>A player-built anchor: holds the field only while powered, anchored and parked.</summary>
+/// <summary>Caelestinus Central's own anchor: keeps corruption off the station while it stands.</summary>
+[RegisterComponent]
+public sealed partial class WFLatticeCentralAnchorComponent : Component;
+
+/// <summary>A player-built anchor: holds the field only while powered, anchored, parked and fed exotic matter.</summary>
 [RegisterComponent]
 public sealed partial class WFLatticeRelayComponent : Component
 {
@@ -36,6 +44,26 @@ public sealed partial class WFLatticeRelayComponent : Component
     /// <summary>Seconds its grid has sat still so far.</summary>
     [ViewVariables]
     public float Settled;
+
+    /// <summary>Whether it runs on exotic matter; a station's mapped anchor doesn't.</summary>
+    [DataField]
+    public bool NeedsFuel = true;
+
+    /// <summary>Seconds of holding it has left; it burns them only while it holds.</summary>
+    [DataField]
+    public float Fuel;
+
+    /// <summary>Seconds of holding one shard of exotic matter buys.</summary>
+    [DataField]
+    public float FuelPerShard = 600f;
+
+    /// <summary>Most shards it holds at once.</summary>
+    [DataField]
+    public int MaxShards = 6;
+
+    /// <summary>What it draws before the Unstringing, in watts; -1 until first read.</summary>
+    [ViewVariables]
+    public float BaseLoad = -1f;
 }
 
 /// <summary>One of an anchor station's own guns: it fires only from an anchor station.</summary>
@@ -72,4 +100,30 @@ public sealed partial class WFLatticeAnchorStationComponent : Component
     /// <summary>Whether the station is fighting back now, its shield down.</summary>
     [ViewVariables]
     public bool Engaged;
+
+    /// <summary>Until when the station fights back whether or not its shield holds: something hit it directly.</summary>
+    [ViewVariables]
+    public TimeSpan ProvokedUntil;
+
+    /// <summary>When the station next marks what is on it, so a hit on any of it is noticed.</summary>
+    [ViewVariables]
+    public TimeSpan NextMark;
+
+    /// <summary>Players named as trespassers aboard, and when they may be named again.</summary>
+    [ViewVariables]
+    public Dictionary<EntityUid, TimeSpan> Trespassers = new();
+
+    [ViewVariables]
+    public TimeSpan NextTrespassCheck;
+
+    /// <summary>Trespassers not yet named, waiting for the next announcement, and when it may go out.</summary>
+    [ViewVariables]
+    public List<EntityUid> PendingTrespassers = new();
+
+    [ViewVariables]
+    public TimeSpan NextTrespassAlert;
 }
+
+/// <summary>Something on an anchor station whose damage the station answers at once.</summary>
+[RegisterComponent]
+public sealed partial class WFLatticeStationPartComponent : Component;

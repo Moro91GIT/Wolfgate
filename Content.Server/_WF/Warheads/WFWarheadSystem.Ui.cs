@@ -28,17 +28,18 @@ public sealed partial class WFWarheadSystem
 
     private void OnSetTimerMessage(Entity<WFWarheadComponent> ent, ref WFWarheadSetTimerMessage args)
     {
-        if (!HasComp<WFTimerFuzeComponent>(ent) || ent.Comp.State != WFWarheadState.Safe || !float.IsFinite(args.Seconds))
+        if (!TryComp<WFTimerFuzeComponent>(ent, out var fuze) || ent.Comp.State != WFWarheadState.Safe || !float.IsFinite(args.Seconds))
             return;
 
-        ent.Comp.Timer = Math.Clamp(args.Seconds, ent.Comp.FinalPhase, MaxTimer);
+        ent.Comp.Timer = Math.Clamp(args.Seconds, Math.Max(ent.Comp.FinalPhase, fuze.MinTimer), MaxTimer);
         Dirty(ent);
         UpdateUi(ent);
     }
 
     private void OnArmMessage(Entity<WFWarheadComponent> ent, ref WFWarheadArmMessage args)
     {
-        if (!TryComp<WFTimerFuzeComponent>(ent, out var fuze) || ent.Comp.State != WFWarheadState.Safe)
+        if (!TryComp<WFTimerFuzeComponent>(ent, out var fuze) || ent.Comp.State != WFWarheadState.Safe
+            || !KeyIn(ent, args.Actor))
             return;
 
         _doAfter.TryStartDoAfter(new DoAfterArgs(EntityManager, args.Actor, fuze.ArmDelay,
@@ -52,7 +53,8 @@ public sealed partial class WFWarheadSystem
     private void OnTurnKeyMessage(Entity<WFWarheadComponent> ent, ref WFWarheadTurnKeyMessage args)
     {
         if (!TryComp<WFTwoPersonArmingComponent>(ent, out var keys)
-            || ent.Comp.State is not (WFWarheadState.Safe or WFWarheadState.Armed))
+            || ent.Comp.State is not (WFWarheadState.Safe or WFWarheadState.Armed)
+            || !KeyIn(ent, args.Actor))
             return;
 
         TurnKey((ent, keys), ent, args.Actor);
@@ -64,7 +66,7 @@ public sealed partial class WFWarheadSystem
             return;
 
         var wanted = args.Safe ? WFWarheadState.Armed : WFWarheadState.Safe;
-        if (ent.Comp.State != wanted)
+        if (ent.Comp.State != wanted || !args.Safe && !KeyIn(ent, args.Actor))
             return;
 
         _doAfter.TryStartDoAfter(new DoAfterArgs(EntityManager, args.Actor, remote.SafetyDelay,
@@ -89,13 +91,14 @@ public sealed partial class WFWarheadSystem
             Timer = comp.Timer,
             FinalPhase = comp.FinalPhase,
             YieldClass = comp.YieldClass,
-            DisarmQuality = comp.DisarmQuality,
+            DisarmQuality = comp.DisarmQuality ?? string.Empty,
         };
 
         if (TryComp<WFTimerFuzeComponent>(uid, out var timer))
         {
             state.HasTimerFuze = true;
             state.TimerOptions = new List<float>(timer.Options);
+            state.MinTimer = Math.Max(comp.FinalPhase, timer.MinTimer);
         }
 
         if (TryComp<WFTwoPersonArmingComponent>(uid, out var keys))

@@ -11,9 +11,10 @@ ship-access-mode-private = Private
 ship-access-mode-faction = Faction
 ship-access-mode-crew = Crew
 ship-access-mode-company = Company
+ship-access-mode-public = Public
 ship-access-no-company = Join a player company, and enter the round as that character, before selecting Company access.
 ship-access-linked-company = Linked company: {$name} ({$count} issued IDs). Members playing this round open these doors; leaving the company removes access.
-ship-access-mode-hint = Private admits the owner and allowed IDs. Crew also admits current crew members' issued IDs. Faction also admits company access. Individual door rules override this mode.
+ship-access-mode-hint = Private admits the owner and allowed IDs. Crew also admits current crew members' issued IDs. Faction also admits company access. Public, which staff set, admits anyone through every door that has no rule of its own. Individual door rules override this mode.
 ship-access-no-crew = Join a crew through Crew Setup and enter the round before selecting Crew access.
 ship-access-mode-unavailable = This ship does not support that access mode.
 ship-access-linked-crew = Linked crew: {$name} ({$count} issued IDs). Leaving the crew or respawning removes crew access; ownership and deliberately allowed IDs remain.
@@ -82,6 +83,10 @@ ship-access-all-doors-set = { $count ->
     }
 ship-access-door-not-on-ship = That door is not on this ship.
 ship-access-seal-pending = The door will bolt as soon as it is shut and powered.
+ship-access-door-in-zone = That door follows its zone, switched at the ship's command console.
+ship-access-door-zone-hint = This door follows its zone, switched at the ship's command console. Now: { $desc }
+ship-access-rule-zone-name = Zone
+ship-access-rule-zone-desc = The owner and whoever its zone admits: in a Staff zone the officers, the staff list and admins; in a Locked zone the officers and admins.
 ship-access-no-owner-key = Neither the deed nor your ID card has a crew record, so no door can be keyed to you. Locking would shut you out.
 
 # Codes and the keypad

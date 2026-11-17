@@ -12,31 +12,33 @@ matter is found only in the deep bands. All seven steps of the build order are b
 - **Drones:** Lattice maintenance drones. Those still in range of a working anchor guard it; those whose anchor failed,
   or that wandered out of the field, went feral and attack anything, because they read every hull as an anomaly. That
   is why drones thicken with distance, and the drone rings become the anchor bands.
-- **The Choir:** wants the Lattice down so the song can reach everyone. They are at home in the Deep.
+- **The Choir:** wants the Lattice down so the song can reach everyone. They are at home in the Coda.
 
 ## Bands
 
-Field strength at a point is the sum of every anchor's contribution, so the edges are lobed, not circles. Distances
-below are for an intact Lattice and slide inward where anchors fall.
+Field strength at a point is the sum of the six primary anchors' holds, so with the Lattice intact the edges are
+near-circles at the distances below; they slide inward on the side of a lost anchor. Relay and station anchors only
+hold a local well of anchored space round themselves and never move the far edges.
 
 | Band | About | Drone zone | Drift | Threats | Reward |
 |---|---|---|---|---|---|
-| Moored | 0-18 km | none | fades | none | baseline |
-| Slack | 18-22 km | 1 | slow | comm static, rare whispers, phantom radar blips | more ore, more metallic rocks |
-| Adrift | 22-25 km | 2 | moderate | false hails, ghost contacts, footsteps, glimpses, screen warping | rich ore, rare exotic matter |
-| Untethered | 25-30 km | 3 | fast | hallucinated Remade, nav drift | exotic matter deposits |
-| the Deep | 30 km+ | 4 | exponential | small animals aboard turn Remade (low chance), Monolith hulks | the best salvage, dense exotic matter |
+| Unison | 0-20 km | none | fades | none | baseline |
+| Detune | 20-34 km | 1 | slow | comm static, rare whispers, phantom radar blips | more ore, more metallic rocks |
+| Dissonance | 34-50 km | 2 | moderate | false hails, ghost contacts, footsteps, glimpses, screen warping | rich ore, rare exotic matter |
+| Feedback | 50-66 km | 3 | fast | hallucinated Remade, nav drift | exotic matter deposits |
+| the Coda | 66 km+ | 4 | exponential | small animals aboard turn Remade (low chance), Monolith hulks | the best salvage, dense exotic matter |
 
-- **Edges follow the drone rings.** The default worldgen (`MonoDefault`) is nearly empty inside 18 km apart from the
-  9 km asteroid ring, Cluster A and the Wilds, and its Very Far biomes start drones at 18, 22, 25 and 30 km with no
-  outer edge. The bands take the map's drone ring radii as their edges, so the Deep is the existing Very Far T2 Far
-  biome and needs no new worldgen. The Wilds hold drones inside Moored space; lore can make them a dead anchor's site.
-- **Garbling:** the Deep's name is never shown cleanly (`the D#e$p`, `#h$ D%%@`, then noise), and popups, radar labels,
+- **Edges are the profile's.** The default worldgen (`MonoDefault`) is nearly empty inside 20 km apart from the 9 km
+  asteroid ring, Cluster A and the Wilds, and its Very Far biomes change at 20, 34, 50 and 66 km, the same as the
+  profile's edges, so the Coda is the Very Far T2 Far biome. Drone rings no longer move the edges
+  (`droneRingEdges: false`), and only low-tier drones spawn out there. The Wilds hold drones inside Moored space; lore
+  can make them a dead anchor's site.
+- **Garbling:** the Coda's name is never shown cleanly (`the D#e$p`, `#h$ D%%@`, then noise), and popups, radar labels,
   ship names and coordinates garble on the same exponential curve with depth. Character substitution, not combining
   marks, which the game fonts may not draw.
 - **Crossing a band** shows a popup and a chip: leaving anchored space, restricted unsafe space, and the yield bonus.
 - **Radar:** the drone rings are relabelled as bands, and the shuttle console shows Lattice stability.
-- **Monolith ships** (the hulk, the guarded hulk and the adrift freighter) spawn in the Deep only, 31-36 km from the
+- **Monolith ships** (the hulk, the guarded hulk and the adrift freighter) spawn in the Coda only, 68-76 km from the
   centre (`latticeBand` on the encounter), and the coordinates in the Scion hint whispers garble.
 
 ## Drift
@@ -47,7 +49,7 @@ below are for an intact Lattice and slide inward where anchors fall.
 - **Planets count:** a planet's surface and orbit take the Drift of the world's position in the sector.
 - **Hallucinations are client-only:** each player sees their own phantom contacts, hails and figures, and nobody else
   does. No networked entities.
-- **Remade in the Deep:** the Unmooring takes the smallest minds first. A pet or mouse aboard may turn into a Remade
+- **Remade in the Coda:** the Unmooring takes the smallest minds first. A pet or mouse aboard may turn into a Remade
   critter (`Remade/Critters`). A running stabiliser prevents it.
 
 ## Counterplay
@@ -70,23 +72,23 @@ below are for an intact Lattice and slide inward where anchors fall.
 
 The client feeds Lattice integrity into the `WFBlackHole` shader. As anchors fall, lensing strengthens, the disk flares
 and stutters, its colour moves from warm orange towards violet, doubled disk images appear and the edge of the shadow
-tears. From the Deep it always looks wrong, whatever the Lattice's state.
+tears. From the Coda it always looks wrong, whatever the Lattice's state.
 
 ## Exotic matter
 
-Found only in the Adrift band and further out. It sells for a lot, and it is the ingredient for stabilisers, charms
+Found only in the Dissonance band and further out. It sells for a lot, and it is the ingredient for stabilisers, charms
 and relay anchors. It is stable and does not decay. Its price and spawn rates need tuning against the Mining module's
 150-minute voucher ladder.
 
 ## The Choir as a role
 
 A player faction, built like the ADS and Reaver campaigns: tiers, DEFCON scoring, campaign events. A crew whose Drift
-runs high hears the song and may choose to join. Nobody is converted against their will. Their chapel is in the Deep,
+runs high hears the song and may choose to join. Nobody is converted against their will. Their chapel is in the Coda,
 Drift does not harm them, and their aim is to break anchors and carry Scions inward. It needs admin support and
 guardrails for low population, so it comes after the Lattice itself.
 
 Built so far: the opt-in offer at high Drift, the faction, the briefing, admin alerts and logs, population and member
-caps, and DEFCON scoring. Still to come: a Choir chapel in the Deep, campaign tiers and events, and objectives.
+caps, and DEFCON scoring. Still to come: a Choir chapel in the Coda, campaign tiers and events, and objectives.
 
 ## Build order
 

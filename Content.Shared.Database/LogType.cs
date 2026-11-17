@@ -512,4 +512,22 @@ public enum LogType
     /// </summary>
     WFAnatomy = 12490,
     // WOLFGATE END
+
+    // WOLFGATE(Photography) START: photos taken, labelled and written on
+    /// <summary>Photos taken, labelled and written on.</summary>
+    WFPhoto = 12491,
+    // WOLFGATE END
+
+    // WOLFGATE(ShipCommand) START: service use and price rules aboard a commanded ship
+    /// <summary>A player used a service aboard a commanded ship, with the price charged and the rule applied.</summary>
+    WFShipService = 12492,
+
+    /// <summary>A commanded ship's price rules were changed.</summary>
+    WFShipServiceRules = 12493,
+    // WOLFGATE END
+
+    // WOLFGATE(ShipAdmin) START: admin ship panel actions
+    /// <summary>Staff changed a ship from the admin ship panel.</summary>
+    WFShipAdmin = 12494,
+    // WOLFGATE END
 }

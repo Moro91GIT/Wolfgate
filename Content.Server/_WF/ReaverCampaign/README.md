@@ -6,8 +6,10 @@ its ring, spread one quiet frontier cell at a time toward the origin, send patro
 3, raids at player ships and stations. A threat score (10 a stronghold, 1 a held cell, up to 20 for held space near
 the origin) sets a tier from None to Overrun; a rise is announced at once, a fall only after ten minutes under the
 threshold. The sector map shows held cells and a legend line with the tier, strongholds, cells and current bounty.
-The sector watch announces in three tiers: chimed banners for the big moments, at most one quiet banner per five minutes
-(the rest go on the radio) and routine lines on the Common channel only.
+The sector watch banners only capital moments: a rising tier, the first stronghold and a regroup, the citadel setting out,
+raised and fallen, and the defeat. Everything else is a line on the Common channel (a falling tier, later strongholds and
+their fall, convoys, blockades, kills, retakes, smuggling funding); reinforcements, growth and response packs say nothing, and a
+ship a patrol or raid turns on is warned aboard only.
 A cell where a campaign ship and a crewed player ship meet is disputed: the map hatches it, and the stronghold's
 reinforcement clock, the convoy and reinforcement deadlines there hold until one side leaves or dies; spread skips it.
 Campaign crews fire on sight (`WFCrewOnSightComponent` on every campaign hull, set in `SpawnEncounter`): any faction
@@ -121,10 +123,13 @@ and counted for the round summary. `wf_reavers respond <q> <r>` sends one by han
 
 Smuggling funds the Reavers (`.Funding`). Each smuggling crate (the market's `contrabandGoods`) sold at an open chute,
 and each crate of NPC freight (a manifest seal) fenced at a `sealedOnlyChutes` chute (the Underground fence), banks
-toward a war chest; every `fundingCrates` (5) pays out, bringing every stronghold's next reinforcement and the next
-spread forward by `fundingShare` (a quarter) of their intervals, announced as a routine radio line. The chest holds one
-payout at most and spends it once a stronghold stands, the campaign isn't held and `fundingCooldown` (20 minutes) has
-passed since the last payout; `wf_reavers status` shows it.
+toward a war chest, and so does every `fundingGoodsValue` (5,000) of `fundingGoodsTag` goods (narcotics) sold on a
+cargo pallet (`WFPalletSaleEvent`); every `fundingCrates` (4) make a payout, bringing every stronghold's next
+reinforcement and the next spread forward by `fundingShare` (a quarter) of their intervals and sending a patrol from the
+stronghold with fewest out, up to `fundingPatrols` past the usual patrol cap and without moving that stronghold's own
+patrol clock. Each payout is announced on the common channel. The chest banks up to `fundingBank` (3) payouts, so a bulk
+run keeps paying, and spends one whenever a stronghold stands, the campaign isn't held and `fundingCooldown` (5 minutes)
+has passed since the last; `wf_reavers status` shows it.
 
 Ship raids favour laden ships (up to three times the weight for a hold worth 100,000, through
 `WFCargoValueQueryEvent`), and `RecentlyRaided` tells the market which stations a raid was just sent at.
@@ -150,6 +155,7 @@ Ship raids favour laden ships (up to three times the weight for a hold worth 100
 - [`Content.Server/_WF/ReaverCampaign/Systems/WFReaverCampaignRuleSystem.cs`](Systems/WFReaverCampaignRuleSystem.cs)
 - [`Content.Server/_WF/ReaverCampaign/Systems/WFReaverCampaignSystem.Announce.cs`](Systems/WFReaverCampaignSystem.Announce.cs)
 - [`Content.Server/_WF/ReaverCampaign/Systems/WFReaverCampaignSystem.Batteries.cs`](Systems/WFReaverCampaignSystem.Batteries.cs)
+- [`Content.Server/_WF/ReaverCampaign/Systems/WFReaverCampaignSystem.Boarding.cs`](Systems/WFReaverCampaignSystem.Boarding.cs)
 - [`Content.Server/_WF/ReaverCampaign/Systems/WFReaverCampaignSystem.Citadel.cs`](Systems/WFReaverCampaignSystem.Citadel.cs)
 - [`Content.Server/_WF/ReaverCampaign/Systems/WFReaverCampaignSystem.Conflict.cs`](Systems/WFReaverCampaignSystem.Conflict.cs)
 - [`Content.Server/_WF/ReaverCampaign/Systems/WFReaverCampaignSystem.Convoys.cs`](Systems/WFReaverCampaignSystem.Convoys.cs)
@@ -201,6 +207,7 @@ Ship raids favour laden ships (up to three times the weight for a hold worth 100
 - [`Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverRaidTest.cs`](../../../Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverRaidTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverReinforcementTest.cs`](../../../Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverReinforcementTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverSanctuaryTest.cs`](../../../Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverSanctuaryTest.cs)
+- [`Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverSeizedTest.cs`](../../../Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverSeizedTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverSimulationTest.cs`](../../../Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverSimulationTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverStarvedTest.cs`](../../../Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverStarvedTest.cs)
 - [`Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverStrongholdTest.cs`](../../../Content.IntegrationTests/Tests/_WF/ReaverCampaign/WFReaverStrongholdTest.cs)

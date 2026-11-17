@@ -15,7 +15,7 @@ Some pages unsettle the book. A guide entry's `unease` (0 to 1) builds up as it 
 paragraphs (`wf-lore-book-whisper-*`), and deep in, its title, chapter trail and page numbers slip too. Closing the
 book and opening it again clears it. A page stays as it was drawn until it is turned again; now and then a word is written in the DS13 glyph font
 (`WFLoreGlyphs`), and quiet whispers play under the book (`WFLoreBookWhispers`), more often and louder as it corrupts.
-Pages that carry unease (the Unmooring, the Lattice, the Choir) sit together in the Forbidden chapter at the back. Pages turn with one of two page-flip sounds (`WFLoreBookPageTurn`).
+Pages that carry unease (the Monolith, the Unmooring, the Lattice, the Choir) sit together in the Forbidden chapter at the back. Pages turn with one of two page-flip sounds (`WFLoreBookPageTurn`).
 
 Raising `WFLoreBookUIController.Edition` opens the book once for every player, at its front, on their next lobby
 or round; `wf.lorebook.seen_edition` (client, saved) remembers who has seen it.
@@ -126,6 +126,10 @@ in the upstream `_Mono` lore, factions and star system pages.
   - Verda's city
 - [`Resources/ServerInfo/_Mono/Guidebook/BeginnerGuide.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/BeginnerGuide.xml): point new players at the lore book
 - [`Resources/ServerInfo/_Mono/Guidebook/Factions/caelestinus.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/Factions/caelestinus.xml): one origin for Caelestinus, which now holds the Bench; the upstream text is kept in the comment below
+- [`Resources/ServerInfo/_Mono/Guidebook/Factions/USSP_Remnants.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/Factions/USSP_Remnants.xml): objectives in red like the other factions'
+- [`Resources/ServerInfo/_Mono/Guidebook/Factions/viper_group.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/Factions/viper_group.xml)
+  - the Vipers get standing orders like the other factions
+  - Viper standing order
 - [`Resources/ServerInfo/_Mono/Guidebook/Lore/Primer.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/Lore/Primer.xml): the opening page, rewritten for the Collapse, the Lattice and the Bench; the upstream text is kept in the comment below
 - [`Resources/ServerInfo/_Mono/Guidebook/Lore/Timeline.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/Lore/Timeline.xml): the history, carried through the Collapse and the Caelestinus Accord; the upstream text is kept in the comment below
 - [`Resources/ServerInfo/_Mono/Guidebook/Rules/MonolithRuleset.xml`](../../../Resources/ServerInfo/_Mono/Guidebook/Rules/MonolithRuleset.xml): the primer is in the lore book; was a textlink

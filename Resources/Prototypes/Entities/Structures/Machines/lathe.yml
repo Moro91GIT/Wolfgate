@@ -161,6 +161,7 @@
     staticPacks:
     - ToolsStatic
     - WFPlanetStatic # WOLFGATE(Planets): landing thruster kits and parachutes.
+    - WFPhotographyStatic # WOLFGATE(Photography): cameras and film.
     - PartsStatic
     - AtmosStatic
     - CablesStatic
@@ -417,6 +418,8 @@
     - SMCybernetics
     # Goob/Mono - modsuits
     - Modsuits
+    - ModsuitModules # WOLFGATE(Modsuits): module recipes
+    - ModsuitPlating # WOLFGATE(Modsuits): plating recipes
     # Mono - Mechs
     - ClarkeMechParts
     - DurandMechParts

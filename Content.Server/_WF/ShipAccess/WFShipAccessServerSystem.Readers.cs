@@ -164,6 +164,11 @@ public sealed partial class WFShipAccessServerSystem
 
         TryComp<WFDoorAccessRuleComponent>(uid, out var rule);
         var ruleKind = rule?.Rule ?? WFDoorAccessRule.Default;
+
+        // On a public ship every door that follows the ship admits anyone. Lockers and doors with a rule keep theirs.
+        if (ruleKind == WFDoorAccessRule.Default && ship.Comp.Mode == WFShipAccessMode.Public && IsRuledDoor(uid))
+            ruleKind = WFDoorAccessRule.Public;
+
         var lists = reader.Comp.AccessLists;
         var keys = reader.Comp.AccessKeys;
 
@@ -244,6 +249,14 @@ public sealed partial class WFShipAccessServerSystem
                 foreach (var key in rule!.Players)
                     keys.Add(_access.ToRecordKey(key));
                 break;
+            case WFDoorAccessRule.Zone:
+            {
+                // The zone's owner names who it admits now; with nobody answering, only the owner.
+                keys.UnionWith(owners);
+                var zoneKeys = new WFDoorZoneKeysEvent(uid, rule?.Zone, keys);
+                RaiseLocalEvent(ship.Owner, ref zoneKeys);
+                break;
+            }
             default:
                 keys.UnionWith(owners);
                 foreach (var entry in ship.Comp.AllowList)

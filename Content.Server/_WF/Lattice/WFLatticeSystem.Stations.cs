@@ -13,6 +13,8 @@ using Content.Shared._WF.Remade.Ward;
 using Content.Shared.Construction.Components;
 using Content.Shared.Damage;
 using Content.Shared.Destructible;
+using Content.Shared.Popups;
+using Content.Shared.Shuttles.Components;
 using Robust.Shared.Audio;
 using Robust.Shared.EntitySerialization.Systems;
 using Robust.Shared.Map;
@@ -49,6 +51,9 @@ public sealed partial class WFLatticeSystem
     /// <summary>The alarm a breach sounds across the sector.</summary>
     private static readonly SoundSpecifier BreachAlarm = new SoundPathSpecifier("/Audio/Misc/delta_alt.ogg");
 
+    /// <summary>IFF of a lost anchor's station: dead grey.</summary>
+    private static readonly Color DeadAnchorColor = Color.FromHex("#6e6e6e");
+
     private List<Entity<MapGridComponent>> _stationGrids = new();
 
     private void InitializeStations()
@@ -58,6 +63,7 @@ public sealed partial class WFLatticeSystem
         SubscribeLocalEvent<WFLatticeAnchorComponent, ComponentShutdown>(OnAnchorShutdown);
         SubscribeLocalEvent<WFLatticeAnchorComponent, AnchorStateChangedEvent>(OnAnchorUnbolted);
         SubscribeLocalEvent<WFLatticeAnchorComponent, DamageChangedEvent>(OnAnchorDamaged);
+        SubscribeLocalEvent<WFLatticeStationPartComponent, DamageChangedEvent>(OnPartDamaged);
         SubscribeLocalEvent<WFLatticeAnchorShieldComponent, MapInitEvent>(OnShieldMapInit);
         SubscribeLocalEvent<WFShipShieldAttackedEvent>(OnShieldAttacked);
         SubscribeLocalEvent<WFDefconGatherEvent>(OnDefconGather);
@@ -227,6 +233,7 @@ public sealed partial class WFLatticeSystem
             return;
 
         ent.Comp.Active = false;
+        MarkDead(ent.Owner);
         var breach = new WFLatticeBreachEvent(ent.Owner);
         RaiseLocalEvent(ref breach);
         var bearing = _transform.GetWorldPosition(ent.Owner);
@@ -244,6 +251,18 @@ public sealed partial class WFLatticeSystem
         });
     }
 
+    /// <summary>Renames a lost anchor's station and greys its IFF, so radar shows at a glance that it is dead.</summary>
+    private void MarkDead(EntityUid core)
+    {
+        // Only an anchor's own station; a core spawned loose on some other grid leaves it alone.
+        if (Transform(core).GridUid is not { } grid || TerminatingOrDeleted(grid) || !HasComp<WFLatticeAnchorStationComponent>(grid))
+            return;
+
+        _meta.SetEntityName(grid, Loc.GetString("wf-lattice-station-name-dead", ("anchor", Name(core))));
+        _shuttle.SetIFFColor(grid, DeadAnchorColor);
+        _shuttle.RemoveIFFFlag(grid, IFFFlags.HideLabel | IFFFlags.HideLabelAlways);
+    }
+
     /// <summary>An anchor's shield generator can be blown up, but not unbolted or taken apart.</summary>
     private void OnShieldMapInit(Entity<WFLatticeAnchorShieldComponent> ent, ref MapInitEvent args)
     {
@@ -258,7 +277,16 @@ public sealed partial class WFLatticeSystem
             return;
 
         var attacker = args.Origin is { } origin && TryComp<TransformComponent>(origin, out var from) ? from.GridUid : null;
+        // The direct-hit alarm goes first, so the weaker under-fire advisory can't take its cooldown.
+        Provoke(grid, args.Origin);
         Strike(grid, attacker, 1f);
+    }
+
+    /// <summary>A hit on anything else on the station is answered at once too.</summary>
+    private void OnPartDamaged(Entity<WFLatticeStationPartComponent> ent, ref DamageChangedEvent args)
+    {
+        if (args.DamageIncreased && Transform(ent.Owner).GridUid is { } grid)
+            Provoke(grid, args.Origin);
     }
 
     /// <summary>A hit on the shield counts towards the limit.</summary>
@@ -322,8 +350,23 @@ public sealed partial class WFLatticeSystem
                         && (!TryComp<PhysicsComponent>(grid, out var body) || body.LinearVelocity.Length() <= relay.MaxSpeed);
             var powered = !TryComp<ApcPowerReceiverComponent>(uid, out var power) || power.Powered;
             relay.Settled = still ? relay.Settled + seconds : 0f;
+            // Past the Unstringing a mobile relay is a haven, and what it draws keeps climbing.
+            if (power != null && relay.NeedsFuel)
+            {
+                if (relay.BaseLoad < 0f)
+                    relay.BaseLoad = power.Load;
+
+                power.Load = relay.BaseLoad * HavenLoadFactor(xform.MapUid);
+            }
+
             anchor.Strength = relay.Strength;
-            anchor.Active = powered && relay.Settled >= relay.SettleSeconds;
+            var was = anchor.Active;
+            anchor.Active = powered && relay.Settled >= relay.SettleSeconds && (!relay.NeedsFuel || relay.Fuel > 0f);
+            if (anchor.Active && relay.NeedsFuel)
+                relay.Fuel = MathF.Max(0f, relay.Fuel - seconds);
+
+            if (was && relay.NeedsFuel && relay.Fuel <= 0f)
+                _popup.PopupEntity(Loc.GetString("wf-lattice-relay-empty"), uid, PopupType.MediumCaution);
         }
     }
 

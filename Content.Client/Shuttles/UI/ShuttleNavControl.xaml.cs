@@ -90,6 +90,11 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
     #region Mono
     // These 2 handle timing updates
     protected const float RadarUpdateInterval = 0f;
+    // WOLFGATE(Performance) START: the sweep divided by the zero interval, so the sweep hand keeps a period of its own.
+    // The request gate stays open; the throttle in RadarBlipsSystem owns the refresh rate.
+    protected const float RadarSweepPeriod = 1f;
+    private float _wfSweep; // WOLFGATE(Performance): the sweep hand's own timer, since the request accumulator is zeroed each frame
+    // WOLFGATE END
     protected float _updateAccumulator = 0f;
 
     // doesn't support absolute panning and angle follow, but why would you need that?
@@ -298,6 +303,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         _radarModeButtons.AddChild(_radarRotationButton);
         _radarModeButtons.AddChild(_radarAnchorButton);
         _radarModeButtons.AddChild(_radarResetButton);
+        AddWfZoomToMouseButton(_radarModeButtons); // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        AddWfAllNamesButton(_radarModeButtons); // WOLFGATE(RadarLabels): every contact named toggle.
 
         parent.AddChild(_radarModeButtons);
         AddWfTerrainButton(parent); // WOLFGATE(Planets): terrain toggle overlays the radar, not the settings column.
@@ -339,7 +346,9 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         Azimuth,
         Rotation,
         Anchor,
-        Reset
+        Reset,
+        WfZoomToMouse, // WOLFGATE(Shuttles): zoom toward the cursor toggle.
+        WfAllNames // WOLFGATE(RadarLabels): every contact named toggle.
     }
 
     public sealed partial class RadarModeButton : BaseButton // WOLFGATE(CombatConsole): theme the original radar mode controls.
@@ -442,6 +451,14 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                         handle.DrawLine(left, right, iconColor);
                         break;
                     }
+                // WOLFGATE(Shuttles) START: zoom toward the cursor toggle.
+                case RadarModeButtonIcon.WfZoomToMouse:
+                    WfDrawZoomToMouse(handle, center, radius, Color.Lime.WithAlpha(0.95f));
+                    break;
+                case RadarModeButtonIcon.WfAllNames: // WOLFGATE(RadarLabels): every contact named toggle
+                    WfDrawAllNames(handle, center, radius, Color.Lime.WithAlpha(0.95f));
+                    break;
+                // WOLFGATE END
                 default:
                     break;
             }
@@ -518,6 +535,11 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
     protected override void FrameUpdate(FrameEventArgs args)
     {
         base.FrameUpdate(args);
+        // WOLFGATE(Performance) START: the sweep hand turns on its own timer, so it keeps moving while requests are throttled
+        _wfSweep += args.DeltaSeconds;
+        if (_wfSweep >= RadarSweepPeriod)
+            _wfSweep -= RadarSweepPeriod;
+        // WOLFGATE END
         WfSaveDisplaySettings(); // WOLFGATE(Shuttles): keep a changed radar display choice for the next radar.
         WfUpdateWaypoints(); // WOLFGATE(Waypoints): keep the panel on the grid's current list.
 
@@ -679,6 +701,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         DrawCrewGroups(handle, xform, worldToView); // WOLFGATE(NpcCrew): Admin tags and battlegroup lines for NPC-crewed ships.
         DrawEncounterMarkers(handle, xform, worldToView); // WOLFGATE(Encounters): Sector markers for visible encounters.
         DrawWfLatticePhantoms(handle, worldToView, xform.MapUid); // WOLFGATE(Lattice): radar contacts only this player sees.
+        DrawWfLatticeHex(handle, worldToView, xform.MapUid); // WOLFGATE(Lattice): the hex field's beams and the anchors' wards.
         DrawWfWaypoints(handle, worldToView, xform.MapUid); // WOLFGATE(Waypoints): the crew's marked positions.
 
         // Frontier Corvax: north line drawing
@@ -724,6 +747,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
         // Mono edited: Frontier - collect blip location data outside foreach - more changes ahead
         _tempBlipDataList.Clear();
+        WfGatherEncounterGrids(); // WOLFGATE(RadarLabels): encounter ships draw as ships
 
         _visibleGridsSet.Clear();
 
@@ -732,7 +756,10 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         #region Mono
         // Draw radar line
         // First, figure out which angle to draw.
-        var updateRatio = _updateAccumulator / RadarUpdateInterval;
+        // WOLFGATE(Performance) START: this divided by a zero interval and drew the sweep to a NaN point every frame
+        // var updateRatio = _updateAccumulator / RadarUpdateInterval;
+        var updateRatio = _wfSweep / RadarSweepPeriod;
+        // WOLFGATE END
 
         Angle angle = updateRatio * Math.Tau;
         var origin = ScalePosition(-new Vector2(Offset.X, -Offset.Y));
@@ -817,6 +844,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
             }
         }
         #endregion
+        WfDrawTags(handle); // WOLFGATE(RadarLabels): every contact's tag, laid out together over the scope.
+        DrawWfLatticeDeadZones(handle, worldToView, xform.MapUid); // WOLFGATE(Lattice): the Coda shows only as static on every scanner.
         DrawWfCoordinateReadout(handle); // WOLFGATE(Waypoints): cursor and scanner coordinates over everything else.
     }
 
@@ -947,7 +976,10 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                     var uiX = uiXCentre * uiXOffset / uiDistance;
                     var uiY = uiYCentre * uiYOffset / uiDistance;
 
-                    var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+                    // WOLFGATE(RadarLabels) START: the old test called contacts on the scope's diagonals outside it
+                    // var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+                    var isOutsideRadarCircle = !WfOnScope(uiPosition * UIScale);
+                    // WOLFGATE END
                     if (isOutsideRadarCircle)
                     {
                         // 0.95f for offsetting the icons slightly away from edge of radar so it doesnt clip.
@@ -967,7 +999,10 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
                     var distance = Vector2.Distance(gridMapPos, mapPos.Position);
 
-                    if (!isOutsideRadarCircle || isDistantPOI || isMouseOver)
+                    // WOLFGATE(RadarLabels) START: only contacts on the scope get a tag; one pinned to the rim keeps just its blip unless hovered
+                    // if (!isOutsideRadarCircle || isDistantPOI || isMouseOver)
+                    if (!isOutsideRadarCircle || isMouseOver)
+                    // WOLFGATE END
                     {
                         // Shows decimal when distance is < 50m, otherwise pointless to show it.
                         var displayedDistance = distance < 50f ? $"{distance:0.0}" : distance < 1000 ? $"{distance:0}" : $"{distance / 1000:0.0}k";
@@ -1036,39 +1071,54 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                         var lines = labelText.Split('\n');
                         var mainLabel = lines[0];
 
-                        // Draw main ship label with company color if available
-                        handle.DrawString(Font, (uiPosition + labelOffset) * UIScale, mainLabel, UIScale * 0.9f, displayColor);
-
-                        // Mono start - draw main stack of info
+                        // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
+                        WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, isMouseOver ? 3 : isPlayerShuttle ? 2 : 1,
+                            always: isMouseOver && WfHoverReveal || distance <= WfTagCloseRange, key: gUid.Id); // a ship this close keeps its name: it could be shooting
+                        WfTagLine(handle, mainLabel, UIScale * 0.9f, displayColor);
                         if (shouldDrawDetailedIFF)
                         {
-                            // Get company label & draw
-                            var companyLabel = !hideLabel ? lines[1] : Loc.GetString("shuttle-console-company-unknown");
-                            var companyLabelOffset = new Vector2(
-                                labelOffset.X,
-                                labelOffset.Y + handle.GetDimensions(Font, mainLabel, 0.9f).Y
-                            );
-                            handle.DrawString(Font, (uiPosition + companyLabelOffset) * UIScale, companyLabel, UIScale * 0.7f, displayColor);
-
-                            // Draw coordinates
-                            var coordDimensions = handle.GetDimensions(Font, coordsText, 0.7f);
-                            var coordOffset = new Vector2(
-                                labelOffset.X,
-                                labelOffset.Y + handle.GetDimensions(Font, mainLabel, 0.9f).Y + handle.GetDimensions(Font, companyLabel, 0.7f).Y);
-                            handle.DrawString(Font, (uiPosition + coordOffset) * UIScale, coordsText, 0.7f * UIScale, displayColor);
-
-                            // Draw track ID (if it has one)
-                            var trackIdDimensions = handle.GetDimensions(Font, trackIdText, 0.7f);
-                            var trackIdOffset = new Vector2(
-                                labelOffset.X,
-                                labelOffset.Y + handle.GetDimensions(Font, mainLabel, 0.9f).Y + handle.GetDimensions(Font, companyLabel, 0.7f).Y + handle.GetDimensions(Font, coordsText, 0.7f).Y);
+                            WfTagLine(handle, !hideLabel ? lines[1] : Loc.GetString("shuttle-console-company-unknown"), UIScale * 0.7f, displayColor);
+                            WfTagLine(handle, coordsText, UIScale * 0.7f, displayColor);
                             if (iff != null)
-                                handle.DrawString(Font, (uiPosition + trackIdOffset) * UIScale, trackIdText, 0.7f * UIScale, displayColor);
+                                WfTagLine(handle, trackIdText, UIScale * 0.7f, displayColor);
                         }
-                        // Mono end
+
+                        // // Draw main ship label with company color if available
+                        // handle.DrawString(Font, (uiPosition + labelOffset) * UIScale, mainLabel, UIScale * 0.9f, displayColor);
+                        //
+                        // // Mono start - draw main stack of info
+                        // if (shouldDrawDetailedIFF)
+                        // {
+                        //     // Get company label & draw
+                        //     var companyLabel = !hideLabel ? lines[1] : Loc.GetString("shuttle-console-company-unknown");
+                        //     var companyLabelOffset = new Vector2(
+                        //         labelOffset.X,
+                        //         labelOffset.Y + handle.GetDimensions(Font, mainLabel, 0.9f).Y
+                        //     );
+                        //     handle.DrawString(Font, (uiPosition + companyLabelOffset) * UIScale, companyLabel, UIScale * 0.7f, displayColor);
+                        //
+                        //     // Draw coordinates
+                        //     var coordDimensions = handle.GetDimensions(Font, coordsText, 0.7f);
+                        //     var coordOffset = new Vector2(
+                        //         labelOffset.X,
+                        //         labelOffset.Y + handle.GetDimensions(Font, mainLabel, 0.9f).Y + handle.GetDimensions(Font, companyLabel, 0.7f).Y);
+                        //     handle.DrawString(Font, (uiPosition + coordOffset) * UIScale, coordsText, 0.7f * UIScale, displayColor);
+                        //
+                        //     // Draw track ID (if it has one)
+                        //     var trackIdDimensions = handle.GetDimensions(Font, trackIdText, 0.7f);
+                        //     var trackIdOffset = new Vector2(
+                        //         labelOffset.X,
+                        //         labelOffset.Y + handle.GetDimensions(Font, mainLabel, 0.9f).Y + handle.GetDimensions(Font, companyLabel, 0.7f).Y + handle.GetDimensions(Font, coordsText, 0.7f).Y);
+                        //     if (iff != null)
+                        //         handle.DrawString(Font, (uiPosition + trackIdOffset) * UIScale, trackIdText, 0.7f * UIScale, displayColor);
+                        // }
+                        // // Mono end
+                        // WOLFGATE END
                     }
 
-                    NfAddBlipToList(_tempBlipDataList, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, labelColor, hideLabel ? default : gUid); // Frontier code
+                    // WOLFGATE(RadarLabels): a contact on the scope is drawn as what it is; at the rim, or unknown, it keeps the triangle
+                    if (isOutsideRadarCircle || !WfQueueContactIcon(gUid, uiPosition, curGridToView, labelColor, hideLabel || blipOnly))
+                        NfAddBlipToList(_tempBlipDataList, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, labelColor, hideLabel ? default : gUid); // Frontier code
                                                                                                                                                         // End Frontier: IFF drawing functions
                 }
 
@@ -1113,6 +1163,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         WfFlushGrids(handle);
         if (!renderFill)
             NfDrawBlips(handle, _tempBlipDataList);
+        WfDrawContactIcons(handle, !renderFill); // WOLFGATE(RadarLabels): contacts on the scope, by what they are
 
         // If we've set the controlling console, and it's on a different grid
         // to the shuttle itself, then draw an additional marker to help the
@@ -1290,13 +1341,17 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                 //var color = Color.ToSrgb(Color.Magenta); // Frontier
                 var color = Color.ToSrgb(state.HighlightedRadarColor); // Frontier
 
-                var verts = new[]
-                {
-                    Vector2.Transform(position + new Vector2(-DockScale, -DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(DockScale, -DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(DockScale, DockScale), gridToView),
-                    Vector2.Transform(position + new Vector2(-DockScale, DockScale), gridToView),
-                };
+                // WOLFGATE(Shuttles) START: a dock marker keeps a small minimum size on screen, and hides when zoomed far out
+                // var verts = new[]
+                // {
+                //     Vector2.Transform(position + new Vector2(-DockScale, -DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(DockScale, -DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(DockScale, DockScale), gridToView),
+                //     Vector2.Transform(position + new Vector2(-DockScale, DockScale), gridToView),
+                // };
+                if (WfDockVertices(position, positionInView, gridToView, DockScale) is not { } verts)
+                    break;
+                // WOLFGATE END
 
                 handle.DrawPrimitives(DrawPrimitiveTopology.TriangleFan, verts, color.WithAlpha(0.8f));
                 handle.DrawPrimitives(DrawPrimitiveTopology.LineStrip, verts, color);
@@ -1308,6 +1363,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
             {
                 if (state.LabelName == null || labeled.Contains(state.LabelName))
                     continue;
+                if (!WfDockNamesShown(gridToView, DockScale)) // WOLFGATE(Shuttles): dock names only up close, so they don't crowd the contacts
+                    break;
 
                 var position = state.Coordinates.Position;
                 var uiPosition = Vector2.Transform(position, gridToView);
@@ -1317,7 +1374,11 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
 
                 labeled.Add(state.LabelName);
                 var labelDimensions = handle.GetDimensions(Font, state.LabelName, 0.9f);
-                handle.DrawString(Font, (uiPosition / UIScale - labelDimensions / 2) * UIScale, state.LabelName, UIScale * 0.9f, _dockLabelColor);
+                // WOLFGATE(RadarLabels) START: dock names join the scope's shared tag layout.
+                // handle.DrawString(Font, (uiPosition / UIScale - labelDimensions / 2) * UIScale, state.LabelName, UIScale * 0.9f, _dockLabelColor);
+                WfBeginTag(uiPosition, (uiPosition / UIScale - labelDimensions / 2) * UIScale);
+                WfTagLine(handle, state.LabelName, UIScale * 0.9f, _dockLabelColor);
+                // WOLFGATE END
             }
             // End Frontier
         }

@@ -252,13 +252,17 @@ public sealed partial class WFWardSystem : EntitySystem
         if (!people)
             return turned;
 
-        // Anyone loose in space inside the oval, on foot, in a suit or a jetpack. People aboard a ship go with the ship.
+        // Anyone loose in space inside the oval, on foot, in a suit or a jetpack. People aboard a ship go with the ship,
+        // so only the map's own broadphase is asked: a map-wide lookup walked every entity of every grid in the oval,
+        // the whole station included, at 25 ms/s on a busy round.
         _people.Clear();
-        _lookup.GetEntitiesIntersecting(homeXform.MapID, world, _people);
+        _lookup.GetLocalEntitiesIntersecting(homeXform.MapUid.Value, world, _people, LookupFlags.Dynamic | LookupFlags.Approximate);
         foreach (var person in _people)
         {
             var xform = Transform(person);
-            if (xform.GridUid != null || !TryComp<PhysicsComponent>(person, out var body))
+            // Only what sits loose on the map: a rider goes with their vehicle, and moving an organ would pull
+            // it out of the body it is in.
+            if (xform.GridUid != null || xform.ParentUid != homeXform.MapUid || !TryComp<PhysicsComponent>(person, out var body))
                 continue;
 
             var inHome = Vector2.Transform(_transform.GetWorldPosition(xform), toLocal);

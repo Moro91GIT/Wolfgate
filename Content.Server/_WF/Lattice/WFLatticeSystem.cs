@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Numerics;
 using Content.Server._WF.Planets;
 using Content.Server.Worldgen.Components;
@@ -37,11 +38,15 @@ public sealed partial class WFLatticeSystem : EntitySystem
     /// <summary>Seconds between field checks.</summary>
     public const float Interval = 1f;
 
+    /// <summary>Drift a second lost while above the band's ceiling.</summary>
+    private const float OverCapFade = 0.2f;
+
     private const float ChipSeconds = 12f;
 
     private float _accumulator;
     private int _primaries;
-    private readonly Dictionary<NetUserId, int> _seen = new();
+    /// <summary>The band each body was last told it is in; per body, so a respawn is told afresh.</summary>
+    private readonly Dictionary<EntityUid, int> _seen = new();
     private readonly List<(Vector2 Position, float Strength)> _anchors = new();
     private readonly Dictionary<EntityUid, (Vector2 Position, List<(ICommonSession Session, EntityUid Mob)> Aboard)> _carriers = new();
 
@@ -54,9 +59,21 @@ public sealed partial class WFLatticeSystem : EntitySystem
             _seen.Clear();
             _ovals.Clear();
             _nextLostShip.Clear();
+            _hex.Clear();
+            _scionLast.Clear();
+            _beamPopup.Clear();
+            _central.Clear();
+            _tacetAt.Clear();
+            _codaAtCentre.Clear();
+            _fading.Clear();
+            _implosions.Clear();
+            _unstrungAt.Clear();
         });
         InitializeStations();
         InitializeDefence();
+        InitializeFtl();
+        InitializeRelayFuel();
+        InitializeEndgame();
     }
 
     public override void Update(float frameTime)
@@ -64,6 +81,8 @@ public sealed partial class WFLatticeSystem : EntitySystem
         base.Update(frameTime);
         UpdateDefence(frameTime);
         HoldBarriers();
+        HoldScions();
+        UpdateImplosions();
 
         _accumulator += frameTime;
         if (_accumulator < Interval)
@@ -183,6 +202,12 @@ public sealed partial class WFLatticeSystem : EntitySystem
         return BandOf(point, out _)?.Yield ?? 1f;
     }
 
+    /// <summary>Exotic matter shards per vein a rock broken at a point drops, on average. Zero outside the Coda.</summary>
+    public float ExoticAt(MapCoordinates point)
+    {
+        return BandOf(point, out _)?.Exotic ?? 0f;
+    }
+
     /// <summary>
     /// Drops the exotic matter a rock of this many veins holds, if the band where it broke has any: at the rock, or at
     /// <paramref name="dropAt"/> when the loot goes straight to a ship drill.
@@ -210,6 +235,19 @@ public sealed partial class WFLatticeSystem : EntitySystem
         {
             into.Add(new MapCoordinates(Vector2.Zero, xform.MapID));
         }
+    }
+
+    /// <summary>Whether a point is within a distance of any reality anchor on its map: a primary core, Central's or a relay.</summary>
+    public bool NearAnchor(MapId map, Vector2 point, float range)
+    {
+        var anchors = EntityQueryEnumerator<WFLatticeAnchorComponent, TransformComponent>();
+        while (anchors.MoveNext(out _, out var xform))
+        {
+            if (xform.MapID == map && (_transform.GetWorldPosition(xform) - point).LengthSquared() < range * range)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>Copies the gathered anchors onto the field for clients, if they changed.</summary>
@@ -273,7 +311,15 @@ public sealed partial class WFLatticeSystem : EntitySystem
 
         GatherAnchors(map);
         SyncAnchors(map);
+        SyncHex(map);
+        PlaceCentral(map);
+        UpdateEndgame(map);
         RollLostShip(map, profile);
+        foreach (var gone in _seen.Keys.Where(uid => TerminatingOrDeleted(uid)).ToList())
+        {
+            _seen.Remove(gone);
+        }
+
         _carriers.Clear();
         foreach (var session in _player.Sessions)
         {
@@ -302,12 +348,20 @@ public sealed partial class WFLatticeSystem : EntitySystem
             var rate = WFLatticeMath.DriftRate(band, depth);
             if (rate > 0f && TryComp<WFLatticeShelterComponent>(carrier, out var shelter))
                 rate *= 1f - Math.Clamp(shelter.Shelter, 0f, 1f);
+            if (rate > 0f)
+                rate *= GainMultiplier(aboard);
 
-            drift.Drift = Math.Clamp(drift.Drift + rate * seconds, 0f, profile.DriftMax);
+            // Each band has its ceiling: only the Coda takes Drift to the top, and coming back in lets it ease down.
+            var cap = band.MaxDrift >= 0f ? Math.Min(band.MaxDrift, profile.DriftMax) : profile.DriftMax;
+            drift.Drift = drift.Drift > cap
+                ? Math.Max(cap, drift.Drift - OverCapFade * seconds)
+                : Math.Clamp(drift.Drift + rate * seconds, 0f, cap);
+            Soak(carrier, drift, index, profile, seconds);
             var level = (int) (drift.Drift / WFDriftComponent.LevelStep);
-            if (drift.Band != index || drift.Level != level || MathF.Abs(drift.Depth - depth) >= 0.05f)
+            if (drift.Band != index || drift.Level != level || MathF.Abs(drift.Depth - depth) >= 0.05f || drift.NoFtl == band.Ftl)
             {
                 drift.Band = index;
+                drift.NoFtl = !band.Ftl;
                 drift.Level = level;
                 drift.Depth = depth;
                 Dirty(carrier, drift);
@@ -319,27 +373,23 @@ public sealed partial class WFLatticeSystem : EntitySystem
 
             foreach (var (session, mob) in aboard)
             {
-                var seen = _seen.TryGetValue(session.UserId, out var last);
+                var seen = _seen.TryGetValue(mob, out var last);
                 if (seen ? last == index : index == 0)
                 {
-                    _seen[session.UserId] = index;
+                    _seen[mob] = index;
                     continue;
                 }
 
-                _seen[session.UserId] = index;
+                _seen[mob] = index;
                 Notify(session, mob, band, depth);
             }
 
             foreach (var (session, mob) in aboard)
             {
-                var own = drift.Drift;
-                // A person's own charm shelters them on a ship that has none.
-                if (carrier != mob && TryComp<WFLatticeShelterComponent>(mob, out var charm))
-                    own *= 1f - Math.Clamp(charm.Shelter, 0f, 1f);
+                var felt = Feel(mob, carrier, drift, aboard, profile);
 
                 // What they carry in their own head counts as much as where they are.
-                if (carrier != mob && TryComp<WFDriftComponent>(mob, out var head))
-                    own = Math.Max(own, head.Mind);
+                var own = Math.Max(felt, CompOrNull<WFDriftComponent>(mob)?.Mind ?? 0f);
 
                 // The Choir are at home out here: nothing they see is wrong to them.
                 if (HasComp<WFChoirMemberComponent>(mob))
@@ -358,6 +408,11 @@ public sealed partial class WFLatticeSystem : EntitySystem
     private bool TryGetCarrier(EntityUid mob, EntityUid sector, out EntityUid carrier, out Vector2 position)
     {
         var xform = Transform(mob);
+        // A vehicle's crew sit on its interior map and go wherever the vehicle is.
+        if (TryComp<Content.Shared._WF.Vehicles.Core.VehicleInteriorLinkComponent>(xform.MapUid, out var link)
+            && link.Vehicle != mob && Exists(link.Vehicle) && !TerminatingOrDeleted(link.Vehicle))
+            return TryGetCarrier(link.Vehicle, sector, out carrier, out position);
+
         carrier = xform.GridUid ?? mob;
         position = default;
         if (xform.MapUid is not { } map)
@@ -402,17 +457,23 @@ public sealed partial class WFLatticeSystem : EntitySystem
     private void GatherAnchors(EntityUid map)
     {
         _anchors.Clear();
-        var query = EntityQueryEnumerator<WFLatticeAnchorComponent, TransformComponent>();
         _primaries = 0;
-        while (query.MoveNext(out _, out var anchor, out var xform))
+
+        // Unstrung, only a mobile relay still holds; a station's own anchor doesn't. What held fades out below.
+        var unstrung = TryComp<WFLatticeFieldComponent>(map, out var field) && field.Unstrung;
+        var query = EntityQueryEnumerator<WFLatticeAnchorComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var anchor, out var xform))
         {
-            if (xform.MapUid != map || !anchor.Active)
+            if (xform.MapUid != map || !anchor.Active || unstrung && !IsMobileRelay(uid))
                 continue;
 
-            _anchors.Add((_transform.GetWorldPosition(xform), anchor.Strength));
+            // Secondary anchors carry their strength negated: they hold a local well, not the bands.
+            _anchors.Add((_transform.GetWorldPosition(xform), anchor.Primary ? anchor.Strength : -anchor.Strength));
             if (anchor.Primary)
                 _primaries++;
         }
+
+        AddFading(map);
     }
 
     private void Notify(ICommonSession session, EntityUid mob, WFLatticeBand band, float depth)

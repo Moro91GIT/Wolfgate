@@ -14,7 +14,7 @@
     heldPrefix: blue
   - type: ShipyardVoucher
     destroyOnEmpty: true
-    consoleType: Sr
+    companyName: Colonial # judge ships fly under Caelestinus
     vessels:
     - Lightning
     - Hornet

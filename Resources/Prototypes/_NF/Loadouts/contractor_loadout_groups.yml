@@ -237,6 +237,11 @@
   - WFContractorBunnysuitClown
   - WFContractorBunnysuitMime
   # WOLFGATE END
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingUniformJumpsuitBlueshieldOfficer
+  - WFContractorClothingUniformJumpskirtBlueshieldOfficer
+  - WFContractorClothingUniformJumpsuitBlueshieldShirt
+  # WOLFGATE END
 
   fallbacks:
   - ContractorClothingUniformJumpsuitColorGrey
@@ -252,6 +257,10 @@
   ## Mono end
   # WOLFGATE(ClownCosmetics) START
   - WFContractorClothingModsuitClownPowerCell
+  # WOLFGATE END
+  # WOLFGATE(Modsuits) START: Add sanitater and standard modsuit to loadouts
+  - MdMedicClothingModsuitParamedicPowerCell
+  - MdClothingModsuitStandardPowerCell
   # WOLFGATE END
   - ContractorClothingBackpack
   - ContractorClothingBackpackDuffel
@@ -323,6 +332,12 @@
   - ContractorClothingBackpackDuffelMime
   - ContractorClothingBackpackSatchelMime
   - ContractorClothingBackpackMessengerMime
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingBackpackBlueshield
+  - WFContractorClothingBackpackDuffelBlueshield
+  - WFContractorClothingBackpackSatchelBlueshield
+  - WFContractorClothingBackpackMessengerBlueshield
+  # WOLFGATE END
   fallbacks:
   - ContractorClothingBackpack
 
@@ -583,6 +598,10 @@
   - WFContractorClothingOuterHardsuitMimeBlack
   - WFContractorClothingOuterClownPriest
   # WOLFGATE END
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingOuterBlueshieldArmourVest
+  - WFContractorClothingOuterBlueshieldArmoredJacket
+  # WOLFGATE END
 
 - type: loadoutGroup
   id: ContractorBelt
@@ -620,6 +639,9 @@
   - ContractorClothingBeltPunkRandomizedFilled # Punkish (Randomized visuals)
   - ContractorClothingBeltSheathFilled # Mono
   - ContractorClothingBeltChampion
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingBeltMilitaryWebbingBSO
+  # WOLFGATE END
 
 - type: loadoutGroup
   id: ContractorShoes
@@ -697,6 +719,9 @@
   - WFContractorClothingUndergarmentSocksBunnysuitClown
   - WFContractorClothingUndergarmentSocksBunnysuitMime
   - WFContractorClothingShoesPinkClownHeels
+  # WOLFGATE END
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingShoesBootsWinterSnowjackBso
   # WOLFGATE END
   fallbacks:
   - ContractorClothingShoesColorBlack
@@ -796,6 +821,7 @@
   - WFMeridianLoadoutClothingHeadPeaceflower
   - WFMeridianLoadoutClothingHeadPillowHood
   - WFMeridianLoadoutClothingHeadPizza
+  - WFMeridianLoadoutClothingHeadPlaybunnyears
   - WFMeridianLoadoutClothingHeadPlaybunnyearsCmo
   - WFMeridianLoadoutClothingHeadPlaybunnyearsCoroner
   - WFMeridianLoadoutClothingHeadPlaybunnyearsDoctor
@@ -878,6 +904,9 @@
   - WFContractorBunnyEarsMime
   - WFContractorClothingHeadHatMitreClown
   # WOLFGATE END
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingHeadHatCowboyBlueshield
+  # WOLFGATE END
 
 - type: loadoutGroup
   id: ContractorEars
@@ -901,6 +930,9 @@
   - ContractorClothingHeadsetAltMedicalCommon
   - ContractorClothingHeadsetAltScienceCommon
   # - USSPHeadset # Mono
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingHeadsetAltBlueshield
+  # WOLFGATE END
   fallbacks:
   - ContractorClothingHeadsetGreyCommon
 
@@ -1146,6 +1178,7 @@
   - WFMeridianLoadoutClothingNeckScarf
   - WFMeridianLoadoutClothingNeckTesharianMantle
   - WFMeridianLoadoutClothingNeckTie
+  - WFMeridianLoadoutClothingNeckTieBunnytie
   - WFMeridianLoadoutClothingNeckTieBunnytieBitrunner
   - WFMeridianLoadoutClothingNeckTieBunnytieCargo
   - WFMeridianLoadoutClothingNeckTieBunnytieCmo
@@ -1165,6 +1198,12 @@
   # WOLFGATE END
 #  - ContractorClothingCloakCmo # Temp removed for MOM. Will return if replaced.
 #  - ContractorClothingNeckMantleCMO # Temp removed for MOM. Will return if replaced.
+  # WOLFGATE(Resprites) START: CMO neckwear restored and the resprited HOS set added to the Vagrant neck group
+  - ContractorClothingCloakCmo
+  - ContractorClothingNeckMantleCMO
+  - WFContractorClothingNeckCloakHos
+  - WFContractorClothingNeckMantleHOS
+  # WOLFGATE END
   - ContractorClothingNeckCloakRd
   - ContractorClothingNeckMantleRD
   - ContractorClothingNeckCloakCe
@@ -1185,6 +1224,10 @@
   - WFContractorClothingNeckCloakHonk
   - WFContractorClothingNeckClownPin
   - WFContractorClothingNeckMimePin
+  # WOLFGATE END
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingNeckMantleBlueshield
+  - WFContractorClothingNeckEnsembleBlueshield
   # WOLFGATE END
 
 - type: loadoutGroup
@@ -1250,6 +1293,9 @@
   - WFMeridianLoadoutClothingGlassesEyepatchMedical
   - WFMeridianLoadoutClothingGlassesPsych
   # WOLFGATE END
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingEyesGlassesBSO
+  # WOLFGATE END
 
 - type: loadoutGroup
   id: ContractorUtility # Right Hand - 1 only
@@ -1290,6 +1336,7 @@
   - ContractorHarmonicaInstrument
   - ContractorSaxophoneInstrument
   - ContractorAcousticGuitarInstrument
+  - WFBoombox # WOLFGATE(Boombox): portable internet speaker.
   - ContractorCane
   - ContractorLGBTQHandyFlag
   #- ContractorNTHandyFlag
@@ -1340,6 +1387,9 @@
   - WFContractorClothingMaskBlushingClown
   - WFContractorClothingMaskClownHarlequin
   - WFContractorClothingMaskMimePierrot
+  # WOLFGATE END
+  # WOLFGATE(Blueshield) START: blueshield officer clothing ported from GoobStation
+  - WFContractorClothingMaskGasSwatBSO
   # WOLFGATE END
   fallbacks:
   - ContractorClothingMaskBreath
@@ -1412,6 +1462,7 @@
   - WFContractorLauncherCreamPie
   - WFContractorHonkCoFlippo
   - WFContractorClothingMaskPartyHorn
+  - WFContractorCrazyGlue
   # WOLFGATE END
 
 - type: loadoutGroup # Mono - removed standard supply boxes.

@@ -376,6 +376,8 @@
   - WFMeridianLoadoutClothingUnderColor
   - WFMeridianLoadoutClothingUnderColorJumpskirt
   - WFMeridianLoadoutClothingUnderColorJumpskirtRainbow
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyCustomPlaybunny
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyGreyscale
   - WFMeridianLoadoutClothingUnderDougDimmadome
   - WFMeridianLoadoutClothingUnderDressEveninggown
   - WFMeridianLoadoutClothingUnderDressNovaCountess
@@ -720,6 +722,7 @@
   - WFMeridianLoadoutClothingNeckScarf
   - WFMeridianLoadoutClothingNeckTesharianMantle
   - WFMeridianLoadoutClothingNeckTie
+  - WFMeridianLoadoutClothingNeckTieBunnytie
   - WFMeridianLoadoutClothingNeckTieDisco
   - WFMeridianLoadoutClothingNeckTieHorrible
   - WFMeridianLoadoutClothingNeckWarriorCape
@@ -1413,6 +1416,8 @@
   - WFMeridianLoadoutClothingUnderColor
   - WFMeridianLoadoutClothingUnderColorJumpskirt
   - WFMeridianLoadoutClothingUnderColorJumpskirtRainbow
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyCustomPlaybunny
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyGreyscale
   - WFMeridianLoadoutClothingUnderDougDimmadome
   - WFMeridianLoadoutClothingUnderDressEveninggown
   - WFMeridianLoadoutClothingUnderDressNovaCountess
@@ -1975,7 +1980,11 @@
   minLimit: 0
   loadouts:
   - ChiefEngineerCloak
+  - ChiefEngineerCloakGreen # WOLFGATE(Resprites): GoobStation cloak resprite added the green variant
   - ChiefEngineerMantle
+  - ChiefEngineerMantleOrange # WOLFGATE(Resprites): GoobStation mantle resprite added the orange variant
+  - WFChiefEngineerEnsembleWhite # WOLFGATE(Resprites): GoobStation ensemble
+  - WFChiefEngineerEnsembleGreen # WOLFGATE(Resprites): GoobStation ensemble
   # WOLFGATE(MeridianClothing) START: Meridian Rift clothing, written by Tools/_WF/MeridianClothing/port.py
   - WFMeridianLoadoutClothingAccessoryMedalSilverEmergencyServicesEngineering
   - WFMeridianLoadoutClothingNeckCloakSkillRewardConstruction
@@ -2340,7 +2349,7 @@
 # Security
 - type: loadoutGroup
   id: HeadofSecurityHead
-  name: loadout-group-head-of-security-head
+  name: loadout-group-contractor-head # WOLFGATE(Judges): judges use these groups, so they get the contractor label
   minLimit: 0
   loadouts:
   - HeadofSecurityHead
@@ -2350,11 +2359,27 @@
   - WFMeridianLoadoutClothingHeadCollectableHos
   - WFMeridianLoadoutClothingHeadCollectablePolice
   - WFMeridianLoadoutClothingHeadPlaybunnyearsBrigPhys
+  - WFMeridianLoadoutHeadHatsSyndicateInterdyneDeckofficerBlack
+  - WFMeridianLoadoutHeadHatsSyndicateInterdyneDeckofficerWhite
+  - WFMeridianLoadoutHeadHatsWardenDrill
+  - WFMeridianLoadoutHeadHatsWardenPolicePatrol
+  - WFMeridianLoadoutHeadHatsWardenRed
+  - WFMeridianLoadoutHeadHatsWardenSyndicate
+  - WFMeridianLoadoutClothingHeadPlaybunnyearsHos
+  - WFMeridianLoadoutClothingHeadPlaybunnyearsSecurity
+  - WFMeridianLoadoutClothingHeadPlaybunnyearsSecurityAssistant
+  # WOLFGATE END
+  # WOLFGATE(Judges) START: Expanding loadout options in HeadOfSecurityHead for overseer
+  - SecurityBeret
+  - SecurityHelmet
+  - WardenBeret
+  - WardenHead
+  - ContractorClothingHeadSanabi
   # WOLFGATE END
 
 - type: loadoutGroup
   id: HeadofSecurityJumpsuit
-  name: loadout-group-head-of-security-jumpsuit
+  name: loadout-group-contractor-jumpsuit # WOLFGATE(Judges): judges use these groups, so they get the contractor label
   loadouts:
   - HeadofSecurityJumpsuit
   - HeadofSecurityJumpskirt
@@ -2399,11 +2424,16 @@
   - WFMeridianLoadoutClothingUnderRankSecurityWardenNovaSuitBlue
   - WFMeridianLoadoutClothingUnderSolfedOfficer
   - WFMeridianLoadoutClothingUnderSolfedOfficerLowrnk
+  - WFMeridianLoadoutClothingUnderRankSecurityHeadOfSecurityNovaAltSkirt
+  - WFMeridianLoadoutClothingUnderRankSecurityHeadOfSecurityNovaParadeFemale
+  - WFMeridianLoadoutClothingUnderRankSecurityHeadOfSecurityNovaBlue
+  - WFMeridianLoadoutClothingUnderRankSecurityHeadOfSecurityNovaFormal
+  - WFMeridianLoadoutClothingUnderRankSecurityHeadOfSecurityNovaFormalBlue
   # WOLFGATE END
 
 - type: loadoutGroup
   id: HeadofSecurityNeck
-  name: loadout-group-head-of-security-neck
+  name: loadout-group-contractor-neck # WOLFGATE(Judges): judges use these groups, so they get the contractor label
   minLimit: 0
   loadouts:
   - HeadofSecurityCloak
@@ -2417,11 +2447,15 @@
   - WFMeridianLoadoutClothingNeckTieBunnytieBrigPhys
   - WFMeridianLoadoutClothingNeckTieBunnytieSecurity
   - WFMeridianLoadoutClothingNeckTieBunnytieSecurityAssistant
+  - WFMeridianLoadoutClothingNeckMantleHosmantle
+  - WFMeridianLoadoutClothingNeckPauldron
+  - ContractorClothingNeckCloakSanabi
+  - ContractorClothingNeckIFFRed
   # WOLFGATE END
 
 - type: loadoutGroup
   id: HeadofSecurityOuterClothing
-  name: loadout-group-head-of-security-outerclothing
+  name: loadout-group-contractor-outerclothing # WOLFGATE(Judges): judges use these groups, so they get the contractor label
   loadouts:
   - HeadofSecurityCoat
   - HeadofSecurityWinterCoat
@@ -2438,7 +2472,7 @@
 
 - type: loadoutGroup
   id: WardenHead
-  name: loadout-group-warden-head
+  name: loadout-group-contractor-head # WOLFGATE(Judges): judges use these groups, so they get the contractor label
   minLimit: 0
   loadouts:
   - WardenHead
@@ -2452,7 +2486,7 @@
 
 - type: loadoutGroup
   id: WardenJumpsuit
-  name: loadout-group-warden-jumpsuit
+  name: loadout-group-contractor-jumpsuit # WOLFGATE(Judges): judges use these groups, so they get the contractor label
   loadouts:
   - WardenJumpsuit
   - WardenJumpskirt
@@ -2497,7 +2531,7 @@
 
 - type: loadoutGroup
   id: WardenOuterClothing
-  name: loadout-group-warden-outerclothing
+  name: loadout-group-contractor-outerclothing # WOLFGATE(Judges): judges use these groups, so they get the contractor label
   loadouts:
   - WardenCoat
   - WardenArmoredWinterCoat
@@ -2832,6 +2866,7 @@
   loadouts:
   - ChiefMedicalOfficerCloak
   - ChiefMedicalOfficerMantle
+  - WFChiefMedicalOfficerEnsemble # WOLFGATE(Resprites): GoobStation ensemble
   # WOLFGATE(MeridianClothing) START: Meridian Rift clothing, written by Tools/_WF/MeridianClothing/port.py
   - WFMeridianLoadoutClothingAccessoryMedalSilverEmergencyServicesMedical
   - WFMeridianLoadoutClothingNeckTieBunnytieCmo
@@ -3207,6 +3242,8 @@
   - WFMeridianLoadoutClothingUnderColor
   - WFMeridianLoadoutClothingUnderColorJumpskirt
   - WFMeridianLoadoutClothingUnderColorJumpskirtRainbow
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyCustomPlaybunny
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyGreyscale
   - WFMeridianLoadoutClothingUnderDougDimmadome
   - WFMeridianLoadoutClothingUnderDressEveninggown
   - WFMeridianLoadoutClothingUnderDressNovaCountess
@@ -3380,6 +3417,8 @@
   - WFMeridianLoadoutClothingUnderColor
   - WFMeridianLoadoutClothingUnderColorJumpskirt
   - WFMeridianLoadoutClothingUnderColorJumpskirtRainbow
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyCustomPlaybunny
+  - WFMeridianLoadoutClothingUnderCostumePlaybunnyGreyscale
   - WFMeridianLoadoutClothingUnderDougDimmadome
   - WFMeridianLoadoutClothingUnderDressEveninggown
   - WFMeridianLoadoutClothingUnderDressNovaCountess

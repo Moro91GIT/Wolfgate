@@ -32,6 +32,7 @@ share from its slot, or from the counter of a trader hosting it (`ShipyardHostCa
 - [`Content.Server/_WF/Shipyard/DeviceNetworkSystem.Wolfgate.cs`](DeviceNetworkSystem.Wolfgate.cs)
 - [`Content.Server/_WF/Shipyard/PowerChargeSystem.Wolfgate.cs`](PowerChargeSystem.Wolfgate.cs)
 - [`Content.Server/_WF/Shipyard/ShipyardSystem.WolfgateDeed.cs`](ShipyardSystem.WolfgateDeed.cs)
+- [`Content.Server/_WF/Shipyard/ShipyardSystem.WolfgateOwnership.cs`](ShipyardSystem.WolfgateOwnership.cs)
 - [`Content.Server/_WF/Shipyard/ShipyardSystem.WolfgateTrader.cs`](ShipyardSystem.WolfgateTrader.cs)
 - [`Content.Server/_WF/Shipyard/ShipyardSystem.WolfgateUnsavable.cs`](ShipyardSystem.WolfgateUnsavable.cs)
 - [`Content.Server/_WF/Shipyard/ShipyardWolfgateEvents.cs`](ShipyardWolfgateEvents.cs)
@@ -54,15 +55,33 @@ share from its slot, or from the counter of a trader hosting it (`ShipyardHostCa
 ### Prototypes
 
 - [`Resources/Prototypes/_WF/Shipyard/brute.yml`](../../../Resources/Prototypes/_WF/Shipyard/brute.yml)
+- [`Resources/Prototypes/_WF/Shipyard/bucket.yml`](../../../Resources/Prototypes/_WF/Shipyard/bucket.yml)
 - [`Resources/Prototypes/_WF/Shipyard/carabela.yml`](../../../Resources/Prototypes/_WF/Shipyard/carabela.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Carrier/vox_skipjack.yml`](../../../Resources/Prototypes/_WF/Shipyard/Carrier/vox_skipjack.yml)
+- [`Resources/Prototypes/_WF/Shipyard/dread.yml`](../../../Resources/Prototypes/_WF/Shipyard/dread.yml)
 - [`Resources/Prototypes/_WF/Shipyard/dredger.yml`](../../../Resources/Prototypes/_WF/Shipyard/dredger.yml)
 - [`Resources/Prototypes/_WF/Shipyard/Entities/Objects/Devices/ship_vouchers.yml`](../../../Resources/Prototypes/_WF/Shipyard/Entities/Objects/Devices/ship_vouchers.yml)
 - [`Resources/Prototypes/_WF/Shipyard/foxtrot_ii.yml`](../../../Resources/Prototypes/_WF/Shipyard/foxtrot_ii.yml)
 - [`Resources/Prototypes/_WF/Shipyard/hammerhead.yml`](../../../Resources/Prototypes/_WF/Shipyard/hammerhead.yml)
+- [`Resources/Prototypes/_WF/Shipyard/hermes.yml`](../../../Resources/Prototypes/_WF/Shipyard/hermes.yml)
 - [`Resources/Prototypes/_WF/Shipyard/lathe_recipes.yml`](../../../Resources/Prototypes/_WF/Shipyard/lathe_recipes.yml)
 - [`Resources/Prototypes/_WF/Shipyard/reach.yml`](../../../Resources/Prototypes/_WF/Shipyard/reach.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/despot.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/despot.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/huolian.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/huolian.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/jackal.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/jackal.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/ketch.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/ketch.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/minerva.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/minerva.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/molly.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/molly.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/pibb.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/pibb.yml)
+- [`Resources/Prototypes/_WF/Shipyard/Reaver/renegade.yml`](../../../Resources/Prototypes/_WF/Shipyard/Reaver/renegade.yml)
+- [`Resources/Prototypes/_WF/Shipyard/scarab.yml`](../../../Resources/Prototypes/_WF/Shipyard/scarab.yml)
+- [`Resources/Prototypes/_WF/Shipyard/solarsail.yml`](../../../Resources/Prototypes/_WF/Shipyard/solarsail.yml)
 - [`Resources/Prototypes/_WF/Shipyard/srashakri.yml`](../../../Resources/Prototypes/_WF/Shipyard/srashakri.yml)
+- [`Resources/Prototypes/_WF/Shipyard/sunrise.yml`](../../../Resources/Prototypes/_WF/Shipyard/sunrise.yml)
+- [`Resources/Prototypes/_WF/Shipyard/TSF/welder.yml`](../../../Resources/Prototypes/_WF/Shipyard/TSF/welder.yml)
 - [`Resources/Prototypes/_WF/Shipyard/ubm_excelsior.yml`](../../../Resources/Prototypes/_WF/Shipyard/ubm_excelsior.yml)
+- [`Resources/Prototypes/_WF/Shipyard/ubm_lurker.yml`](../../../Resources/Prototypes/_WF/Shipyard/ubm_lurker.yml)
+- [`Resources/Prototypes/_WF/Shipyard/vox_vrakritatat.yml`](../../../Resources/Prototypes/_WF/Shipyard/vox_vrakritatat.yml)
 
 ### Localization
 
@@ -75,13 +94,31 @@ share from its slot, or from the counter of a trader hosting it (`ShipyardHostCa
 ### Shared maps
 
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/brute.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/brute.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/bucket.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/bucket.yml)
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/carabela.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/carabela.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Carrier/vox_skipjack.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Carrier/vox_skipjack.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/dread.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/dread.yml)
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/dredger.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/dredger.yml)
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/foxtrot_ii.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/foxtrot_ii.yml)
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/hammerhead.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/hammerhead.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/hermes.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/hermes.yml)
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/reach.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/reach.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/despot.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/despot.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/huolian.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/huolian.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/jackal.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/jackal.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/ketch.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/ketch.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/minerva.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/minerva.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/molly.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/molly.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/pibb.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/pibb.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/renegade.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/Reaver/renegade.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/scarab.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/scarab.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/solarsail.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/solarsail.yml)
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/srashakri.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/srashakri.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/sunrise.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/sunrise.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/TSF/welder.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/TSF/welder.yml)
 - [`Resources/SharedMaps/_WF/Shipyard/Shuttles/ubm_excelsior.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/ubm_excelsior.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/ubm_lurker.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/ubm_lurker.yml)
+- [`Resources/SharedMaps/_WF/Shipyard/Shuttles/vox_vrakritatat.yml`](../../../Resources/SharedMaps/_WF/Shipyard/Shuttles/vox_vrakritatat.yml)
 
 ## Non-modular edits
 
@@ -98,11 +135,15 @@ share from its slot, or from the counter of a trader hosting it (`ShipyardHostCa
   - zero entries do not count
 - [`Content.Shared/Damage/DamageSpecifierDictionarySerializer.cs`](../../../Content.Shared/Damage/DamageSpecifierDictionarySerializer.cs): adds writing support so DamageSpecifier can round-trip through DamageDict
 - [`Content.Shared/VendingMachines/VendingMachineComponent.cs`](../../../Content.Shared/VendingMachines/VendingMachineComponent.cs): a data definition, so a live machine's stock can be written out with its grid
+- [`Resources/Prototypes/_Mono/Entities/Objects/Devices/ship_vouchers.yml`](../../../Resources/Prototypes/_Mono/Entities/Objects/Devices/ship_vouchers.yml): New WF T0 Ships
 - [`Resources/Prototypes/_Mono/Outpost/caelestinus.yml`](../../../Resources/Prototypes/_Mono/Outpost/caelestinus.yml): ships sold anywhere on this station end up on the used ship lot
 - [`Resources/Prototypes/_Mono/Recipes/Lathes/Packs/Factions/phaethon_dynasty.yml`](../../../Resources/Prototypes/_Mono/Recipes/Lathes/Packs/Factions/phaethon_dynasty.yml): Foxtrot-II voucher
 - [`Resources/Prototypes/_Mono/Roles/Jobs/Medical/medic.yml`](../../../Resources/Prototypes/_Mono/Roles/Jobs/Medical/medic.yml): free Triage or Stubby
 - [`Resources/Prototypes/_Mono/Roles/Jobs/ViperGroup/commander.yml`](../../../Resources/Prototypes/_Mono/Roles/Jobs/ViperGroup/commander.yml): VG commanders start with a voucher for their Wolf
-- [`Resources/Prototypes/_NF/Entities/Objects/Devices/Misc/ship_vouchers.yml`](../../../Resources/Prototypes/_NF/Entities/Objects/Devices/Misc/ship_vouchers.yml): Judges can redeem Roswell with the standard station guard voucher
+- [`Resources/Prototypes/_NF/Entities/Objects/Devices/Misc/ship_vouchers.yml`](../../../Resources/Prototypes/_NF/Entities/Objects/Devices/Misc/ship_vouchers.yml)
+  - Mono vouchers only list their vessels, access alone offers nothing
+  - the mail ship, not the janitor's
+  - Judges can redeem Roswell with the standard station guard voucher
 - [`Resources/Prototypes/_NF/Entities/Structures/Machines/Computers/computers_shipyard.yml`](../../../Resources/Prototypes/_NF/Entities/Structures/Machines/Computers/computers_shipyard.yml): cash in a destroyed console drops instead of being deleted
 - [`Resources/SharedMaps/_Mono/Shuttles/Civilian/guppy.yml`](../../../Resources/SharedMaps/_Mono/Shuttles/Civilian/guppy.yml): Saved with its air filled in; the starter ship spawned as vacuum.
 

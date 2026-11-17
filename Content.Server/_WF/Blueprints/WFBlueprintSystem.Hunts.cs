@@ -130,7 +130,7 @@ public sealed partial class WFBlueprintSystem
             for (var i = 0; i < record.Sites.Count; i++)
             {
                 var site = record.Sites[i];
-                if (site.BlueprintClaim == null && site.ExpeditionClaim == null && TierOf(site.Difficulty) == tier)
+                if (site.BlueprintClaim == null && site.ExpeditionClaim == null && site.ContractClaim == null && TierOf(site.Difficulty) == tier)
                     free.Add((uid, i));
             }
         }

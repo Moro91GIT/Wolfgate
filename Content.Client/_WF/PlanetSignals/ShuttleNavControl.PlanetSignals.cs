@@ -115,13 +115,22 @@ public partial class ShuttleNavControl
                 : Loc.GetString("wf-planet-signals-marker-vessel", ("name", WFPlanetSignalsWindow.NameOf(signal)),
                     ("layer", WFPlanetSignalsWindow.LayerOf(signal)));
             var labelSize = handle.GetDimensions(Font, label, UIScale * 0.8f);
-            handle.DrawString(Font, point + new Vector2(size * 2f, -labelSize.Y / 2f), label, UIScale * 0.8f, color);
+            WfBeginTag(point, point + new Vector2(size * 2f, -labelSize.Y / 2f), mine ? 2 : 0, always: mine);
+            WfTagLine(handle, label, UIScale * 0.8f, color);
         }
+    }
+
+    /// <summary>Lets a world pinned to the scope's rim, which has no tag, be clicked by its blip alone.</summary>
+    private void WfAddPlanetBlipHit(EntityUid body, Vector2 uiPosition)
+    {
+        if (EntManager.HasComponent<WFPlanetSignalsComponent>(body))
+            _wfPlanetHits.Add((body, uiPosition * UIScale, 16f * UIScale, default));
     }
 
     /// <summary>
     /// Over a world's name on the radar out in space: how many vessels, sites and people it holds, and whether the ship's
-    /// expedition is there. A world drawn here is off the scope or has no scope circle, so only its blip and name take a click.
+    /// expedition is there, added to the name's tag. A world drawn here is off the scope or has no scope circle, so only
+    /// its blip and name take a click.
     /// </summary>
     private void WfDrawPlanetSignalTag(DrawingHandleScreen handle, EntityUid body, Vector2 uiPosition, Vector2 labelOffset, string label)
     {
@@ -152,51 +161,55 @@ public partial class ShuttleNavControl
         if (vessels == 0 && sites == 0 && signals.People == 0)
             return;
 
-        // Stacked upward from the name, so the detailed lines below it keep their place.
-        var at = labelAt;
+        // Stacked upward from the name, so the detailed lines below it keep their place. They show while the name
+        // stands alone; in a stack only the name is listed.
         var tag = Loc.GetString("wf-planet-signals-tag", ("vessels", vessels), ("sites", sites), ("people", signals.People));
-        at.Y -= handle.GetDimensions(Font, tag, UIScale * 0.7f).Y;
-        handle.DrawString(Font, at, tag, UIScale * 0.7f, WfSiteColor);
+        WfTagAbove(handle, tag, UIScale * 0.7f, WfSiteColor);
 
         // A cargo depot on the world is named over it, in the depots' colour.
         foreach (var depot in _wfDepots)
         {
             var line = Loc.GetString("wf-planet-signals-tag-depot", ("depot", Loc.GetString(depot)));
-            at.Y -= handle.GetDimensions(Font, line, UIScale * 0.8f).Y;
-            handle.DrawString(Font, at, line, UIScale * 0.8f, WFPlanetCargoHubSites.Colour);
+            WfTagAbove(handle, line, UIScale * 0.8f, WFPlanetCargoHubSites.Colour);
         }
 
-        if (!mine)
-            return;
-
-        var expedition = Loc.GetString("wf-planet-signals-tag-expedition");
-        at.Y -= handle.GetDimensions(Font, expedition, UIScale * 0.7f).Y;
-        handle.DrawString(Font, at, expedition, UIScale * 0.7f, WfExpeditionColor);
+        if (mine)
+            WfTagAbove(handle, Loc.GetString("wf-planet-signals-tag-expedition"), UIScale * 0.7f, WfExpeditionColor);
     }
 
     /// <summary>
-    /// Opens the signal list of the world under a click. False when nothing was hit, the press was a drag, this radar's
-    /// clicks aim guns, or a grid is under the click: a ship or drone over a world's circle is what was clicked.
+    /// Answers a left click: the signal list of the world under it, else the radar menu (RadarMenu). False when the
+    /// press was a drag or this radar's clicks aim guns. A ship or drone over a world's circle is what was clicked.
     /// </summary>
     private bool WfTryOpenPlanetSignals(Vector2 pixel, Vector2 relative)
     {
         var pressed = _wfPressedAt;
         _wfPressedAt = null;
-        if (OnRadarClick != null || pressed is not { } down || (down - pixel).Length() > 6f * UIScale
-            || WfGridUnderClick(relative))
+        if (OnRadarClick != null || pressed is not { } down || (down - pixel).Length() > 6f * UIScale)
             return false;
 
-        foreach (var (body, centre, radius, label) in _wfPlanetHits)
+        if (!WfGridUnderClick(relative))
         {
-            if ((pixel - centre).Length() > radius && !label.Contains(pixel))
-                continue;
+            foreach (var (body, centre, radius, label) in _wfPlanetHits)
+            {
+                if ((pixel - centre).Length() > radius && !label.Contains(pixel))
+                    continue;
 
-            _wfSignalsWindow ??= new WFPlanetSignalsWindow();
-            _wfSignalsWindow.Show(body, WfOurGrid());
-            return true;
+                // The world's menu lists its signals among the rest; a radar without it lists them at once.
+                if (!WfOpenWorldMenu(body))
+                    WfShowPlanetSignals(body);
+                return true;
+            }
         }
 
-        return false;
+        return WfOpenRadarMenu(relative);
+    }
+
+    /// <summary>Opens the signal list of a world.</summary>
+    private void WfShowPlanetSignals(EntityUid body)
+    {
+        _wfSignalsWindow ??= new WFPlanetSignalsWindow();
+        _wfSignalsWindow.Show(body, WfOurGrid());
     }
 
     /// <summary>
@@ -210,7 +223,8 @@ public partial class ShuttleNavControl
         var transform = EntManager.System<SharedTransformSystem>();
         foreach (var grid in _grids)
         {
-            if (EntManager.HasComponent<MapComponent>(grid.Owner))
+            // Only a grid the radar shows can be what was clicked; a hidden one leaves the world clickable.
+            if (EntManager.HasComponent<MapComponent>(grid.Owner) || !WfContactShown(grid.Owner))
                 continue;
 
             var gridToView = transform.GetWorldMatrix(grid.Owner) * _wfWorldToView;

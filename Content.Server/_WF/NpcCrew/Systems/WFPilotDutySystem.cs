@@ -98,6 +98,23 @@ public sealed partial class WFPilotDutySystem : EntitySystem
             if (refreshDocks || now >= duty.NextDockCheck)
                 RefreshDocked((uid, duty));
 
+            if (duty.YieldedUntil is { } yielded)
+            {
+                // While a person flies the ship its orders stand still: no dock timer runs and no waypoint is passed.
+                if (now < yielded)
+                    continue;
+
+                // Someone flew the ship while this crewman stood by: its orders start again from where the ship is now,
+                // and a bump while they flew is not the creep's.
+                duty.YieldedUntil = null;
+                duty.HoldPosition = null;
+                duty.DockCollision = null;
+                if (Steer((uid, duty)) == null)
+                    _toRelease.Add(uid);
+
+                continue;
+            }
+
             if (!TryComp<ShipSteererComponent>(uid, out var steerer)
                 || TargetElsewhere(duty, xform.MapID) != duty.AwaitingTarget)
             {
@@ -680,7 +697,7 @@ public sealed partial class WFPilotDutySystem : EntitySystem
         steerer.RangeTolerance = mode == ShipSteeringMode.Orbit ? 0f : null;
         steerer.InRangeMaxSpeed = speed;
         steerer.AvoidCollisions = avoid;
-        var skill = WFCrewSkills.Of(CompOrNull<WFCrewComponent>(ent)?.Skill ?? WFCrewSkill.Veteran);
+        var skill = TryComp<WFCrewComponent>(ent, out var pilotCrew) ? WFCrewSkills.Of(pilotCrew) : WFCrewSkills.Of(WFCrewSkill.Veteran);
         steerer.AvoidProjectiles = skill.DodgesFire && duty.Orders is not (WFPilotOrder.Dock or WFPilotOrder.Hold);
         steerer.EvasionBuffer = duty.Orders == WFPilotOrder.Dock ? duty.Navigation.DockEvasionBuffer : duty.Navigation.EvasionBuffer;
         steerer.BaseEvasionTime = duty.Orders == WFPilotOrder.Dock ? duty.Navigation.DockEvasionLookahead : duty.Navigation.EvasionLookahead * skill.Evasion;

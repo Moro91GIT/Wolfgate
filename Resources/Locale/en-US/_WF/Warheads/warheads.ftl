@@ -65,7 +65,6 @@ wf-warhead-ui-spec-grid-value = DESTROYED OUTRIGHT
 wf-warhead-ui-spec-tiles = ~{$tiles} tiles
 wf-warhead-ui-spec-fallout-value = {$sources} sources over ~{$tiles} tiles
 wf-warhead-ui-spec-none = none
-wf-warhead-ui-footer = To abort, use a multitool on the device. Not possible in the last 10 seconds.
 
 wf-warhead-armed = Countdown started: {$seconds} seconds.
 wf-warhead-key-denied = Your key doesn't fit.
@@ -74,6 +73,9 @@ wf-warhead-safety-off = Safety off. It will go off on a signal.
 wf-warhead-safety-on = Safety on.
 wf-warhead-disarmed = Countdown stopped. Safety on.
 wf-warhead-disarm-too-late = Too late. It can't be stopped now.
+wf-warhead-wires-board = W-9 FUZING ASSEMBLY
+wf-warhead-wire-name = FUZE
+wf-warhead-wire-disarmed = The countdown dies. The warhead is safe.
 
 wf-deadman-verb-grip = Grip the switch
 wf-deadman-verb-release = Ease off the grip
@@ -167,3 +169,7 @@ wf-nuke-designer-field-map-wide-audio = Map-wide alarm (true/false)
 wf-nuke-designer-field-map-wide-audio-tooltip = Plays the final alarm and countdown voice to the whole map rather than nearby.
 wf-nuke-designer-field-detonation-sound = Detonation sound
 wf-nuke-designer-field-detonation-sound-tooltip = Sound played to the whole map. Leave empty for none.
+
+wf-warhead-key-missing = It won't arm. Its key isn't in the keyhole.
+wf-warhead-examine-key-in = Its key is in the keyhole.
+wf-warhead-examine-key-out = It has an empty keyhole. It won't arm without its key.

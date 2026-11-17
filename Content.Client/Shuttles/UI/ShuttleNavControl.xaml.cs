@@ -670,6 +670,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
         DrawWfTerrain(handle, worldToView, xform.MapUid); // WOLFGATE(Planets): cached planetary terrain beneath radar contacts.
         DrawSectorBorders(handle, worldToView, xform.MapID); // WOLFGATE(SectorControl): faction territory borders beneath radar contacts.
         DrawDroneRings(handle, worldToView, xform.MapUid); // WOLFGATE(DroneRings): draw rings where drones start to spawn.
+        DrawWfZoneRings(handle, worldToView, xform.MapUid); // WOLFGATE(Wilderness): the edges of Safe Zones, Wildernesses and outposts.
 
         _grids.Clear();
         _mapManager.FindGridsIntersecting(xform.MapID, new Box2(mapPos.Position - MaxRadarRangeVector, mapPos.Position + MaxRadarRangeVector), ref _grids, approx: true, includeMap: false);
@@ -1067,6 +1068,8 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                             }
                         }
 
+                        displayColor = WfMarkColor(gUid, displayColor); // WOLFGATE(Wilderness): a marked ship's name shows red
+
                         // Split label text into lines
                         var lines = labelText.Split('\n');
                         var mainLabel = lines[0];
@@ -1075,6 +1078,7 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
                         WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, isMouseOver ? 3 : isPlayerShuttle ? 2 : 1,
                             always: isMouseOver && WfHoverReveal || distance <= WfTagCloseRange, key: gUid.Id); // a ship this close keeps its name: it could be shooting
                         WfTagLine(handle, mainLabel, UIScale * 0.9f, displayColor);
+                        WfTagSkull(handle, gUid, uiPosition * UIScale, mainLabel); // WOLFGATE(Wilderness): a skull by a marked ship's blip and name
                         if (shouldDrawDetailedIFF)
                         {
                             WfTagLine(handle, !hideLabel ? lines[1] : Loc.GetString("shuttle-console-company-unknown"), UIScale * 0.7f, displayColor);

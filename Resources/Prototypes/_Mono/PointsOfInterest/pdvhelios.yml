@@ -20,6 +20,11 @@
   - type: WFOrdnanceStation
     terminal: WFOrdnanceTerminalPDV
   # WOLFGATE END
+  # WOLFGATE(Wilderness) START: port-strike protection round the faction outpost, kept off radars like its IFF
+  - type: WFZoneSource
+    zone: WFFactionOutpost
+    rings: false
+  # WOLFGATE END
   - type: IFF
     color: "#DE9E59"
     readOnly: true # mono
@@ -93,6 +98,10 @@
   # WOLFGATE(Ordnance) START: the faction's ordnance terminal
   - type: WFOrdnanceStation
     terminal: WFOrdnanceTerminalPDV
+  # WOLFGATE END
+  # WOLFGATE(Wilderness) START: port-strike protection round the faction outpost
+  - type: WFZoneSource
+    zone: WFFactionOutpost
   # WOLFGATE END
   - type: IFF
     color: "#DE9E59"

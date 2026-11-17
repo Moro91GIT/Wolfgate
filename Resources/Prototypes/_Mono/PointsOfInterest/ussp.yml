@@ -23,6 +23,10 @@
   - type: WFOrdnanceStation
     terminal: WFOrdnanceTerminalUSSP
   # WOLFGATE END
+  # WOLFGATE(Wilderness) START: named as not a safe zone
+  - type: WFZoneSource
+    zone: WFNotSafe
+  # WOLFGATE END
   - type: IFF
     color: "#ccaa55"
   - type: WorldGenDistanceCarver

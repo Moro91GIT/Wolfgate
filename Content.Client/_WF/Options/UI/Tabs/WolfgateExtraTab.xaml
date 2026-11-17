@@ -18,6 +18,9 @@
                 <CheckBox Name="RadarIconsOnlyCheckBox" Text="{Loc 'ui-options-wf-radar-icons-only'}" />
                 <CheckBox Name="RadarHoverRevealCheckBox" Text="{Loc 'ui-options-wf-radar-hover-reveal'}" />
                 <CheckBox Name="ShowNewbieTagCheckBox" Text="{Loc 'wf-newbie-option-show-tag'}" />
+                <Label Text="{Loc 'ui-options-wf-zones'}" StyleClasses="LabelKeyText"/>
+                <CheckBox Name="WildernessBorderCheckBox" Text="{Loc 'ui-options-wf-wilderness-border'}" />
+                <CheckBox Name="WildernessRingsCheckBox" Text="{Loc 'ui-options-wf-wilderness-rings'}" />
                 <Label Text="{Loc 'ui-options-wf-effects'}" StyleClasses="LabelKeyText"/>
                 <CheckBox Name="HeatHazeCheckBox" Text="{Loc 'ui-options-wf-heat-haze'}" />
                 <ui:OptionSlider Name="HeatHazeStrengthSlider" Title="{Loc 'ui-options-wf-heat-haze-strength'}" />

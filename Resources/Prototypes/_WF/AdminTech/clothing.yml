@@ -222,6 +222,3 @@
 - type: entity
   parent: WFAdminTechIdAdmin
   id: WFAdminTechIdCentCom
-  components:
-  - type: IdCard
-    jobTitle: job-title-centcom

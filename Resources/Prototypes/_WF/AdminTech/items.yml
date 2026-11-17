@@ -136,7 +136,7 @@
     sprite: _WF/AdminTech/pocket_subspace.rsi
     state: icon
   - type: Storage
-    maxItemSize: Huge
+    maxItemSize: Large
     grid:
     - 0,0,7,3
 

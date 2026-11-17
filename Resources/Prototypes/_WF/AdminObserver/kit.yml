@@ -20,8 +20,9 @@
   parent: WFAdminTechPouch
   id: WFAdminKitPouchBase
   components:
+  # One size under the satchel of holding's own limit: a bag only takes a bag that holds smaller things than it does.
   - type: Storage
-    maxItemSize: Huge
+    maxItemSize: Large
     grid:
     - 0,0,9,5
 

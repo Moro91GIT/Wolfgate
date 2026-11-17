@@ -211,12 +211,14 @@ and `WFAdminKitControl` (client).
 ### Prototypes
 
 - [`Resources/Prototypes/_WF/AdminObserver/actions.yml`](../../../Resources/Prototypes/_WF/AdminObserver/actions.yml)
+- [`Resources/Prototypes/_WF/AdminObserver/guidebook.yml`](../../../Resources/Prototypes/_WF/AdminObserver/guidebook.yml)
 - [`Resources/Prototypes/_WF/AdminObserver/kit.yml`](../../../Resources/Prototypes/_WF/AdminObserver/kit.yml)
 - [`Resources/Prototypes/_WF/AdminObserver/marker.yml`](../../../Resources/Prototypes/_WF/AdminObserver/marker.yml)
 
 ### Localization
 
 - [`Resources/Locale/en-US/_WF/AdminObserver/avatars.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/avatars.ftl)
+- [`Resources/Locale/en-US/_WF/AdminObserver/guidebook.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/guidebook.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/hotkeys.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/hotkeys.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/kit.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/kit.ftl)
 - [`Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl`](../../../Resources/Locale/en-US/_WF/AdminObserver/manifest.ftl)
@@ -226,6 +228,10 @@ and `WFAdminKitControl` (client).
 ### Textures
 
 - [`Resources/Textures/_WF/AdminObserver/Shaders/staff_tint.swsl`](../../../Resources/Textures/_WF/AdminObserver/Shaders/staff_tint.swsl)
+
+### Guidebook
+
+- [`Resources/ServerInfo/_WF/AdminObserver/Guidebook/AdminObserver.xml`](../../../Resources/ServerInfo/_WF/AdminObserver/Guidebook/AdminObserver.xml)
 
 ## Non-modular edits
 

@@ -100,10 +100,11 @@
   parent: BaseStorageItem
   id: WFAdminTechPocketBase
   components:
+  # A container holds nothing bigger than itself (StorageSizeArbitrageTest), and a pocket takes nothing over Small.
   - type: Item
     size: Small
   - type: Storage
-    maxItemSize: Normal
+    maxItemSize: Small
     grid:
     - 0,0,5,3
 
@@ -123,7 +124,7 @@
     sprite: _WF/AdminTech/pocket_subspace.rsi
     state: icon
   - type: Storage
-    maxItemSize: Huge
+    maxItemSize: Small
     grid:
     - 0,0,7,5
 
@@ -135,6 +136,11 @@
   - type: Sprite
     sprite: _WF/AdminTech/pocket_subspace.rsi
     state: icon
+  # Large, so it holds most tools, and drawn small in a bag's grid.
+  - type: Item
+    size: Large
+    shape:
+    - 0,0,1,1
   - type: Storage
     maxItemSize: Large
     grid:
@@ -147,8 +153,12 @@
   - type: Sprite
     sprite: _WF/AdminTech/construction_bag_bluespace.rsi
     state: icon
+  - type: Item
+    size: Large
+    shape:
+    - 0,0,1,1
   - type: Storage
-    maxItemSize: Huge
+    maxItemSize: Large
     grid:
     - 0,0,7,5
 
@@ -160,7 +170,7 @@
     sprite: _WF/AdminTech/construction_bag_subspace.rsi
     state: icon
   - type: Storage
-    maxItemSize: Huge
+    maxItemSize: Large
     grid:
     - 0,0,11,7
 
@@ -171,7 +181,7 @@
   - type: Sprite
     state: box
   - type: Storage
-    maxItemSize: Huge
+    maxItemSize: Large
     grid:
     - 0,0,9,7
 

@@ -53,7 +53,7 @@ child prototypes here, never in that module's generated files.
 - The handheld chem dispenser: a reagent dispenser here is a powered machine that draws from jugs in its own
   storage, which an item in the hand does not have.
 - The job locker and vendor beacons: every choice in their menu needs a name and a description that nobody has
-  written yet.
+  written yet. Left for a follow-up.
 - MODsuits and their modules, cyborg walkers and their items, the techweb fabricator and its designs, the
   omniplumber: each needs systems Wolfgate does not have.
 - The medigun and cell-loaded guns, firing pins, the tiny-fan capsule, the plushie spawner boxes; the human

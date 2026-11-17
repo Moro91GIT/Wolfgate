@@ -21,6 +21,7 @@
   id: WFAdminKitPouchBase
   components:
   # One size under the satchel of holding's own limit: a bag only takes a bag that holds smaller things than it does.
+  # The pouch is Large itself, as a container holds nothing bigger than itself.
   - type: Storage
     maxItemSize: Large
     grid:

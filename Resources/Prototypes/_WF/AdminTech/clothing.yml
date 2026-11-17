@@ -177,6 +177,8 @@
     state: icon
   - type: Clothing
     sprite: _WF/AdminTech/cytotheca.rsi
+  - type: Item
+    size: Normal
   - type: Storage
     maxItemSize: Normal
     grid:
@@ -194,8 +196,10 @@
   parent: WFAdminTechCytothecaBluespace
   id: WFAdminTechCytothecaSubspace
   components:
+  - type: Item
+    size: Large
   - type: Storage
-    maxItemSize: Huge
+    maxItemSize: Large
     grid:
     - 0,0,9,5
 

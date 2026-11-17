@@ -1,50 +1,57 @@
 using System.Numerics;
-using Robust.Shared.Map.Components;
-using Robust.Shared.Physics.Components;
+using Content.Shared._WF.GridMomentum;
+using Robust.Shared.Network;
 
 namespace Content.Shared.Movement.Systems;
 
-/// <summary>Floating mobs just off a grid move relative to that grid, so stepping off a moving ship keeps its momentum.</summary>
+/// <summary>
+/// A mob that floats off a moving grid carries the grid's velocity away with it: off a grid, it slows and pushes off
+/// relative to that velocity, taken once as it leaves, not to the map. Nothing nearby drags it along afterwards.
+/// </summary>
 public abstract partial class SharedMoverController
 {
-    /// <summary>How far past a mob's bounds a grid still counts as the one it floats beside.</summary>
-    private const float WfGridFrameRange = 4f;
+    [Dependency] private INetManager _wfNet = default!;
 
-    private List<Entity<MapGridComponent>> _wfFrameGrids = new();
-
-    /// <summary>
-    /// The map velocity of the nearest grid at the mob's position, or zero when it is on a grid or no grid is in range.
-    /// Friction and push-off apply relative to it, so a mob that leaves a moving ship drifts along with it.
-    /// </summary>
+    /// <summary>The velocity the mob slows towards while weightless: zero on a grid, else what it carried off one.</summary>
     private Vector2 WfGridFrame(EntityUid uid, TransformComponent xform)
     {
-        if (xform.GridUid != null || xform.MapUid == null)
-            return Vector2.Zero;
+        return xform.GridUid == null && TryComp<WFGridMomentumComponent>(uid, out var momentum) ? momentum.Frame : Vector2.Zero;
+    }
 
-        var position = _transform.GetWorldPosition(xform);
-        var box = _lookup.GetWorldAABB(uid, xform).Enlarged(WfGridFrameRange);
-        _wfFrameGrids.Clear();
-        _mapSystem.FindGridsIntersecting(xform.MapID, box, ref _wfFrameGrids, approx: true);
-
-        EntityUid? nearest = null;
-        var best = float.MaxValue;
-        foreach (var grid in _wfFrameGrids)
+    /// <summary>
+    /// Notes the grid a mob stands on, and on the tick it leaves, what that grid was doing where it left. Runs before
+    /// anything that stops the mob moving itself, so a mob pulled or knocked off a ship still keeps its speed.
+    /// </summary>
+    private void WfTrackGrid(EntityUid uid, TransformComponent xform)
+    {
+        if (!TryComp<WFGridMomentumComponent>(uid, out var momentum))
         {
-            if (!PhysicsQuery.TryComp(grid, out var body) || body.BodyType == Robust.Shared.Physics.BodyType.Static)
-                continue;
-
-            var distance = (_transform.GetWorldPosition(grid.Owner) - position).LengthSquared();
-            if (distance >= best)
-                continue;
-
-            best = distance;
-            nearest = grid.Owner;
+            // Added by the server; the client predicts with it once it has arrived.
+            if (_wfNet.IsClient || xform.GridUid == null)
+                return;
+            momentum = EnsureComp<WFGridMomentumComponent>(uid);
         }
 
-        if (nearest is not { } frame || !PhysicsQuery.TryComp(frame, out var frameBody))
-            return Vector2.Zero;
+        if (xform.GridUid is { } grid)
+        {
+            if (momentum.Grid != grid || momentum.Frame != Vector2.Zero)
+            {
+                momentum.Grid = grid;
+                momentum.Frame = Vector2.Zero;
+                Dirty(uid, momentum);
+            }
 
-        var local = Vector2.Transform(position, _transform.GetInvWorldMatrix(frame));
-        return PhysicsSystem.GetLinearVelocity(frame, local, frameBody);
+            return;
+        }
+
+        // Just floated off: keep what the grid was doing at the spot it was left.
+        if (momentum.Grid is { } left)
+        {
+            momentum.Grid = null;
+            momentum.Frame = !TerminatingOrDeleted(left) && PhysicsQuery.TryComp(left, out var body)
+                ? PhysicsSystem.GetLinearVelocity(left, Vector2.Transform(_transform.GetWorldPosition(xform), _transform.GetInvWorldMatrix(left)), body)
+                : Vector2.Zero;
+            Dirty(uid, momentum);
+        }
     }
 }

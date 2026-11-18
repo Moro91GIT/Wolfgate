@@ -1,5 +1,0 @@
-# The flashed effect with no motion, used when the player turns on the dark flash option.
-- type: shader
-  id: WFFlashedEffectStill
-  kind: source
-  path: "/Textures/_WF/DarkFlash/flashed_effect_still.swsl"

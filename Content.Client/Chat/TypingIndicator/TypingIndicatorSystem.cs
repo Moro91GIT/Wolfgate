@@ -1,4 +1,4 @@
-using Content.Shared._WF.HideTyping; // WOLFGATE(HideTyping)
+using Content.Shared._WG.HideTyping; // WOLFGATE(HideTyping)
 using Content.Shared.CCVar;
 using Content.Shared.Chat.TypingIndicator;
 using Robust.Client.Player;

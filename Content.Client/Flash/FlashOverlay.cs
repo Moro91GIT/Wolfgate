@@ -77,7 +77,7 @@ namespace Content.Client.Flash
             // WOLFGATE(DarkFlash) START: a still fade for players who turn on dark flash
             // _shader.SetParameter("percentComplete", PercentComplete);
             // worldHandle.UseShader(_shader);
-            var shader = WfFlashShader();
+            var shader = WgFlashShader();
             shader.SetParameter("percentComplete", PercentComplete);
             worldHandle.UseShader(shader);
             // WOLFGATE END

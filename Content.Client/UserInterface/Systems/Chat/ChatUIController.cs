@@ -455,7 +455,7 @@ public sealed partial class ChatUIController : UIController
         }
 
         // WOLFGATE(SpeechBubbles) START: the player's speech bubble toggles
-        if (!WfShowSpeechBubble(ent, msg, speechType))
+        if (!WgShowSpeechBubble(ent, msg, speechType))
             return;
         // WOLFGATE END
 
@@ -881,7 +881,7 @@ public sealed partial class ChatUIController : UIController
 
     public void ProcessChatMessage(ChatMessage msg, bool speechBubble = true)
     {
-        if (_ent.EntitySysManager.TryGetEntitySystem<Content.Client._WF.Ghost.GhostOrbitSystem>(out var ghostOrbit)) // WOLFGATE(Ghost)
+        if (_ent.EntitySysManager.TryGetEntitySystem<Content.Client._WG.Ghost.GhostOrbitSystem>(out var ghostOrbit)) // WOLFGATE(Ghost)
             ghostOrbit.AddChatLink(msg); // WOLFGATE(Ghost): orbit link for ghosts
 
         // color the name unless it's something like "the old man"
@@ -893,7 +893,7 @@ public sealed partial class ChatUIController : UIController
         }
 
         // WOLFGATE(WolfChem) START: chat seen through the local player's high, before tags split the message text
-        if (_ent.EntitySysManager.TryGetEntitySystem<Content.Client._WF.WolfChem.Narcotics.WFDrugChatSystem>(out var drugChat))
+        if (_ent.EntitySysManager.TryGetEntitySystem<Content.Client._WG.WolfChem.Narcotics.WGDrugChatSystem>(out var drugChat))
             drugChat.Distort(msg);
         // WOLFGATE END
 
@@ -910,12 +910,12 @@ public sealed partial class ChatUIController : UIController
             }
         }
 
-        var wfBeforeHighlights = msg.WrappedMessage; // WOLFGATE(Notifications): tells whether a highlight matched
+        var wgBeforeHighlights = msg.WrappedMessage; // WOLFGATE(Notifications): tells whether a highlight matched
         foreach (var highlight in _highlights)
         {
             msg.WrappedMessage = SharedChatSystem.InjectTagAroundString(msg, highlight, "color", _highlightsColor);
         }
-        WfOnHighlights(msg, wfBeforeHighlights); // WOLFGATE(Notifications): sound and window flash on a highlight
+        WgOnHighlights(msg, wgBeforeHighlights); // WOLFGATE(Notifications): sound and window flash on a highlight
 
         // Log all incoming chat to repopulate when filter is un-toggled
         if (!msg.HideChat)

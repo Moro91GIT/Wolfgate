@@ -187,7 +187,7 @@ public sealed class WGCockpitTest : InteractionTest
             var originalPlotControls = plots.Select(plot => plot.WgCockpitControls).ToArray();
             var networkPorts = Named<GridContainer>(window, "NetworkPortsBox");
             var originalNetworkLayout = (networkPorts.LimitedDimension, networkPorts.Rows, networkPorts.Columns);
-            var helmKeys = new[] { "IFFToggle", "IFFDetailedToggle", "DockToggle" }.Select(name => Named<Button>(window, name)).ToArray();
+            var helmKeys = new[] { "IFFToggle", "IFFDetailedToggle" }.Select(name => Named<Button>(window, name)).ToArray();
             var helmKeyCaptions = helmKeys.Select(key => key.Text).ToArray();
             var helmKeyParent = helmKeys[0].Parent;
             var helmKeyOrder = helmKeys.Select(key => key.GetPositionInParent()).ToArray();
@@ -211,7 +211,6 @@ public sealed class WGCockpitTest : InteractionTest
             foreach (var (key, shown) in new (Button, Func<bool>)[]
                      {
                          (sensorKeys[0], () => radar.ShowIFF), (sensorKeys[1], () => radar.ShowIFFDetailed),
-                         (sensorKeys[2], () => radar.ShowDocks),
                      })
             {
                 var before = shown();
@@ -2435,10 +2434,10 @@ public sealed class WGCockpitTest : InteractionTest
         }
     }
 
-    /// <summary>The IFF, detailed IFF and docks toggles sit on the NAV scope's glass, clear of its mode buttons, and nowhere else.</summary>
+    /// <summary>The IFF and detailed IFF toggles sit on the NAV scope's glass, clear of its mode buttons, and nowhere else.</summary>
     private static void AssertRadarKeys(WGCockpitView hud, IUserInterfaceManager ui, string context, string page)
     {
-        var keys = new[] { "IFFToggle", "IFFDetailedToggle", "DockToggle" }.Select(name => Named<Button>(hud, name)).ToArray();
+        var keys = new[] { "IFFToggle", "IFFDetailedToggle" }.Select(name => Named<Button>(hud, name)).ToArray();
         foreach (var key in keys)
             Assert.That(key.VisibleInTree, Is.EqualTo(page == "wg-cockpit-nav"), $"{context}: {key.Name} belongs with the radar on NAV.");
         if (page != "wg-cockpit-nav")
@@ -2446,7 +2445,6 @@ public sealed class WGCockpitTest : InteractionTest
         Assert.That(keys.Select(key => key.Text), Is.EqualTo(new[]
         {
             Loc.GetString("shuttle-console-iff-toggle-short"), Loc.GetString("shuttle-console-iff-detailed-short"),
-            Loc.GetString("shuttle-console-dock-toggle-short"),
         }), context);
         var radar = Named<ShuttleNavControl>(hud, "NavRadar");
         var modes = Named<Control>(hud, "WgRadarModes");

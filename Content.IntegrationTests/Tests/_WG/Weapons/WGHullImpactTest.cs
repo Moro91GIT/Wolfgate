@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using Content.Server.Destructible;
+using Content.Shared._WG.CCVar;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Projectiles;
@@ -50,6 +51,42 @@ public sealed class WGHullImpactTest
         {
             Assert.That(HullFailure(entities, shell, wall, inside), Is.Null,
                 $"{wallPrototype} at closing speed {closingSpeed}");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>Autocannon-sized blasts take the battle-load direct path; it must not reach behind the wall either.</summary>
+    [TestCase("30mmBulletHE", "WallPlastitanium", 0f)]
+    [TestCase("30mmBulletHE", "WallPlastitanium", 40f)]
+    [TestCase("35mmBulletHE", "WallPlastitanium", 0f)]
+    [TestCase("30mmBulletHE", "WallPlastitaniumDiagonal", 0f)]
+    public async Task SmallShellBlastStopsAtIntactWall(string ammo, string wallPrototype, float closingSpeed)
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Connected = false, Dirty = true });
+        var server = pair.Server;
+        var map = await pair.CreateTestMap();
+        var entities = server.EntMan;
+        var wall = EntityUid.Invalid;
+        var inside = EntityUid.Invalid;
+        var shell = EntityUid.Invalid;
+
+        await server.WaitAssertion(() =>
+        {
+            server.CfgMan.SetCVar(Robust.Shared.CVars.NetTickrate, TickRate);
+            server.CfgMan.SetCVar(BattleLoadCVars.MicroExplosions, true);
+            (wall, inside) = SpawnHull(entities, map, wallPrototype);
+            shell = FireShell(entities, map, ammo, 12f, closingSpeed);
+        });
+
+        await pair.RunTicksSync(30);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(HullFailure(entities, shell, wall, inside), Is.Null,
+                $"{ammo} on {wallPrototype} at closing speed {closingSpeed}");
+            Assert.That(entities.System<SharedMapSystem>().GetTileRef(map.Grid, new Vector2i(1, 0)).Tile.IsEmpty, Is.False,
+                "The floor behind the wall was broken.");
         });
 
         await pair.CleanReturnAsync();

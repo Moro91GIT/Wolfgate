@@ -16,7 +16,7 @@ public partial class ShuttleNavControl
     private void DrawCrewGroups(DrawingHandleScreen handle, TransformComponent consoleXform, Matrix3x2 worldToView)
     {
         var setup = EntManager.System<WGCrewSetupClientSystem>();
-        if (!WgShowEncounters || !setup.WatchRadar() || setup.Crews.Count == 0)
+        if (!ShowIFF || !setup.WatchRadar() || setup.Crews.Count == 0)
             return;
 
         _wgCrewAnchors.Clear();
@@ -46,7 +46,7 @@ public partial class ShuttleNavControl
             if (!setup.Tags.TryGetValue((crew.Grid, crew.Group), out var tag))
                 continue;
 
-            WgBeginTag(point, point + new Vector2(10f, -38f) * UIScale);
+            WgBeginTag(point, point + new Vector2(10f, -38f) * UIScale, always: true, key: HashCode.Combine(crew.Grid, crew.Group));
             WgTagLine(handle, tag, UIScale * 0.8f, color);
         }
     }

@@ -221,7 +221,7 @@ public partial class ShuttleNavControl
 
             handle.DrawCircle(at, 3f * UIScale, WgPhantomColor);
             var label = view.Garble(Loc.GetString("wg-lattice-phantom-contact"), mapUid, position.Position, seed);
-            WgBeginTag(at, at + new Vector2(6f, -6f) * UIScale, 1);
+            WgBeginTag(at, at + new Vector2(6f, -6f) * UIScale, 1, always: true, key: seed);
             WgTagLine(handle, label, UIScale * 0.8f, WgPhantomColor);
         }
     }

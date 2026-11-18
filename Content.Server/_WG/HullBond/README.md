@@ -12,13 +12,19 @@ Adding it to another machine is all a new fitting needs.
 
 `WGHullBondSystem` holds the rules:
 
-- A fitting bonds when it map-inits bolted down, or when a wrench first bolts it down. A hull loaded from a save
-  never map-inits, so its fittings bond on the first unbolt, board removal or examine instead.
+- A fitting bonds when it map-inits bolted down, or when it is first bolted down, by a wrench or by an SRD or drydock
+  rebuilding it. A hull loaded from a save never map-inits, so its fittings bond on the first unbolt, board removal
+  or examine instead.
 - The bond is a hull id (`WGHullBondId` on the grid), not an entity reference, so it survives a used-ship resale and
   never matches a hull from another round. The pieces of a split hull share its id.
 - A board taken out of a bonded fitting (prying, destruction, a drydock break) carries the bond. A machine built from
   it adopts the bond and comes loose at once if it was built on another hull. A bonded board can't go in a flatpacker,
   which would unpack a new, unbonded machine.
+
+NPC ships are fair game. An encounter hull (Reavers, pirates and every other `Encounters` ship) is made loose when
+it is built (`Loosen`, a `Loose` flag on its `WGHullBondId`): the fittings bonded to it lose their bond and nothing
+bonds to it again, so a stolen shield, drive or loader bolts down on the thief's ship and bonds there. A claimed
+encounter ship stays loose, and the pieces of a loose hull are loose.
 
 A new board, a new flatpack and a fitting that was never bolted down have no bond and take the first hull they are
 bolted to. The refusal is server-side, so the client may show the wrench starting before the popup.

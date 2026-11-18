@@ -1,4 +1,4 @@
-using Content.Client._WF.AdminObserver; // WOLFGATE(AdminObserver)
+using Content.Client._WG.AdminObserver; // WOLFGATE(AdminObserver)
 using Content.Client.Administration.Managers;
 using Content.Client.Ghost;
 using Content.Shared.Administration;
@@ -79,7 +79,7 @@ internal sealed partial class ChatManager : IChatManager
                 // WOLFGATE(AdminObserver) START: a manifested admin observer's say is in character, so its dead chat goes by dsay
                 // if (_systems.GetEntitySystemOrNull<GhostSystem>() is {IsGhost: true})
                 if (_systems.GetEntitySystemOrNull<GhostSystem>() is {IsGhost: true}
-                    && _systems.GetEntitySystemOrNull<WFManifestClientSystem>()?.LocalManifested() != true)
+                    && _systems.GetEntitySystemOrNull<WGManifestClientSystem>()?.LocalManifested() != true)
                 // WOLFGATE END
                     goto case ChatSelectChannel.Local;
 

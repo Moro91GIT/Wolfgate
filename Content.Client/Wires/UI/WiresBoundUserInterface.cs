@@ -1,5 +1,5 @@
-using Content.Client._WF.AdminTech; // WOLFGATE(AdminTech)
-using Content.Shared._WF.AdminTech; // WOLFGATE(AdminTech)
+using Content.Client._WG.AdminTech; // WOLFGATE(AdminTech)
+using Content.Shared._WG.AdminTech; // WOLFGATE(AdminTech)
 using Content.Shared.Wires;
 using Robust.Client.GameObjects;
 using Robust.Client.UserInterface;
@@ -11,7 +11,7 @@ namespace Content.Client.Wires.UI
         [ViewVariables]
         private WiresMenu? _menu;
 
-        private WFWireLegendWindow? _wfLegend; // WOLFGATE(AdminTech): what each wire does, for a viewer holding a legend tool
+        private WGWireLegendWindow? _wgLegend; // WOLFGATE(AdminTech): what each wire does, for a viewer holding a legend tool
 
         public WiresBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
         {
@@ -22,18 +22,18 @@ namespace Content.Client.Wires.UI
             base.Open();
             _menu = this.CreateWindow<WiresMenu>();
             _menu.OnAction += PerformAction;
-            SendMessage(new WFWireLegendRequestMessage()); // WOLFGATE(AdminTech): answered only for a holder of a legend tool
+            SendMessage(new WGWireLegendRequestMessage()); // WOLFGATE(AdminTech): answered only for a holder of a legend tool
         }
 
         // WOLFGATE(AdminTech) START: show the wire legend the server sends back
         protected override void ReceiveMessage(BoundUserInterfaceMessage message)
         {
             base.ReceiveMessage(message);
-            if (message is not WFWireLegendMessage legend)
+            if (message is not WGWireLegendMessage legend)
                 return;
 
-            _wfLegend ??= new WFWireLegendWindow();
-            _wfLegend.Show(legend);
+            _wgLegend ??= new WGWireLegendWindow();
+            _wgLegend.Show(legend);
         }
         // WOLFGATE END
 
@@ -55,7 +55,7 @@ namespace Content.Client.Wires.UI
                 return;
 
             _menu?.Dispose();
-            _wfLegend?.Close(); // WOLFGATE(AdminTech)
+            _wgLegend?.Close(); // WOLFGATE(AdminTech)
         }
     }
 }

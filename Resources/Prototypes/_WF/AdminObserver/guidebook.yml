@@ -1,6 +1,0 @@
-# The admin's page on the observer, manifesting, the kit and technicians.
-- type: guideEntry
-  id: WFAdminObserver
-  name: guide-entry-wf-admin-observer
-  text: "/ServerInfo/_WF/AdminObserver/Guidebook/AdminObserver.xml"
-  priority: 20

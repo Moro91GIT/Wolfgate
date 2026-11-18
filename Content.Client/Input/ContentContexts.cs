@@ -1,6 +1,6 @@
-using Content.Shared._WF.RMCCore.Input; // WOLFGATE(Xenonids)
-using Content.Shared._WF.CancelInteractions; // WOLFGATE(CancelInteractions)
-using Content.Shared._WF.HandSelect; // WOLFGATE(HandSelect)
+using Content.Shared._WG.RMCCore.Input; // WOLFGATE(Xenonids)
+using Content.Shared._WG.CancelInteractions; // WOLFGATE(CancelInteractions)
+using Content.Shared._WG.HandSelect; // WOLFGATE(HandSelect)
 using Content.Shared.Input;
 using Robust.Shared.Input;
 
@@ -67,11 +67,11 @@ namespace Content.Client.Input
             human.AddFunction(ContentKeyFunctions.ShuttleDescend);
             human.AddFunction(ContentKeyFunctions.SwapHands);
             human.AddFunction(ContentKeyFunctions.SwapHandsPrevious); // Frontier
-            human.AddFunction(WFHandSelectKeys.WFSelectLeftHand); // WOLFGATE(HandSelect): swap to left hand
-            human.AddFunction(WFHandSelectKeys.WFSelectRightHand); // WOLFGATE(HandSelect): swap to right hand
-            human.AddFunction(WFCancelInteractionKeys.WFCancelInteractions); // WOLFGATE(CancelInteractions): cancel own do-afters
+            human.AddFunction(WGHandSelectKeys.WGSelectLeftHand); // WOLFGATE(HandSelect): swap to left hand
+            human.AddFunction(WGHandSelectKeys.WGSelectRightHand); // WOLFGATE(HandSelect): swap to right hand
+            human.AddFunction(WGCancelInteractionKeys.WGCancelInteractions); // WOLFGATE(CancelInteractions): cancel own do-afters
             human.AddFunction(ContentKeyFunctions.Drop);
-            human.AddFunction(ContentKeyFunctions.WFOfferItem); // WOLFGATE(ExtraInteractions): hold out the active item
+            human.AddFunction(ContentKeyFunctions.WGOfferItem); // WOLFGATE(ExtraInteractions): hold out the active item
             human.AddFunction(ContentKeyFunctions.UseItemInHand);
             human.AddFunction(ContentKeyFunctions.AltUseItemInHand);
             human.AddFunction(ContentKeyFunctions.OpenCharacterMenu);

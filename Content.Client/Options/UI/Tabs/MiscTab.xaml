@@ -29,10 +29,10 @@
                 <Label Text="{Loc 'ui-options-general-cursor'}"
                        StyleClasses="LabelKeyText"/>
                 <!-- WOLFGATE(Screentips) START: screentip position and colour -->
-                <ui:OptionDropDown Name="DropDownScreentips" Title="{Loc 'ui-options-wf-screentips'}" />
+                <ui:OptionDropDown Name="DropDownScreentips" Title="{Loc 'ui-options-wg-screentips'}" />
                 <ui:OptionColorSlider Name="ScreentipColorSlider"
-                                      Title="{Loc 'ui-options-wf-screentip-color'}"
-                                      Example="{Loc 'ui-options-wf-screentip-color-example'}"/>
+                                      Title="{Loc 'ui-options-wg-screentip-color'}"
+                                      Example="{Loc 'ui-options-wg-screentip-color-example'}"/>
                 <!-- WOLFGATE END -->
                 <CheckBox Name="ShowHeldItemCheckBox" Text="{Loc 'ui-options-show-held-item'}" />
                 <CheckBox Name="ShowCombatModeIndicatorsCheckBox" Text="{Loc 'ui-options-show-combat-mode-indicators'}" />

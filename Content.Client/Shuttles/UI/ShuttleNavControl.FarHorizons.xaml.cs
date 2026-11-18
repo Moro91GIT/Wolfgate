@@ -27,7 +27,7 @@ public partial class ShuttleNavControl
         handle.DrawCircle(starPos, starRadius, starSystem.StarSystem.Star.Color.WithAlpha(0.5f));
 
         // WOLFGATE(PlanetScan): worlds draw as their own planet sprite, at a size that reads as a world.
-        if (WfDrawScopePlanets(handle, starSystem.StarSystem, worldToView, mapUid)) return;
+        if (WgDrawScopePlanets(handle, starSystem.StarSystem, worldToView, mapUid)) return;
 
         foreach (var planet in starSystem.StarSystem.Planets)
         {
@@ -80,7 +80,7 @@ public partial class ShuttleNavControl
             }
 
             // WOLFGATE(PlanetScan): a world on the scope has its sprite and hover scan instead of a blip and label.
-            if (!isOutsideRadarCircle && WfIsScopePlanet(uid, uiPosition)) continue;
+            if (!isOutsideRadarCircle && WgIsScopePlanet(uid, uiPosition)) continue;
 
             NfAddBlipToList(_beaconBlips, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, color);
 
@@ -93,10 +93,10 @@ public partial class ShuttleNavControl
             var labelOffset = new Vector2(blipSize, -handle.GetDimensions(Font, mainLabel, 0.9f).Y * 0.5f);
             // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
             // handle.DrawString(Font, (uiPosition + labelOffset) * UIScale, mainLabel, UIScale * 0.9f, color);
-            // WfDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
-            WfBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale);
-            WfTagLine(handle, mainLabel, UIScale * 0.9f, color);
-            WfDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
+            // WgDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
+            WgBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale);
+            WgTagLine(handle, mainLabel, UIScale * 0.9f, color);
+            WgDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
             // WOLFGATE END
 
             if (!ShowIFFDetailed)
@@ -111,11 +111,11 @@ public partial class ShuttleNavControl
             //     stackOffset += handle.GetDimensions(Font, lines[1], 0.7f).Y;
             // }
             if (lines.Length > 1)
-                WfTagLine(handle, lines[1], UIScale * 0.7f, color);
+                WgTagLine(handle, lines[1], UIScale * 0.7f, color);
 
             var coordsText = $"({worldPos.X:0.0}, {worldPos.Y:0.0})";
             // handle.DrawString(Font, (uiPosition + new Vector2(labelOffset.X, stackOffset)) * UIScale, coordsText, UIScale * 0.7f, color);
-            WfTagLine(handle, coordsText, UIScale * 0.7f, color);
+            WgTagLine(handle, coordsText, UIScale * 0.7f, color);
             // WOLFGATE END
         }
 

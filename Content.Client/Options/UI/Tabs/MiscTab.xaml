@@ -30,7 +30,7 @@
                        StyleClasses="LabelKeyText"/>
                 <CheckBox Name="ShowHeldItemCheckBox" Text="{Loc 'ui-options-show-held-item'}" />
                 <CheckBox Name="ShowCombatModeIndicatorsCheckBox" Text="{Loc 'ui-options-show-combat-mode-indicators'}" />
-                <CheckBox Name="WFCombatFaceCursorCheckBox" Text="{Loc 'ui-options-wf-combat-face-cursor'}" /> <!-- WOLFGATE(CombatFacing): face the cursor in combat mode -->
+                <CheckBox Name="WGCombatFaceCursorCheckBox" Text="{Loc 'ui-options-wg-combat-face-cursor'}" /> <!-- WOLFGATE(CombatFacing): face the cursor in combat mode -->
                 <Label Text="{Loc 'ui-options-general-storage'}"
                        StyleClasses="LabelKeyText"/>
                 <CheckBox Name="OpaqueStorageWindowCheckBox" Text="{Loc 'ui-options-opaque-storage-window'}" />

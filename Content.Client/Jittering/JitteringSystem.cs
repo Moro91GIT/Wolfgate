@@ -1,6 +1,6 @@
 using System.Numerics;
 using Content.Shared._CE.ZLevels.Core.Components; // Mono
-using Content.Client._WF.PixelShift; // WOLFGATE(PixelShift)
+using Content.Client._WG.PixelShift; // WOLFGATE(PixelShift)
 using Content.Shared.Jittering;
 using Robust.Client.Animations;
 using Robust.Client.GameObjects;
@@ -12,7 +12,7 @@ namespace Content.Client.Jittering
     {
         [Dependency] private IRobustRandom _random = default!;
         [Dependency] private AnimationPlayerSystem _animationPlayer = default!;
-        [Dependency] private WFPixelShiftVisualsSystem _wfPixelShift = default!; // WOLFGATE(PixelShift)
+        [Dependency] private WGPixelShiftVisualsSystem _wgPixelShift = default!; // WOLFGATE(PixelShift)
 
         private readonly float[] _sign = { -1, 1 };
         private readonly string _jitterAnimationKey = "jittering";
@@ -37,7 +37,7 @@ namespace Content.Client.Jittering
                 ? zPhys.SpriteOffsetDefault
                 : sprite.Offset;
             if (zPhys == null) // WOLFGATE(PixelShift): keep a pixel shift out of the base offset jitter returns to
-                jittering.StartOffset -= _wfPixelShift.CurrentShift(uid, sprite); // WOLFGATE(PixelShift)
+                jittering.StartOffset -= _wgPixelShift.CurrentShift(uid, sprite); // WOLFGATE(PixelShift)
             _animationPlayer.Play(uid, animationPlayer, GetAnimation(jittering, sprite), _jitterAnimationKey);
         }
 

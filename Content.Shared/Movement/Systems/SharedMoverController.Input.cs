@@ -229,7 +229,7 @@ namespace Content.Shared.Movement.Systems
             {
                 var targetDir = mover.TargetRelativeRotation - diff;
                 targetDir = targetDir.GetCardinalDir().ToAngle().Reduced();
-                if (_wfDefaultNorth.WantsNorth(uid)) // WOLFGATE(Camera): the Default to North option faces the new grid's north
+                if (_wgDefaultNorth.WantsNorth(uid)) // WOLFGATE(Camera): the Default to North option faces the new grid's north
                     targetDir = Angle.Zero; // WOLFGATE(Camera)
                 mover.TargetRelativeRotation = targetDir;
             }
@@ -310,9 +310,9 @@ namespace Content.Shared.Movement.Systems
 
         private void HandleDirChange(EntityUid entity, Direction dir, ushort subTick, bool state)
         {
-            if (WfTryTurnInPlace(entity, dir, state)) // WOLFGATE(TurnInPlace): the held turn key turns instead of moving
+            if (WgTryTurnInPlace(entity, dir, state)) // WOLFGATE(TurnInPlace): the held turn key turns instead of moving
                 return; // WOLFGATE(TurnInPlace)
-            if (WfTryPixelShift(entity, dir, state)) // WOLFGATE(PixelShift): a held shift or tilt key nudges the sprite instead, and a step clears the shift
+            if (WgTryPixelShift(entity, dir, state)) // WOLFGATE(PixelShift): a held shift or tilt key nudges the sprite instead, and a step clears the shift
                 return; // WOLFGATE(PixelShift)
 
             // Relayed movement just uses the same keybinds given we're moving the relayed entity

@@ -54,6 +54,7 @@ public sealed partial class WGChoirSystem : EntitySystem
     [Dependency] private NpcFactionSystem _factions = default!;
     [Dependency] private SharedActionsSystem _actions = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
+    [Dependency] private Content.Server._WG.Ghost.GhostNoticeSystem _ghostNotice = default!;
 
     public const string Faction = "WGChoir";
     private const string ActionPrototype = "WGChoirActionAnswer";
@@ -108,6 +109,7 @@ public sealed partial class WGChoirSystem : EntitySystem
         _popup.PopupEntity(Loc.GetString("wg-choir-offer-popup"), mob, session, PopupType.LargeCaution);
         Tell(session, Loc.GetString("wg-choir-offer"));
         _chat.SendAdminAlert(mob, Loc.GetString("wg-choir-admin-offered"));
+        _ghostNotice.Notify(mob, Content.Server._WG.Ghost.GhostNoticeKind.Choir, Loc.GetString("wg-ghost-notice-choir-offered", ("player", mob)));
     }
 
     /// <summary>Makes someone Choir.</summary>
@@ -128,6 +130,7 @@ public sealed partial class WGChoirSystem : EntitySystem
         MarkPda(mob);
         _adminLog.Add(LogType.Action, LogImpact.High, $"{ToPrettyString(mob):player} joined the Choir");
         _chat.SendAdminAlert(mob, Loc.GetString("wg-choir-admin-joined"));
+        _ghostNotice.Notify(mob, Content.Server._WG.Ghost.GhostNoticeKind.Choir, Loc.GetString("wg-ghost-notice-choir-joined", ("player", mob)));
         if (_player.TryGetSessionByEntity(mob, out var session))
         {
             _popup.PopupEntity(Loc.GetString("wg-choir-joined-popup"), mob, session, PopupType.LargeCaution);
@@ -260,6 +263,7 @@ public sealed partial class WGChoirSystem : EntitySystem
         RemComp<WGChoirOfferComponent>(mob);
         _adminLog.Add(LogType.Action, LogImpact.High, $"{ToPrettyString(mob):player} answered the Choir and is turning Remade");
         _chat.SendAdminAlert(mob, Loc.GetString("wg-choir-admin-abomination"));
+        _ghostNotice.Notify(mob, Content.Server._WG.Ghost.GhostNoticeKind.Choir, Loc.GetString("wg-ghost-notice-choir-turning", ("player", mob)));
         if (_player.TryGetSessionByEntity(mob, out var session))
             _popup.PopupEntity(Loc.GetString("wg-choir-abomination-popup"), mob, session, PopupType.LargeCaution);
 

@@ -34,7 +34,7 @@
 
 using System.Numerics; // WOLFGATE(Weapons)
 using Content.Server.Destructible;
-using Content.Server._WF.ShipShields; // WOLFGATE(ShipShields)
+using Content.Server._WG.ShipShields; // WOLFGATE(ShipShields)
 using Content.Shared.Damage;
 using Content.Shared.FixedPoint;
 using Content.Shared.Projectiles;
@@ -81,7 +81,7 @@ public sealed partial class ProjectileSystem : SharedProjectileSystem
             return null;
 
         // WOLFGATE(ShipShields) START: a deflector field slows a round and lets it fly on unspent
-        if (_wfShipShields.PassWolfgateDeflector(target, uid, component))
+        if (_wgShipShields.PassWolfgateDeflector(target, uid, component))
             return null;
         // WOLFGATE END
 
@@ -227,7 +227,7 @@ public sealed partial class ProjectileSystem : SharedProjectileSystem
             //     rayDistance,
             //     uid, // Entity to ignore (self)
             //     false); // IncludeNonHard = false
-            var hits = WfSweep(uid, lastMap, currentVelocity, parentVel, frameTime, projFix.CollisionMask);
+            var hits = WgSweep(uid, lastMap, currentVelocity, parentVel, frameTime, projFix.CollisionMask);
             // WOLFGATE END
 
             // do not process other grid velocity if we are gridded
@@ -239,7 +239,7 @@ public sealed partial class ProjectileSystem : SharedProjectileSystem
 
             // WOLFGATE(Weapons) START: the first hit is the soonest, as each grid's ray has its own direction and speed
             // bool ProcessHits(IEnumerable<RayCastResults> hits)
-            bool ProcessHits(List<WfSweepHit> hits)
+            bool ProcessHits(List<WgSweepHit> hits)
             // WOLFGATE END
             {
                 // Process the closest hit
@@ -295,7 +295,7 @@ public sealed partial class ProjectileSystem : SharedProjectileSystem
                 // var hitMapCoord = lastMap.Offset(rayDirection * minHit.Distance);
                 var hitMapCoord = lastMap.Offset(minHit.Direction * minHit.Distance);
                 // WOLFGATE(ShipShields) START: consume confirmed shield ray hits without relying on a later edge contact
-                var shieldHit = new WFShipShieldProjectileRayHitEvent(uid, projectileComp, hitMapCoord);
+                var shieldHit = new WGShipShieldProjectileRayHitEvent(uid, projectileComp, hitMapCoord);
                 RaiseLocalEvent(minHit.Uid.Value, ref shieldHit);
                 if (shieldHit.Handled)
                     return true;

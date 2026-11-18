@@ -37,8 +37,8 @@
         - type: ForceAnchor
         - type: ClaimableGrid
         # WOLFGATE(Wilderness) START: Monolithic Fragments are Wildernesses
-        - type: WFZoneSource
-          zone: WFWilderness
+        - type: WGZoneSource
+          zone: WGWilderness
         # WOLFGATE END
         paths:
         - /Maps/_Mono/Monolithic/monolithicasteroidsmallarena.yml

@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "license": "CC0-1.0",
+    "copyright": "Built by Tools/_WG/Wilderness/make_icons.py from the Wolfgate radar marker glyphs.",
+    "size": {
+        "x": 16,
+        "y": 16
+    },
+    "states": [
+        {
+            "name": "skull"
+        }
+    ]
+}

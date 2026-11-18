@@ -5,8 +5,8 @@
   id: BaseAlertOrder
   order:
     - category: Health
-    - category: WFWolfmedPain # WOLFGATE(Wolfmed): VISUALS: the pain HUD sits under the health doll
-    - category: WFZone # WOLFGATE(Wilderness): the zone you're in sits high, where it is seen
+    - category: WGWolfmedPain # WOLFGATE(Wolfmed): VISUALS: the pain HUD sits under the health doll
+    - category: WGZone # WOLFGATE(Wilderness): the zone you're in sits high, where it is seen
     - category: Stamina
     - alertType: SuitPower
     - alertType: ModsuitPower # Goobstation - Modsuits

@@ -1,0 +1,15 @@
+- type: entity
+  id: WGZoneMarker
+  name: zone marker
+  description: The centre of a zone that has no grid of its own, such as a site on a planet.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Transform
+
+- type: factionIcon
+  id: WGSkullIcon
+  priority: 1
+  locationPreference: Right
+  icon:
+    sprite: /Textures/_WG/Wilderness/skull_icon.rsi
+    state: skull

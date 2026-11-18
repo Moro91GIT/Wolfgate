@@ -36,8 +36,8 @@
         - type: ForceAnchor # Added post-FTL, so anchoring is fine.
         - type: ClaimableGrid # Mono
         # WOLFGATE(Wilderness) START: event sites are Wildernesses
-        - type: WFZoneSource
-          zone: WFWilderness
+        - type: WGZoneSource
+          zone: WGWilderness
         # WOLFGATE END
         paths:
         - /Maps/_NF/Bluespace/cache.yml
@@ -80,15 +80,15 @@
         - type: PreventPilot
         - type: ForceAnchor
         # WOLFGATE(Wilderness) START: event sites are Wildernesses
-        - type: WFZoneSource
-          zone: WFWilderness
+        - type: WGZoneSource
+          zone: WGWilderness
         # WOLFGATE END
         paths:
         - /Maps/_NF/Bluespace/vault.yml
     rewardAccounts:
       Nfsd: 1.0
     # WOLFGATE(LiveFixes): guards always nearby kept the vault from ever leaving
-    wfMaxExtensions: 4
+    wgMaxExtensions: 4
   - type: CurrencyInjectionOnBluespaceError # Mono: reward TSF with FMC for defending solarian vault
     injection: 
       company: TSF
@@ -134,15 +134,15 @@
         - type: PreventPilot
         - type: ForceAnchor
         # WOLFGATE(Wilderness) START: event sites are Wildernesses
-        - type: WFZoneSource
-          zone: WFWilderness
+        - type: WGZoneSource
+          zone: WGWilderness
         # WOLFGATE END
         paths:
         - /Maps/_NF/Bluespace/vaultsmall.yml
     rewardAccounts:
       Nfsd: 1.0
     # WOLFGATE(LiveFixes): guards always nearby kept the vault from ever leaving
-    wfMaxExtensions: 4
+    wgMaxExtensions: 4
   - type: CurrencyInjectionOnBluespaceError # Mono: reward TSF with FMC for defending solarian vault
     injection: 
       company: TSF
@@ -186,8 +186,8 @@
 #        - type: ForceAnchor
 # Mono edit end
         # WOLFGATE(Wilderness) START: event sites are Wildernesses
-        - type: WFZoneSource
-          zone: WFWilderness
+        - type: WGZoneSource
+          zone: WGWilderness
         # WOLFGATE END
         paths:
         - /Maps/_NF/Bluespace/syndieftlintercept.yml
@@ -221,8 +221,8 @@
           color: "#E10F9B"
         - type: LinkedLifecycleGridParent
         # WOLFGATE(Wilderness) START: event sites are Wildernesses
-        - type: WFZoneSource
-          zone: WFWilderness
+        - type: WGZoneSource
+          zone: WGWilderness
         # WOLFGATE END
         paths:
         - /Maps/_Mono/Bluespace/prefracture.yml

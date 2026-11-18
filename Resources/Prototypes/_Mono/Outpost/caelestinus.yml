@@ -23,11 +23,11 @@
       - type: DeleteNearbyDrones
         distance: 4000
       # WOLFGATE(TradeGoods): names the station for its role in the sector economy
-      - type: WFTradeStation
+      - type: WGTradeStation
         id: Frontier
       # WOLFGATE(Wilderness) START: the Safe Zone round Central
-      - type: WFZoneSource
-        zone: WFSafeZone
+      - type: WGZoneSource
+        zone: WGSafeZone
       # WOLFGATE END
       components:
         - type: StationNameSetup

@@ -251,10 +251,10 @@ public sealed partial class WGChoirSystem : EntitySystem
         Answer(mob, _random.Prob(AbominationChance));
     }
 
-    /// <summary>Answers with a known outcome. A body that can't turn Remade, such as a cyborg's, always joins.</summary>
+    /// <summary>Answers with a known outcome. A body that can't turn Remade, such as a cyborg's or a protected one, always joins.</summary>
     public void Answer(EntityUid mob, bool abomination)
     {
-        if (!abomination || !_conversion.IsTurnable(mob))
+        if (!abomination || !_conversion.CanConvert(mob, once: true))
         {
             Join(mob);
             return;

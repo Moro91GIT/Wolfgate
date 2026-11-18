@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using Content.Client.UserInterface.Controls;
 using Content.Shared._WG.ShipAdmin;
@@ -7,7 +8,7 @@ using Robust.Client.UserInterface.Controls;
 
 namespace Content.Client._WG.ShipAdmin.Tabs;
 
-/// <summary>Rescuing a ship: bring it here, send it somewhere, dock it, stop it, and free its helm and jump drive.</summary>
+/// <summary>Rescuing a ship: bring it here, send it somewhere, dock it, stop it, unstick it, and free its helm and jump drive.</summary>
 public sealed class WGShipAdminMoveTab : WGShipAdminTab
 {
     private readonly WGShipAdminText _status;
@@ -16,8 +17,11 @@ public sealed class WGShipAdminMoveTab : WGShipAdminTab
     private readonly LineEdit _y;
     private readonly ConfirmButton _toPosition;
     private readonly WGShipAdminDropdown _targets;
+    private readonly WGShipAdminDropdown _docks;
     private readonly ConfirmButton _nextTo;
     private readonly ConfirmButton _dockAt;
+    private readonly ConfirmButton _unstick;
+    private readonly ConfirmButton _orbit;
     private readonly Button _undock;
     private readonly Button _halt;
     private readonly Button _clearPilots;
@@ -26,7 +30,15 @@ public sealed class WGShipAdminMoveTab : WGShipAdminTab
 
     private readonly List<NetEntity> _targetGrids = new();
     private readonly List<string> _targetNames = new();
+
+    /// <summary>The docks the dock dropdown lists, after its first entry, "any free dock".</summary>
+    private readonly List<WGShipAdminDock> _dockList = new();
+
+    /// <summary>The grid the dock list was asked for; the reply for any other is stale.</summary>
+    private NetEntity? _docksFor;
     private bool _ftlLocked;
+    private AdminFlags _flags;
+    private WGShipAdminDetail? _detail;
 
     public override string Title => Loc.GetString("wg-ship-admin-tab-move");
 
@@ -50,18 +62,38 @@ public sealed class WGShipAdminMoveTab : WGShipAdminTab
             if (TryPosition(out var position))
                 SendMove(WGShipAdminMoveKind.ToPosition, null, position);
         };
-        _x.OnTextChanged += args => _toPosition.Disabled = !TryPosition(out var typed);
-        _y.OnTextChanged += args => _toPosition.Disabled = !TryPosition(out var typed);
+        _x.OnTextChanged += _ => _toPosition.Disabled = !TryPosition(out var typedX);
+        _y.OnTextChanged += _ => _toPosition.Disabled = !TryPosition(out var typedY);
         Body.AddChild(Row(_x, _y, _toPosition));
 
+        Body.AddChild(Heading(Loc.GetString("wg-ship-admin-move-to-grid-heading")));
+        Body.AddChild(Note(Loc.GetString("wg-ship-admin-move-to-grid-note")));
         _targets = Dropdown();
+        _targets.OnItemSelected += _ => RequestDocks();
         _nextTo = Confirm("wg-ship-admin-move-next-to");
         _nextTo.OnPressed += _ => SendMove(WGShipAdminMoveKind.NextTo, Target(), Vector2.Zero);
+        Body.AddChild(Row(_targets, _nextTo));
+
+        _docks = Dropdown();
         _dockAt = Confirm("wg-ship-admin-move-dock-at");
-        _dockAt.OnPressed += _ => SendMove(WGShipAdminMoveKind.DockAt, Target(), Vector2.Zero);
-        Body.AddChild(Row(_targets, _nextTo, _dockAt));
+        _dockAt.OnPressed += _ =>
+        {
+            if (Target() is { } target)
+                Send(new WGShipAdminDockMessage(Grid, target, PickedDock()));
+        };
+        _docks.OnItemSelected += _ => GateDock();
+        Body.AddChild(Row(_docks, _dockAt));
+        SetDocks(null, new List<WGShipAdminDock>());
 
         Body.AddChild(Heading(Loc.GetString("wg-ship-admin-move-free-heading")));
+        _unstick = Confirm("wg-ship-admin-move-unstick");
+        _unstick.ToolTip = Loc.GetString("wg-ship-admin-move-unstick-tooltip");
+        _unstick.OnPressed += _ => Send(new WGShipAdminActionMessage(Grid, WGShipAdminAction.Unstick));
+        _orbit = Confirm("wg-ship-admin-move-orbit");
+        _orbit.ToolTip = Loc.GetString("wg-ship-admin-move-orbit-tooltip");
+        _orbit.OnPressed += _ => Send(new WGShipAdminActionMessage(Grid, WGShipAdminAction.ReturnToOrbit));
+        Body.AddChild(Row(_unstick, _orbit));
+
         _undock = Plain("wg-ship-admin-move-undock", WGShipAdminAction.Undock);
         _halt = Plain("wg-ship-admin-move-halt", WGShipAdminAction.Halt);
         _clearPilots = Plain("wg-ship-admin-move-clear-pilots", WGShipAdminAction.ClearPilots);
@@ -91,6 +123,56 @@ public sealed class WGShipAdminMoveTab : WGShipAdminTab
             _targetGrids.Add(ship.Grid);
             _targetNames.Add(ship.Name);
         }
+
+        if (Target() != _docksFor)
+            RequestDocks();
+    }
+
+    /// <summary>Fills the dock dropdown with a grid's docks, marking those in use.</summary>
+    public void SetDocks(NetEntity? target, List<WGShipAdminDock> docks)
+    {
+        if (target != _docksFor)
+            return;
+
+        var picked = PickedDock();
+        _docks.Clear();
+        _dockList.Clear();
+        _docks.AddItem(Loc.GetString("wg-ship-admin-move-dock-any"), 0);
+        foreach (var dock in docks)
+        {
+            var id = _dockList.Count + 1;
+            var free = dock.DockedWith.Length == 0;
+            _docks.AddItem(free
+                ? Loc.GetString("wg-ship-admin-move-dock-free", ("dock", dock.Name))
+                : Loc.GetString("wg-ship-admin-move-dock-used", ("dock", dock.Name), ("with", dock.DockedWith)), id);
+
+            // A dock this ship holds can be picked again; one another ship holds can't.
+            var ours = _detail != null && _detail.DockedTo.Contains(dock.DockedWith);
+            _docks.SetItemDisabled(_docks.GetIdx(id), !free && !ours);
+            if (dock.Dock == picked)
+                _docks.SelectId(id);
+
+            _dockList.Add(dock);
+        }
+
+        GateDock();
+    }
+
+    /// <summary>The docks in the dropdown, for tests.</summary>
+    public IReadOnlyList<WGShipAdminDock> Docks => _dockList;
+
+    private void RequestDocks()
+    {
+        _docksFor = Target();
+        SetDocks(_docksFor, new List<WGShipAdminDock>());
+        if (_docksFor is { } target)
+            Send(new WGShipAdminDocksRequestMessage(target));
+    }
+
+    private NetEntity? PickedDock()
+    {
+        var index = _docks.SelectedId - 1;
+        return index >= 0 && index < _dockList.Count ? _dockList[index].Dock : null;
     }
 
     private bool SameTargets(List<WGShipAdminRow> ships)
@@ -109,6 +191,13 @@ public sealed class WGShipAdminMoveTab : WGShipAdminTab
 
     protected override void Show(WGShipAdminDetail detail, AdminFlags flags)
     {
+        // Docking or undocking this ship changes which docks are in use.
+        var redock = _detail == null || _detail.Grid != detail.Grid || !_detail.DockedTo.SequenceEqual(detail.DockedTo);
+        _detail = detail;
+        if (redock && _docksFor != null)
+            RequestDocks();
+
+        _flags = flags;
         _ftlLocked = detail.FtlLock;
         _status.Text = Loc.GetString("wg-ship-admin-move-status",
             ("map", detail.Map),
@@ -122,12 +211,19 @@ public sealed class WGShipAdminMoveTab : WGShipAdminTab
         Gate(_toMe, WGShipAdminAction.BringToMe, flags);
         Gate(_toPosition, WGShipAdminAction.SendTo, flags, TryPosition(out _));
         Gate(_nextTo, WGShipAdminAction.SendTo, flags, hasTarget);
-        Gate(_dockAt, WGShipAdminAction.DockAt, flags, hasTarget);
+        GateDock();
+        Gate(_unstick, WGShipAdminAction.Unstick, flags);
+        Gate(_orbit, WGShipAdminAction.ReturnToOrbit, flags, detail.OnPlanet);
         Gate(_undock, WGShipAdminAction.Undock, flags, (detail.Flags & WGShipAdminRowFlags.Docked) != 0);
         Gate(_halt, WGShipAdminAction.Halt, flags);
         Gate(_clearPilots, WGShipAdminAction.ClearPilots, flags);
         Gate(_resetFtl, WGShipAdminAction.ResetFtl, flags, detail.Ftl.Length > 0);
         Gate(_ftlLock, WGShipAdminAction.FtlLock, flags);
+    }
+
+    private void GateDock()
+    {
+        Gate(_dockAt, WGShipAdminAction.DockAt, _flags, Target() != null && Target() != Grid);
     }
 
     private NetEntity? Target()

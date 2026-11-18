@@ -65,6 +65,8 @@ public sealed partial class WGShipAdminEui : BaseEui
         if (_sendList)
         {
             state.Ships = _ships.BuildList(Filter, out state.Truncated);
+            state.Companies = _ships.ListCompanies();
+            state.Events = _ships.ListEvents();
             _sendList = false;
         }
 
@@ -150,6 +152,26 @@ public sealed partial class WGShipAdminEui : BaseEui
             case WGShipAdminModeMessage mode when Enum.IsDefined(mode.Mode):
                 if (TryTarget(mode.Grid, WGShipAdminAction.SetMode, out var moded))
                     Finish(_ships.SetMode(Player, moded, mode.Mode, mode.Notify, out var modeResult), modeResult);
+                break;
+            case WGShipAdminDocksRequestMessage docksRequest:
+                if (_entMan.TryGetEntity(docksRequest.Target, out var docked) && _entMan.HasComponent<MapGridComponent>(docked))
+                    SendMessage(new WGShipAdminDocksMessage(docksRequest.Target, _ships.ListDocks(docked.Value)));
+                break;
+            case WGShipAdminDockMessage dock:
+                if (TryTarget(dock.Grid, WGShipAdminAction.DockAt, out var docking))
+                    Finish(_ships.DockAt(Player, docking, _entMan.GetEntity(dock.Target), _entMan.GetEntity(dock.Dock), out var dockResult), dockResult);
+                break;
+            case WGShipAdminEventMessage startEvent:
+                if (TryTarget(startEvent.Grid, WGShipAdminAction.StartEvent, out var aimed))
+                    Finish(_ships.StartEvent(Player, aimed, startEvent.Rule ?? string.Empty, out var eventResult), eventResult);
+                break;
+            case WGShipAdminFactionMessage faction:
+                if (TryTarget(faction.Grid, WGShipAdminAction.SetFaction, out var sided))
+                    Finish(_ships.SetHullFaction(Player, sided, faction.Faction, out var factionResult), factionResult);
+                break;
+            case WGShipAdminCompanyMessage company:
+                if (TryTarget(company.Grid, WGShipAdminAction.SetCompany, out var flown))
+                    Finish(_ships.SetShipCompany(Player, flown, company.Company, out var companyResult), companyResult);
                 break;
             case WGShipAdminAllowMessage allow:
                 if (!TryTarget(allow.Grid, allow.Add != null ? WGShipAdminAction.AllowAdd : WGShipAdminAction.AllowRemove, out var listed))

@@ -15,6 +15,7 @@
                     <Button Name="PlayerShipsButton" Text="{Loc wg-ship-admin-filter-ships}" ToggleMode="True" StyleClasses="OpenRight" HorizontalExpand="True" />
                     <Button Name="AllGridsButton" Text="{Loc wg-ship-admin-filter-all}" ToggleMode="True" StyleClasses="OpenLeft" HorizontalExpand="True" />
                 </BoxContainer>
+                <ui:WGShipAdminText Name="FilterNote" />
                 <ui:WGShipAdminDropdown Name="SortButton" Access="Public" HorizontalExpand="True" />
                 <PanelContainer VerticalExpand="True">
                     <PanelContainer.PanelOverride>
@@ -32,8 +33,12 @@
                 <BoxContainer Name="ShipBox" Orientation="Vertical" VerticalExpand="True" SeparationOverride="4" Visible="False">
                     <BoxContainer Orientation="Horizontal" SeparationOverride="6">
                         <Label Name="ShipNameLabel" Access="Public" StyleClasses="LabelHeading" ClipText="True" HorizontalExpand="True" />
-                        <ui:WGShipAdminCompass Name="HeaderCompass" />
-                        <Label Name="HeaderDistance" StyleClasses="LabelSubText" SetWidth="70" Align="Right" />
+                        <ContainerButton Name="HeaderJump" Access="Public">
+                            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                                <ui:WGShipAdminCompass Name="HeaderCompass" />
+                                <Label Name="HeaderDistance" StyleClasses="LabelSubText" SetWidth="70" Align="Right" />
+                            </BoxContainer>
+                        </ContainerButton>
                     </BoxContainer>
                     <ui:WGShipAdminText Name="ShipSummaryLabel" />
                     <TabContainer Name="Tabs" Access="Public" VerticalExpand="True" />

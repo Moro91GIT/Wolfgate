@@ -15,8 +15,10 @@ using Content.Shared._WG.ShipAdmin;
 using Content.Shared.Database;
 using Content.Shared.Doors.Components;
 using Content.Shared.Doors.Systems;
+using Content.Shared._Crescent.Hardpoints;
 using Robust.Shared.Console;
 using Robust.Shared.Player;
+using Robust.Shared.Timing;
 
 namespace Content.Server._WG.ShipAdmin;
 
@@ -28,6 +30,7 @@ public sealed partial class WGShipAdminSystem
     [Dependency] private GridPowerSystem _gridPower = default!;
     [Dependency] private HardpointSystem _hardpoints = default!;
     [Dependency] private IConsoleHost _console = default!;
+    [Dependency] private IGameTiming _timing = default!;
     [Dependency] private SharedDoorSystem _doors = default!;
     [Dependency] private ShipRepairSystem _shipRepair = default!;
     [Dependency] private ShuttleConsoleSystem _shuttleConsoles = default!;
@@ -39,6 +42,9 @@ public sealed partial class WGShipAdminSystem
 
     private readonly Dictionary<EntityUid, FixJob> _fixes = new();
 
+    /// <summary>Ships whose gunnery is relinked once the tick they were queued in is over.</summary>
+    private readonly Dictionary<EntityUid, GameTick> _gunneryRelinks = new();
+
     /// <summary>A fix under way on one ship: the hull and damage work still queued, then the parts that take one call each.</summary>
     private sealed class FixJob
     {
@@ -49,6 +55,9 @@ public sealed partial class WGShipAdminSystem
         public int Tiles;
         public int Rebuilt;
         public int Healed;
+        public int Cleaned;
+        public int Mopped;
+        public int Lit;
 
         /// <summary>The refit line and tier this job brings the ship up to, when it is a refit and not a fix.</summary>
         public WGShipRefitPrototype? Refit;
@@ -181,6 +190,9 @@ public sealed partial class WGShipAdminSystem
 
         // Mono keeps this as the body of its repairgrid command, which takes the grid's own id.
         _shipRepair.RepairGridCmd(_console.LocalShell, string.Empty, new[] { grid.ToString() });
+
+        // The restore spawns parts in no order, so a gun may land before its hardpoint and stay unlinked.
+        QueueGunneryRelink(grid);
         Audit(admin, LogImpact.High, grid, "restored it to its repair snapshot");
         result = Loc.GetString("wg-ship-admin-result-restored", ("ship", Name(grid)));
         return true;
@@ -189,6 +201,7 @@ public sealed partial class WGShipAdminSystem
     /// <summary>Works through the running fixes, a budget of hull and damage items a tick each.</summary>
     private void UpdateFixes()
     {
+        UpdateGunneryRelinks();
         if (_fixes.Count == 0)
             return;
 
@@ -301,20 +314,82 @@ public sealed partial class WGShipAdminSystem
             }
 
             _shuttleConsoles.RefreshShuttleConsoles(grid);
-            _fireControl.ForceServerReconnectionOnGrid(grid);
-            _hardpoints.QueueHardpointRefresh(grid);
+            QueueGunneryRelink(grid);
         }
+
+        if ((parts & WGShipAdminFixParts.Trash) != 0)
+            job.Cleaned += RemoveTrash(grid);
+
+        if ((parts & WGShipAdminFixParts.Puddles) != 0)
+            job.Mopped += RemovePuddles(grid);
+
+        if ((parts & WGShipAdminFixParts.Lights) != 0)
+            job.Lit += FixLights(grid);
 
         Audit(job.Admin, LogImpact.Medium, grid,
-            $"finished a fix of {parts}: {job.Tiles} hull tiles, {job.Rebuilt} parts rebuilt, {job.Healed} healed");
+            $"finished a fix of {parts}: {job.Tiles} hull tiles, {job.Rebuilt} parts rebuilt, {job.Healed} healed, "
+            + $"{job.Cleaned} trash removed, {job.Mopped} puddles mopped, {job.Lit} lights fixed");
 
-        if (_panels.TryGetValue(job.Admin, out var panel))
+        if (!_panels.TryGetValue(job.Admin, out var panel))
+            return;
+
+        var result = Loc.GetString("wg-ship-admin-result-fixed",
+            ("ship", Name(grid)),
+            ("tiles", job.Tiles),
+            ("parts", job.Rebuilt),
+            ("healed", job.Healed));
+
+        // A quick clean-up has nothing to rebuild, so it says what it cleaned instead.
+        if ((parts & (WGShipAdminFixParts.Trash | WGShipAdminFixParts.Puddles | WGShipAdminFixParts.Lights)) != 0)
         {
-            panel.Finish(true, Loc.GetString("wg-ship-admin-result-fixed",
-                ("ship", Name(grid)),
-                ("tiles", job.Tiles),
-                ("parts", job.Rebuilt),
-                ("healed", job.Healed)));
+            result = $"{result} {Loc.GetString("wg-ship-admin-result-cleaned",
+                ("trash", job.Cleaned), ("puddles", job.Mopped), ("lights", job.Lit))}";
         }
+
+        panel.Finish(true, result);
+    }
+
+    /// <summary>
+    /// Mounts every gun aboard that sits on a hardpoint but isn't linked to one, then relinks gunnery a tick
+    /// later, once parts a fix replaced are really gone.
+    /// </summary>
+    private void QueueGunneryRelink(EntityUid grid)
+    {
+        var guns = EntityQueryEnumerator<HardpointAnchorableOnlyComponent, TransformComponent>();
+        while (guns.MoveNext(out var uid, out var gun, out var xform))
+        {
+            if (xform.GridUid != grid || !xform.Anchored || _hardpoints.WgIsMounted(gun))
+                continue;
+
+            gun.anchoredTo = null;
+            _hardpoints.TryAnchorToHardpoint(uid, gun);
+        }
+
+        _gunneryRelinks[grid] = _timing.CurTick;
+    }
+
+    /// <summary>Relinks the gunnery of ships queued in an earlier tick.</summary>
+    private void UpdateGunneryRelinks()
+    {
+        if (_gunneryRelinks.Count == 0)
+            return;
+
+        List<EntityUid>? done = null;
+        foreach (var (grid, queued) in _gunneryRelinks)
+        {
+            if (queued >= _timing.CurTick)
+                continue;
+
+            if (!TerminatingOrDeleted(grid))
+                _fireControl.WgRelinkGrid(grid);
+
+            (done ??= new List<EntityUid>()).Add(grid);
+        }
+
+        if (done == null)
+            return;
+
+        foreach (var grid in done)
+            _gunneryRelinks.Remove(grid);
     }
 }

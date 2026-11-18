@@ -171,6 +171,17 @@ public sealed partial class WGShipAdminSystem : EntitySystem
             case WGShipAdminAction.ResetDoors:
                 panel.Finish(ResetDoors(panel.Player, grid, notify, out var reset), reset);
                 break;
+            case WGShipAdminAction.JumpTo:
+                // A jump changes no row; the result line is enough.
+                var jumped = JumpTo(panel.Player, grid, out var jumpResult);
+                panel.SetResult(jumpResult, !jumped);
+                break;
+            case WGShipAdminAction.Unstick:
+                panel.Finish(Unstick(panel.Player, grid, out var unstuck), unstuck);
+                break;
+            case WGShipAdminAction.ReturnToOrbit:
+                panel.Finish(ReturnToOrbit(panel.Player, grid, out var orbited), orbited);
+                break;
             default:
                 panel.SetResult(Loc.GetString("wg-ship-admin-result-unknown"), true);
                 break;

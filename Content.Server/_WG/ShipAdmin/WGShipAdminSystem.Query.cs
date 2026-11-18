@@ -1,4 +1,8 @@
 using Content.Server._NF.Shipyard.Systems;
+using Content.Server._NF.Station.Components;
+using Content.Server._WG.PlanetCargoHubs;
+using Content.Server._WG.TradeGoods.Components;
+using Content.Shared._WG.PlanetCities;
 using Content.Server._WG.Companies;
 using Content.Server._WG.ShipAccess;
 using Content.Server.Shuttles.Components;
@@ -46,6 +50,24 @@ public sealed partial class WGShipAdminSystem
                || HasComp<VesselComponent>(grid);
     }
 
+    /// <summary>
+    /// Whether a grid is a port or base ships dock at: a trade station or outpost, a planet cargo hub, or a station
+    /// grid that isn't a ship's own. Planet camps and cities and a planet's own surface are not.
+    /// </summary>
+    public bool IsPort(EntityUid grid)
+    {
+        if (HasComp<MapComponent>(grid) || HasComp<WGPlanetCityGridComponent>(grid) || HasComp<ShuttleDeedComponent>(grid))
+            return false;
+
+        if (HasComp<WGTradeStationComponent>(grid))
+            return true;
+
+        if (_station.GetOwningStation(grid) is not { } station)
+            return false;
+
+        return HasComp<WGPlanetCargoHubComponent>(station) || CompOrNull<ExtraShuttleInformationComponent>(station)?.Vessel == null;
+    }
+
     /// <summary>The rows for a filter, by name.</summary>
     public List<WGShipAdminRow> BuildList(WGShipAdminFilter filter, out bool truncated)
     {
@@ -57,7 +79,7 @@ public sealed partial class WGShipAdminSystem
         var grids = AllEntityQuery<MapGridComponent, TransformComponent>();
         while (grids.MoveNext(out var uid, out _, out var xform))
         {
-            if (filter == WGShipAdminFilter.PlayerShips && !IsPlayerShip(uid))
+            if (filter == WGShipAdminFilter.PlayerShips && !IsPlayerShip(uid) && !IsPort(uid))
                 continue;
 
             if (rows.Count >= MaxRows)
@@ -197,11 +219,15 @@ public sealed partial class WGShipAdminSystem
             }
         }
 
-        if (TryComp<WGCompanyShipComponent>(grid, out var companyShip) && string.IsNullOrEmpty(detail.Company))
-            detail.Company = companyShip.Name;
+        if (TryComp<WGCompanyShipComponent>(grid, out var companyShip))
+        {
+            detail.CompanyId = companyShip.CompanyId;
+            if (string.IsNullOrEmpty(detail.Company))
+                detail.Company = companyShip.Name;
+        }
 
-        if (TryComp<CompanyComponent>(grid, out var faction) && faction.CompanyName != "None")
-            detail.Faction = faction.CompanyName;
+        detail.Faction = CurrentFaction(grid);
+        detail.OnPlanet = IsOnPlanet(grid);
 
         foreach (var session in _player.Sessions)
         {

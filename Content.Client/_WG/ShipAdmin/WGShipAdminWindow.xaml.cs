@@ -103,6 +103,14 @@ public sealed partial class WGShipAdminWindow : DefaultWindow
 
         SearchBar.OnTextChanged += _ => Populate();
         RefreshButton.OnPressed += _ => OnMessage?.Invoke(new WGShipAdminListMessage(_filter));
+        HeaderJump.ToolTip = Loc.GetString("wg-ship-admin-jump-tooltip");
+        HeaderJump.OnPressed += _ =>
+        {
+            if (_detail is { } shown)
+                Jump(shown.Grid);
+        };
+        FilterNote.Text = Loc.GetString("wg-ship-admin-filter-note");
+        FilterNote.Colour = WGShipAdminText.Subdued;
         PlayerShipsButton.OnPressed += _ => OnMessage?.Invoke(new WGShipAdminListMessage(WGShipAdminFilter.PlayerShips));
         AllGridsButton.OnPressed += _ => OnMessage?.Invoke(new WGShipAdminListMessage(WGShipAdminFilter.AllGrids));
     }
@@ -122,6 +130,15 @@ public sealed partial class WGShipAdminWindow : DefaultWindow
         _filter = state.Filter;
         PlayerShipsButton.Pressed = _filter == WGShipAdminFilter.PlayerShips;
         AllGridsButton.Pressed = _filter == WGShipAdminFilter.AllGrids;
+
+        if (state.Companies != null)
+        {
+            foreach (var tab in _tabs)
+                tab.SetCompanies(state.Companies);
+        }
+
+        if (state.Events != null)
+            Danger.SetEvents(state.Events);
 
         var selected = state.Selected?.Grid;
         if (state.Ships != null || selected != _selected)
@@ -271,6 +288,7 @@ public sealed partial class WGShipAdminWindow : DefaultWindow
 
         var compass = new WGShipAdminCompass();
         var distance = new Label { StyleClasses = { "LabelSubText" }, SetWidth = 58, Align = Label.AlignMode.Right, ClipText = true };
+        var grid = ship.Grid;
         var line = new BoxContainer
         {
             Orientation = BoxContainer.LayoutOrientation.Horizontal,
@@ -278,9 +296,9 @@ public sealed partial class WGShipAdminWindow : DefaultWindow
             SeparationOverride = 6,
             Margin = new Thickness(4, 1),
         };
-        line.AddChild(compass);
+        line.AddChild(JumpButton(compass, grid));
         line.AddChild(labels);
-        line.AddChild(distance);
+        line.AddChild(JumpButton(distance, grid));
 
         var button = new ContainerButton
         {
@@ -292,10 +310,23 @@ public sealed partial class WGShipAdminWindow : DefaultWindow
         button.AddStyleClass(ContainerButton.StyleClassButton);
         button.AddChild(line);
 
-        var grid = ship.Grid;
         button.OnPressed += _ => OnMessage?.Invoke(new WGShipAdminSelectMessage(grid));
         _rows.Add(new ShipRow(ship, compass, distance));
         return button;
+    }
+
+    /// <summary>Wraps a row's arrow or distance so a click jumps the viewer to the ship instead of selecting the row.</summary>
+    private ContainerButton JumpButton(Control inner, NetEntity grid)
+    {
+        var button = new ContainerButton { ToolTip = Loc.GetString("wg-ship-admin-jump-tooltip"), MouseFilter = MouseFilterMode.Stop };
+        button.AddChild(inner);
+        button.OnPressed += _ => Jump(grid);
+        return button;
+    }
+
+    private void Jump(NetEntity grid)
+    {
+        OnMessage?.Invoke(new WGShipAdminActionMessage(grid, WGShipAdminAction.JumpTo));
     }
 
     /// <summary>

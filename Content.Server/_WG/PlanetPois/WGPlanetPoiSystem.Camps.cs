@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Content.Server._WG.NpcCrew.Components;
 using Content.Server._WG.NpcCrew.Systems;
 using Content.Server._WG.Strangers;
+using Content.Shared._NF.Shipyard.Prototypes;
 using Content.Shared._WG.NpcCrew;
 using Content.Shared._WG.PlanetPois;
 using Content.Shared.NPC.Components;
@@ -46,9 +47,6 @@ public sealed partial class WGPlanetPoiSystem
     /// <summary>Spots beside the road tried for a roadside camp before it goes out in the open instead.</summary>
     private const int RoadsideAttempts = 1024;
 
-    /// <summary>Hulls picked for a camp before it is left out.</summary>
-    private const int CampAttempts = 4;
-
     private async Task PlaceCampsAsync(EntityUid ground, MapGridComponent grid, BiomeComponent biome, EntityUid orbit, Vector2 centre, float radius,
         WGPlanetPoiTablePrototype table, WGPlanetPoiComponent record, HashSet<EntityUid> created)
     {
@@ -66,10 +64,20 @@ public sealed partial class WGPlanetPoiSystem
                 await _preload.Breathe();
                 if (TerminatingOrDeleted(ground))
                     return;
-                // A smaller hull of the camp's may fit where the one picked did not.
+                // Every hull of the camp's in a random order: a smaller one may fit where the first did not, and
+                // random picks alone could keep missing it.
+                var hulls = camp.Vessels.Distinct().Select(id => (ProtoId<VesselPrototype>?) id).ToList();
+                if (hulls.Count == 0)
+                    hulls.Add(null);
+                _random.Shuffle(hulls);
                 var placed = false;
-                for (var attempt = 0; attempt < CampAttempts && !placed; attempt++)
-                    placed = await TryPlaceCampAsync(ground, grid, biome, orbit, centre, radius, table, record, camp, created);
+                foreach (var hull in hulls)
+                {
+                    if (placed = await TryPlaceCampAsync(ground, grid, biome, orbit, centre, radius, table, record, camp, hull, created))
+                        break;
+                    if (TerminatingOrDeleted(ground))
+                        return;
+                }
                 if (!placed)
                     Log.Warning($"No {camp.ID} on {ToPrettyString(ground)}; it is skipped.");
             }
@@ -77,11 +85,12 @@ public sealed partial class WGPlanetPoiSystem
     }
 
     private async Task<bool> TryPlaceCampAsync(EntityUid ground, MapGridComponent grid, BiomeComponent biome, EntityUid orbit, Vector2 centre, float radius,
-        WGPlanetPoiTablePrototype table, WGPlanetPoiComponent record, WGPlanetCampPrototype camp, HashSet<EntityUid> created)
+        WGPlanetPoiTablePrototype table, WGPlanetPoiComponent record, WGPlanetCampPrototype camp, ProtoId<VesselPrototype>? hullId,
+        HashSet<EntityUid> created)
     {
-        if (camp.Vessels.Count == 0)
+        if (hullId is not { } vesselId)
             return TryPlaceOpenCamp(ground, grid, biome, orbit, centre, radius, table, record, camp, created);
-        if (!_proto.TryIndex(_random.Pick(camp.Vessels), out var vessel))
+        if (!_proto.TryIndex(vesselId, out var vessel))
             return false;
 
         var stagingMap = _maps.CreateMap(out var stagingId, runMapInit: false);

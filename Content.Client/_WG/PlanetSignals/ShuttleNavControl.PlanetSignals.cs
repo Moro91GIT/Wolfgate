@@ -115,9 +115,16 @@ public partial class ShuttleNavControl
                 : Loc.GetString("wg-planet-signals-marker-vessel", ("name", WGPlanetSignalsWindow.NameOf(signal)),
                     ("layer", WGPlanetSignalsWindow.LayerOf(signal)));
             var labelSize = handle.GetDimensions(Font, label, UIScale * 0.8f);
-            WgBeginTag(point, point + new Vector2(size * 2f, -labelSize.Y / 2f), mine ? 2 : 0);
+            WgBeginTag(point, point + new Vector2(size * 2f, -labelSize.Y / 2f), mine ? 2 : 0, always: mine);
             WgTagLine(handle, label, UIScale * 0.8f, color);
         }
+    }
+
+    /// <summary>Lets a world pinned to the scope's rim, which has no tag, be clicked by its blip alone.</summary>
+    private void WgAddPlanetBlipHit(EntityUid body, Vector2 uiPosition)
+    {
+        if (EntManager.HasComponent<WGPlanetSignalsComponent>(body))
+            _wgPlanetHits.Add((body, uiPosition * UIScale, 16f * UIScale, default));
     }
 
     /// <summary>
@@ -171,28 +178,38 @@ public partial class ShuttleNavControl
     }
 
     /// <summary>
-    /// Opens the signal list of the world under a click. False when nothing was hit, the press was a drag, this radar's
-    /// clicks aim guns, or a grid is under the click: a ship or drone over a world's circle is what was clicked.
+    /// Answers a left click: the signal list of the world under it, else the radar menu (RadarMenu). False when the
+    /// press was a drag or this radar's clicks aim guns. A ship or drone over a world's circle is what was clicked.
     /// </summary>
     private bool WgTryOpenPlanetSignals(Vector2 pixel, Vector2 relative)
     {
         var pressed = _wgPressedAt;
         _wgPressedAt = null;
-        if (OnRadarClick != null || pressed is not { } down || (down - pixel).Length() > 6f * UIScale
-            || WgGridUnderClick(relative))
+        if (OnRadarClick != null || pressed is not { } down || (down - pixel).Length() > 6f * UIScale)
             return false;
 
-        foreach (var (body, centre, radius, label) in _wgPlanetHits)
+        if (!WgGridUnderClick(relative))
         {
-            if ((pixel - centre).Length() > radius && !label.Contains(pixel))
-                continue;
+            foreach (var (body, centre, radius, label) in _wgPlanetHits)
+            {
+                if ((pixel - centre).Length() > radius && !label.Contains(pixel))
+                    continue;
 
-            _wgSignalsWindow ??= new WGPlanetSignalsWindow();
-            _wgSignalsWindow.Show(body, WgOurGrid());
-            return true;
+                // The world's menu lists its signals among the rest; a radar without it lists them at once.
+                if (!WgOpenWorldMenu(body))
+                    WgShowPlanetSignals(body);
+                return true;
+            }
         }
 
-        return false;
+        return WgOpenRadarMenu(relative);
+    }
+
+    /// <summary>Opens the signal list of a world.</summary>
+    private void WgShowPlanetSignals(EntityUid body)
+    {
+        _wgSignalsWindow ??= new WGPlanetSignalsWindow();
+        _wgSignalsWindow.Show(body, WgOurGrid());
     }
 
     /// <summary>
@@ -206,7 +223,8 @@ public partial class ShuttleNavControl
         var transform = EntManager.System<SharedTransformSystem>();
         foreach (var grid in _grids)
         {
-            if (EntManager.HasComponent<MapComponent>(grid.Owner))
+            // Only a grid the radar shows can be what was clicked; a hidden one leaves the world clickable.
+            if (EntManager.HasComponent<MapComponent>(grid.Owner) || !WgContactShown(grid.Owner))
                 continue;
 
             var gridToView = transform.GetWorldMatrix(grid.Owner) * _wgWorldToView;

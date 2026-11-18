@@ -25,6 +25,7 @@ public sealed partial class WGCrewFriendlyFireSystem : EntitySystem
     [Dependency] private WGCrewAlertSystem _alerts = default!;
     [Dependency] private WGCrewEscortSystem _escorts = default!;
     [Dependency] private WGCrewSystem _crew = default!;
+    [Dependency] private WGCrewRallySystem _rally = default!;
     [Dependency] private MobStateSystem _mobs = default!;
     [Dependency] private SharedProjectileSystem _projectiles = default!;
     [Dependency] private IGameTiming _timing = default!;
@@ -116,6 +117,8 @@ public sealed partial class WGCrewFriendlyFireSystem : EntitySystem
         if (args.Tool is { } beam && HasComp<HitscanBasicDamageComponent>(beam))
             ReportBeamHit(ent.Owner, origin);
         ReportMechHit(ent.Owner, origin);
+        if (!HasComp<MobStateComponent>(ent))
+            _rally.Tampered(ent.Owner, shooter);
     }
 
     /// <summary>Reports a free-flying mech's hit on a ship or anyone aboard as that ship coming under attack.</summary>
@@ -157,13 +160,13 @@ public sealed partial class WGCrewFriendlyFireSystem : EntitySystem
     private float SkillScale(EntityUid victim, EntityUid? origin)
     {
         if (TryComp<WGCrewComponent>(victim, out var crew) && !HasComp<ActorComponent>(victim))
-            return WGCrewSkills.Of(crew.Skill).DamageTaken;
+            return WGCrewSkills.Of(crew).DamageTaken;
 
         if (origin is { } source && !TerminatingOrDeleted(source))
         {
             var attacker = _crew.Wielder(source);
             if (TryComp<WGCrewComponent>(attacker, out var dealer) && !HasComp<ActorComponent>(attacker))
-                return WGCrewSkills.Of(dealer.Skill).DamageDealt;
+                return WGCrewSkills.Of(dealer).DamageDealt;
         }
 
         return 1f;
@@ -200,6 +203,11 @@ public sealed partial class WGCrewFriendlyFireSystem : EntitySystem
         if (_crew.SameCrew(shooter, target))
             return true;
         var home = _crew.HomeGrid(shooter, crew);
+        // A ship round passes an allied hull, so it spares everyone aboard as well, attackers included: sparing the
+        // hull alone shot them through its standing walls.
+        if (shipWeapon && home is { } own && HasComp<MobStateComponent>(target)
+            && Transform(target).GridUid is { } aboard && aboard != own && PassesHull(shooter, crew, own, aboard))
+            return true;
         // Anyone who attacked this crew loses protection, whatever their company or faction.
         if (Attacked(shooter, crew, home, target))
             return false;
@@ -227,6 +235,16 @@ public sealed partial class WGCrewFriendlyFireSystem : EntitySystem
             return true;
         return alliedGrid is { } friendlyGrid
             && (_security.IsAuthorized(shooter, friendlyGrid) || _factions.IsEntityFriendly(shooter, friendlyGrid));
+    }
+
+    /// <summary>Whether this crew's ship rounds pass the structures of another ship.</summary>
+    private bool PassesHull(EntityUid shooter, WGCrewComponent crew, EntityUid ship, EntityUid grid)
+    {
+        if (HasComp<WGCrewSeizedHullComponent>(grid) || _objectives.IsAttackTarget(ship, crew.Group, grid) || _alerts.IsHostileShip(ship, crew.Group, grid)
+            || _security.IsHostileDockingTarget(ship, crew.Group, grid))
+            return false;
+        return _escorts.AreInFormation(ship, grid) || _security.IsAuthorized(shooter, grid)
+            || _factions.IsEntityFriendly(shooter, grid);
     }
 
     /// <summary>Whether the target attacked this crewman or its crew, or was declared a hostile boarder.</summary>

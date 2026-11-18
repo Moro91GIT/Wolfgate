@@ -79,7 +79,8 @@ preset `WGContestedSector`; `wg.reavers.enabled` forces it on without the rule),
 the storyteller's side are weighted up by tier through `WGEncounterWeightEvent`.
 
 A lead out of the fight (crew dead, disabled, hull shot to pieces, or no one at the helm for two minutes) breaks its
-patrol, raid, convoy, reinforcement or stronghold. A patrol that chases out of held space and the ring round it is
+raid, convoy, reinforcement or stronghold. A patrol instead hands the lead to its wing, which takes the lead's orders,
+and is broken only once no ship of it is left in the fight. A patrol that chases out of held space and the ring round it is
 called back. A hub hit by a player ship recalls the patrols within two cells and, with no reinforcement docked, sends a
 sortie pack after the attacker every five minutes. A cell sector control gives back to a ship that held it is announced;
 a standing hub's own cell is never given back.

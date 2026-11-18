@@ -204,8 +204,13 @@ public sealed partial class WGReaverCampaignSystem
             var (_, comp, encounter) = patrol;
             if (!encounter.Ships.TryGetValue(comp.Lead, out var lead) || !_encounters.InFight(lead))
             {
-                BreakLead(patrol.Owner, encounter, comp.Lead);
-                continue;
+                if (!TryPromote(patrol))
+                {
+                    BreakLead(patrol.Owner, encounter, comp.Lead);
+                    continue;
+                }
+
+                lead = encounter.Ships[comp.Lead];
             }
 
             comp.LastSeen = _transform.GetWorldPosition(lead.Grid);
@@ -219,6 +224,66 @@ public sealed partial class WGReaverCampaignSystem
             if (now - comp.OutsideSince >= LeashDelay)
                 CallOff(patrol);
         }
+    }
+
+    /// <summary>
+    /// Hands a patrol whose lead is out of the fight to another of its ships still in it: that one takes the lead's
+    /// orders, and the rest escort it. False if none is left.
+    /// </summary>
+    private bool TryPromote(Entity<WGReaverPatrolComponent, WGEncounterComponent> patrol)
+    {
+        var (uid, comp, encounter) = patrol;
+        string? heir = null;
+        foreach (var (key, ship) in encounter.Ships)
+        {
+            if (key != comp.Lead && !TerminatingOrDeleted(ship.Grid) && _encounters.InFight(ship))
+            {
+                heir = key;
+                break;
+            }
+        }
+
+        if (heir == null)
+            return false;
+
+        var orders = LeadOrders(patrol);
+        var old = comp.Lead;
+        if (!_encounters.SetOrders(uid, heir, orders))
+            return false;
+
+        comp.Lead = heir;
+        var grid = GetNetEntity(encounter.Ships[heir].Grid);
+        foreach (var (key, ship) in encounter.Ships)
+        {
+            if (key != heir && key != old && !TerminatingOrDeleted(ship.Grid))
+                _encounters.SetOrders(uid, key, new List<WGCrewObjective> { new() { Kind = WGCrewObjectiveKind.Escort, Target = grid } });
+        }
+
+        Log.Info($"Reaver patrol {ToPrettyString(uid)} lost its lead {old}; {heir} takes over.");
+        return true;
+    }
+
+    /// <summary>The orders a patrol's lead had left: read from its crew, else rebuilt from the chase it was on, else home.</summary>
+    private List<WGCrewObjective> LeadOrders(Entity<WGReaverPatrolComponent, WGEncounterComponent> patrol)
+    {
+        var (_, comp, encounter) = patrol;
+        if (encounter.Ships.TryGetValue(comp.Lead, out var lead))
+        {
+            var grid = GetNetEntity(lead.Grid);
+            var row = _objectives.Snapshot().FirstOrDefault(crew => crew.Grid == grid && crew.Group == lead.Group);
+            if (row is { Objectives.Count: > 0 })
+                return row.Objectives.ToList();
+        }
+
+        var orders = new List<WGCrewObjective>();
+        if (comp.Intercepting is { } target && !TerminatingOrDeleted(target))
+        {
+            orders.Add(new() { Kind = WGCrewObjectiveKind.GoTo, Position = _transform.GetWorldPosition(target), Range = InterceptApproach });
+            orders.Add(new() { Kind = WGCrewObjectiveKind.Attack, Target = GetNetEntity(target) });
+        }
+
+        orders.AddRange(RouteOrders(comp, comp.Intercepting != null ? comp.Resume : new List<Vector2>()));
+        return orders;
     }
 
     /// <summary>

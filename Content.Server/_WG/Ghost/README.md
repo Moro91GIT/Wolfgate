@@ -18,7 +18,7 @@ Scions (with their stage) and the Choir's flesh ships. Then singularities, tesla
 ghosts, chat and radio messages also carry a link that orbits their sender.
 
 **Ghost notices**, after SS13's ghost alerts: when something worth watching happens, every ghost gets a chip down the
-right of the screen (the source's sprite, a heading, a line and a draining bar, 30 s) and a chat line. Clicking either
+right of the screen (the source's sprite, a heading, a line and a draining bar, 30 s by default; an anchor breach lasts 45 s and a drop beacon until it lands) and a chat line. Clicking either
 orbits the source; right-click dismisses a chip. Sent for a parasite infection and a larva bursting, the Choir's song
 offered, answered or turning someone Remade, a corpse offered at a Scion's Tap, a Scion climbing a stage, a flesh ship
 launched at an anchor, a drop beacon planted, a warhead armed or counting down, and a primary anchor falling. The same

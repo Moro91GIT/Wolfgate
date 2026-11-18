@@ -263,12 +263,12 @@ public sealed partial class WGChoirSystem : EntitySystem
         RemComp<WGChoirOfferComponent>(mob);
         _adminLog.Add(LogType.Action, LogImpact.High, $"{ToPrettyString(mob):player} answered the Choir and is turning Remade");
         _chat.SendAdminAlert(mob, Loc.GetString("wg-choir-admin-abomination"));
-        _ghostNotice.Notify(mob, Content.Server._WG.Ghost.GhostNoticeKind.Choir, Loc.GetString("wg-ghost-notice-choir-turning", ("player", mob)));
         if (_player.TryGetSessionByEntity(mob, out var session))
             _popup.PopupEntity(Loc.GetString("wg-choir-abomination-popup"), mob, session, PopupType.LargeCaution);
 
         _mobState.ChangeMobState(mob, MobState.Dead);
-        _rising.Raise(mob, false);
+        if (_rising.Raise(mob, false))
+            _ghostNotice.Notify(mob, Content.Server._WG.Ghost.GhostNoticeKind.Choir, Loc.GetString("wg-ghost-notice-choir-turning", ("player", mob)));
     }
 
     private void OnOfferShutdown(Entity<WGChoirOfferComponent> ent, ref ComponentShutdown args)

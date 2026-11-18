@@ -61,11 +61,22 @@ public sealed class GhostNoticeSystem : EntitySystem
             return;
 
         var now = _timing.CurTime;
-        var title = Loc.GetString($"wg-ghost-notice-title-{kind.ToString().ToLowerInvariant()}");
         if (_lastSent.TryGetValue((source, text), out var last) && now < last + Repeat)
             return;
 
+        var ghosts = new List<INetChannel>();
+        foreach (var session in _player.Sessions)
+        {
+            if (session.AttachedEntity is { } attached && HasComp<GhostComponent>(attached))
+                ghosts.Add(session.Channel);
+        }
+
+        // Nobody saw it, so a repeat inside the window still goes out.
+        if (ghosts.Count == 0)
+            return;
+
         _lastSent[(source, text)] = now;
+        var title = Loc.GetString($"wg-ghost-notice-title-{kind.ToString().ToLowerInvariant()}");
         var color = KindColor(kind);
         var ev = new GhostNoticeEvent
         {
@@ -80,16 +91,6 @@ public sealed class GhostNoticeSystem : EntitySystem
         _recent.Add(ev);
         if (_recent.Count > RecentCount)
             _recent.RemoveAt(0);
-
-        var ghosts = new List<INetChannel>();
-        foreach (var session in _player.Sessions)
-        {
-            if (session.AttachedEntity is { } attached && HasComp<GhostComponent>(attached))
-                ghosts.Add(session.Channel);
-        }
-
-        if (ghosts.Count == 0)
-            return;
 
         foreach (var channel in ghosts)
             RaiseNetworkEvent(ev, channel);

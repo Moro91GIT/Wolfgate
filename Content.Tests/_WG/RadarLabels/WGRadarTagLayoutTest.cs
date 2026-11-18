@@ -12,10 +12,11 @@ public sealed class WGRadarTagLayoutTest
 {
     private static readonly Vector2 Bounds = new(800, 800);
 
-    private static WGRadarTagLayout.Tag Tag(float x, float y, int priority = 0, float width = 60, float lines = 1)
+    private static WGRadarTagLayout.Tag Tag(float x, float y, int priority = 0, float width = 60, float lines = 1, int key = -1)
     {
         return new WGRadarTagLayout.Tag
         {
+            Key = key >= 0 ? key : (int) (x * 1000 + y),
             Anchor = new Vector2(x, y),
             Position = new Vector2(x + 5, y - 6),
             Size = new Vector2(width, 12 * lines),
@@ -51,13 +52,13 @@ public sealed class WGRadarTagLayoutTest
     public void StackSplitsWhenZoomMakesRoom()
     {
         var layout = new WGRadarTagLayout();
-        var close = new[] { Tag(300, 300), Tag(305, 306), Tag(310, 312) };
+        var close = new[] { Tag(300, 300, key: 1), Tag(305, 306, key: 2), Tag(310, 312, key: 3) };
         layout.Solve(close, Bounds);
         Assert.That(layout.Groups, Has.Count.EqualTo(1));
 
-        // Zooming in four times about the scope's middle spreads the contacts apart.
+        // Zooming in five times about the scope's middle spreads the contacts apart, past the stack's sticky margin.
         var centre = Bounds / 2;
-        var zoomed = close.Select(tag => Tag(centre.X + (tag.Anchor.X - centre.X) * 4, centre.Y + (tag.Anchor.Y - centre.Y) * 4)).ToArray();
+        var zoomed = close.Select(tag => Tag(centre.X + (tag.Anchor.X - centre.X) * 5, centre.Y + (tag.Anchor.Y - centre.Y) * 5, key: tag.Key)).ToArray();
         layout.Solve(zoomed, Bounds);
         Assert.That(layout.Groups, Has.Count.EqualTo(3));
         Assert.That(layout.Groups.All(group => !group.Stacked));
@@ -112,5 +113,41 @@ public sealed class WGRadarTagLayoutTest
         Assert.That(box.Right, Is.LessThanOrEqualTo(Bounds.X));
         Assert.That(box.Top, Is.LessThanOrEqualTo(Bounds.Y));
         Assert.That(box.Left, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public void StackHoldsTogetherOnTheEdge()
+    {
+        var layout = new WGRadarTagLayout();
+        // Overlapping, they stack; just clear of each other they would stand alone, but a stack holds until there is clear room.
+        layout.Solve(new[] { Tag(100, 100, key: 1), Tag(100, 110, key: 2) }, Bounds);
+        Assert.That(layout.Groups, Has.Count.EqualTo(1));
+
+        layout.Solve(new[] { Tag(100, 100, key: 1), Tag(100, 116, key: 2) }, Bounds);
+        Assert.That(layout.Groups, Has.Count.EqualTo(1), "A stack split the moment its tags were barely clear.");
+
+        layout.Solve(new[] { Tag(100, 100, key: 1), Tag(100, 140, key: 2) }, Bounds);
+        Assert.That(layout.Groups, Has.Count.EqualTo(2));
+
+        var fresh = new WGRadarTagLayout();
+        fresh.Solve(new[] { Tag(100, 100, key: 1), Tag(100, 116, key: 2) }, Bounds);
+        Assert.That(fresh.Groups, Has.Count.EqualTo(2), "Tags never stacked shouldn't stick.");
+    }
+
+    [Test]
+    public void RowsKeepTheirOrderUntilContactsReallyPass()
+    {
+        var layout = new WGRadarTagLayout();
+        layout.Solve(new[] { Tag(100, 100, key: 1), Tag(104, 102, key: 2) }, Bounds);
+        var first = layout.Groups.Single().Rows.Select(index => index).ToArray();
+        Assert.That(first, Is.EqualTo(new[] { 0, 1 }));
+
+        // The second contact edges a few pixels above the first: the rows stay put.
+        layout.Solve(new[] { Tag(100, 100, key: 1), Tag(104, 97, key: 2) }, Bounds);
+        Assert.That(layout.Groups.Single().Rows, Is.EqualTo(new[] { 0, 1 }), "Rows traded places over a few pixels.");
+
+        // Well above, they swap.
+        layout.Solve(new[] { Tag(100, 100, key: 1), Tag(104, 80, key: 2) }, Bounds);
+        Assert.That(layout.Groups.Single().Rows, Is.EqualTo(new[] { 1, 0 }));
     }
 }

@@ -70,7 +70,10 @@ public partial class ShuttleNavControl
             var uiX = uiXCentre * uiXOffset / uiDistance;
             var uiY = uiYCentre * uiYOffset / uiDistance;
 
-            var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+            // WOLFGATE(RadarLabels) START: the old test called beacons on the scope's diagonals outside it
+            // var isOutsideRadarCircle = uiDistance > Math.Abs(uiX) && uiDistance > Math.Abs(uiY);
+            var isOutsideRadarCircle = !WgOnScope(uiPosition * UIScale);
+            // WOLFGATE END
             if (isOutsideRadarCircle)
             {
                 uiPosition = new Vector2(
@@ -83,6 +86,13 @@ public partial class ShuttleNavControl
             if (!isOutsideRadarCircle && WgIsScopePlanet(uid, uiPosition)) continue;
 
             NfAddBlipToList(_beaconBlips, isOutsideRadarCircle, uiPosition, uiXCentre, uiYCentre, color);
+            // WOLFGATE(RadarLabels) START: a beacon pinned to the rim keeps its blip, still clickable for a world, but no tag
+            if (isOutsideRadarCircle)
+            {
+                WgAddPlanetBlipHit(uid, uiPosition);
+                continue;
+            }
+            // WOLFGATE END
 
             var distance = Vector2.Distance(worldPos, mapPos.Position);
             var displayedDistance = distance < 50f ? $"{distance:0.0}" : distance < 1000 ? $"{distance:0}" : $"{distance / 1000:0.0}k";
@@ -94,7 +104,7 @@ public partial class ShuttleNavControl
             // WOLFGATE(RadarLabels) START: lines go to the scope's shared tag layout, which stacks overlapping tags.
             // handle.DrawString(Font, (uiPosition + labelOffset) * UIScale, mainLabel, UIScale * 0.9f, color);
             // WgDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
-            WgBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale);
+            WgBeginTag(uiPosition * UIScale, (uiPosition + labelOffset) * UIScale, always: true, key: uid.Id); // beacons are landmarks
             WgTagLine(handle, mainLabel, UIScale * 0.9f, color);
             WgDrawPlanetSignalTag(handle, uid, uiPosition, labelOffset, mainLabel); // WOLFGATE(PlanetSignals): what a world holds, over its name.
             // WOLFGATE END

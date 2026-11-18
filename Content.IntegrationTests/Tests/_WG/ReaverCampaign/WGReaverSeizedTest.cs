@@ -16,7 +16,10 @@ namespace Content.IntegrationTests.Tests._WG.ReaverCampaign;
 [TestOf(typeof(WGReaverCampaignSystem))]
 public sealed class WGReaverSeizedTest : WGReaverTestBase
 {
-    /// <summary>A reinforcement that lost its crew to a boarder is seized after the delay, hunted, and its fire is no longer let pass.</summary>
+    /// <summary>
+    /// A reinforcement that lost its crew to a boarder is seized at once, hunted, flagged to its own side as an
+    /// attacker before it fires a shot, and its fire is no longer let pass.
+    /// </summary>
     [Test]
     public async Task CrewlessHullWithABoarderIsSeizedAndHunted()
     {
@@ -39,6 +42,9 @@ public sealed class WGReaverSeizedTest : WGReaverTestBase
             group = lead.Group;
             hubCrew = SEntMan.EntityQuery<WGCrewComponent>().First(crew => crew.Group == group).Owner;
             taken = SEntMan.GetComponent<WGEncounterComponent>(inbound).Ships["lead"].Grid;
+            // The test hulls carry no crew profile; the real ones fly under the pirate one.
+            SEntMan.EnsureComponent<WGCrewShipProfileComponent>(hub).Profile = "WGCrewProfilePirate";
+            SEntMan.EnsureComponent<WGCrewShipProfileComponent>(taken).Profile = "WGCrewProfilePirate";
 
             Assert.That(alerts.ReportIncomingFire(hub, group, taken), Is.False, "In its crew's hands its fire is let pass.");
             Board(taken);
@@ -47,13 +53,8 @@ public sealed class WGReaverSeizedTest : WGReaverTestBase
 
             KillCrew(inbound, "lead");
             seizure.Check();
-            Assert.That(seizure.IsSeized(taken), Is.False, "Not before the delay is up.");
-        });
-
-        await WaitUntilServer(() => seizure.IsSeized(taken), STiming.TickRate * 30);
-
-        await Server.WaitAssertion(() =>
-        {
+            Assert.That(seizure.IsSeized(taken), Is.True, "With its crew down, the boarder holds it at once.");
+            Assert.That(alerts.IsAttacker(hub, taken), Is.True, "Its own side takes it for an attacker before it fires.");
             Assert.That(Server.System<WGEncounterZoneSystem>().JustSeized(taken), Is.True, "The zones hold their fire while it is hailed.");
             Assert.That(SEntMan.GetComponent<WGReaverPatrolComponent>(patrol).Intercepting, Is.EqualTo(taken),
                 "The patrol that was out is turned on it.");

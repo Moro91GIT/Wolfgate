@@ -148,6 +148,10 @@ public sealed partial class WGCrewSystem : EntitySystem
             return;
 
         crew.Struck[attacker] = _timing.CurTime;
+        // Shot at, he answers on this tick's plan, not when the cached look round falls due.
+        EntityManager.System<WGCrewWeaponSystem>().ForgetThreat(ent.Owner);
+        if (TryComp<HTNComponent>(ent.Owner, out var htn))
+            _htn.Replan(htn);
         if (HomeGrid(ent.Owner, crew) is { } home)
             AnswerAttack(home, crew.Group, attacker);
     }
@@ -354,7 +358,7 @@ public sealed partial class WGCrewSystem : EntitySystem
             RemComp<WGCrewRepairComponent>(uid);
         }
 
-        var ev = new WGCrewMemberDownEvent(uid, component.Group, component.Role, args.NewMobState == MobState.Dead);
+        var ev = new WGCrewMemberDownEvent(uid, component.Group, component.Role, args.NewMobState == MobState.Dead, args.Origin);
         RaiseLocalEvent(uid, ref ev, true);
     }
 

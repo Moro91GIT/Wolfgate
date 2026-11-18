@@ -1,0 +1,233 @@
+using System.Linq;
+using System.Numerics;
+using Content.Server._WG.AdsIncursion.Components;
+using Content.Server._WG.Encounters;
+using Content.Server._WG.Encounters.Components;
+using Content.Server._WG.NpcCrew;
+using Content.Server._WG.NpcCrew.Components;
+using Content.Server._WG.NpcCrew.Systems;
+using Content.Shared._WG.AdsIncursion;
+using Content.Shared._WG.NpcCrew;
+using Content.Shared._WG.SectorControl;
+using Content.Server.Shuttles.Components;
+using Content.Shared.Station.Components;
+using Robust.Shared.Player;
+
+namespace Content.Server._WG.AdsIncursion.Systems;
+
+/// <summary>
+/// Emergencies: an ADS ship fired on, boarded and tampered with, or with crew downed aboard calls sweeps off patrol to
+/// destroy the vessel responsible, and a hull taken from the ADS is hunted down by several at once.
+/// </summary>
+public sealed partial class WGAdsCampaignSystem
+{
+    /// <summary>How many sweeps are pulled off patrol to destroy a hull taken from the ADS.</summary>
+    private const int HijackHunters = 3;
+
+    /// <summary>How many sweeps are pulled off patrol to answer an attack on an ADS ship.</summary>
+    private const int EmergencyHunters = 2;
+
+    /// <summary>How many cells off a sweep may be and still be pulled off patrol.</summary>
+    public const int HuntReach = 6;
+
+    /// <summary>How near a boarded ADS ship a vessel must be to be taken for the boarders' own.</summary>
+    private const float BoardersRange = 1500f;
+
+    /// <summary>How long a hunt runs before the sweep gives up and flies on.</summary>
+    private static readonly TimeSpan HuntTimeout = TimeSpan.FromMinutes(10);
+
+    /// <summary>How soon one ship's emergency is answered again.</summary>
+    private static readonly TimeSpan EmergencyCooldown = TimeSpan.FromSeconds(30);
+
+    private readonly Dictionary<EntityUid, TimeSpan> _emergencies = new();
+
+    [Dependency] private WGCrewSystem _crew = default!;
+
+    private void InitializeHijack()
+    {
+        SubscribeLocalEvent<WGEncounterShipSeizedEvent>(OnShipSeized);
+        SubscribeLocalEvent<WGCrewShipTamperedEvent>(OnTampered);
+        SubscribeLocalEvent<WGCrewMemberDownEvent>(OnCrewDown);
+    }
+
+    private void OnShipSeized(ref WGEncounterShipSeizedEvent args)
+    {
+        if (!IsCampaignEncounter(args.Encounter))
+            return;
+
+        var sent = Hunt(args.Grid, HijackHunters, true);
+        Log.Info($"ADS hull {ToPrettyString(args.Grid)} was seized; {sent} sweeps sent to destroy it.");
+    }
+
+    private void OnTampered(ref WGCrewShipTamperedEvent args)
+    {
+        Emergency(args.Grid, null);
+    }
+
+    /// <summary>A crewman downed by a player, or with boarders known aboard, is an emergency.</summary>
+    private void OnCrewDown(ref WGCrewMemberDownEvent args)
+    {
+        if (!TryComp<WGCrewComponent>(args.Mob, out var crew) || _crew.HomeGrid(args.Mob, crew) is not { } grid || !AdsHull(grid))
+            return;
+
+        var byPlayer = args.Origin is { } origin && !TerminatingOrDeleted(origin) && HasComp<ActorComponent>(_crew.Wielder(origin));
+        if (byPlayer || _alerts.GetSharedHostiles(grid, crew.Group).Count > 0)
+            Emergency(grid, null);
+    }
+
+    /// <summary>
+    /// Answers an attack on an ADS ship: sweeps go after the attacking vessel, or the boarders' own, and failing that
+    /// one closes on the ship itself.
+    /// </summary>
+    private void Emergency(EntityUid grid, EntityUid? attacker)
+    {
+        if (!AdsHull(grid))
+            return;
+
+        var now = _timing.CurTime;
+        if (_emergencies.TryGetValue(grid, out var next) && now < next)
+            return;
+
+        _emergencies[grid] = now + EmergencyCooldown;
+        var target = attacker ?? BoardersShip(grid);
+        var sent = target is { } vessel && !AdsHull(vessel)
+            ? Hunt(vessel, EmergencyHunters, true)
+            : Hunt(grid, 1, false);
+        Log.Info($"ADS ship {ToPrettyString(grid)} in an emergency; {sent} sweeps answer it.");
+    }
+
+    /// <summary>Whether a grid is an ADS campaign hull still in its crew's hands.</summary>
+    private bool AdsHull(EntityUid grid)
+    {
+        return TryComp<WGEncounterGridComponent>(grid, out var marker) && IsCampaignEncounter(marker.Encounter)
+            && !HasComp<WGCrewSeizedHullComponent>(grid);
+    }
+
+    /// <summary>
+    /// The nearest ship within <see cref="BoardersRange"/> of a boarded one, taken for the boarders' own: not an NPC
+    /// hull still in its crew's hands, not a station, and not berthed at one. Its crew may all be aboard the other.
+    /// </summary>
+    private EntityUid? BoardersShip(EntityUid boarded)
+    {
+        var map = Transform(boarded).MapID;
+        var at = _transform.GetWorldPosition(boarded);
+        EntityUid? nearest = null;
+        var best = BoardersRange * BoardersRange;
+        var query = EntityQueryEnumerator<ShuttleComponent, TransformComponent>();
+        while (query.MoveNext(out var ship, out _, out var xform))
+        {
+            if (ship == boarded || xform.MapID != map || HasComp<StationMemberComponent>(ship)
+                || HasComp<WGEncounterGridComponent>(ship) && !HasComp<WGCrewSeizedHullComponent>(ship)
+                || _encounters.DockedAtStation(ship))
+                continue;
+
+            var distance = Vector2.DistanceSquared(_transform.GetWorldPosition(xform), at);
+            if (distance > best)
+                continue;
+
+            best = distance;
+            nearest = ship;
+        }
+
+        return nearest;
+    }
+
+    /// <summary>
+    /// Pulls up to <paramref name="count"/> of the nearest sweeps within <see cref="HuntReach"/> off what they are doing
+    /// to attack a vessel, or, without <paramref name="attack"/>, to close on it and hold. Launches one from the
+    /// nearest node when none is near. Returns how many are on it.
+    /// </summary>
+    private int Hunt(EntityUid target, int count, bool attack)
+    {
+        if (Campaign is not { } campaign || State(true) is not { Finished: false } || TerminatingOrDeleted(target)
+            || Transform(target).MapID != _territory.SectorMap)
+            return 0;
+
+        var at = _transform.GetWorldPosition(target);
+        var cell = WGSectorHex.CellOf(at, _territory.CellSize);
+        var sweeps = Sweeps();
+        var sent = sweeps.Count(sweep => sweep.Comp1.Hunting && sweep.Comp1.Interdicting == target);
+        var near = new List<(Entity<WGAdsSweepComponent, WGEncounterComponent> Sweep, float Distance)>();
+        foreach (var sweep in sweeps)
+        {
+            if (sweep.Comp1.Hunting || LeadGrid(sweep.Owner, sweep.Comp1.Lead) is not { } lead || lead == target)
+                continue;
+
+            var position = _transform.GetWorldPosition(lead);
+            if (WGSectorHex.Distance(WGSectorHex.CellOf(position, _territory.CellSize), cell) <= HuntReach)
+                near.Add((sweep, Vector2.DistanceSquared(position, at)));
+        }
+
+        foreach (var (sweep, _) in near.OrderBy(entry => entry.Distance))
+        {
+            if (sent >= count)
+                break;
+
+            if (StartHunt(campaign, sweep, target, at, attack))
+                sent++;
+        }
+
+        if (sent > 0)
+            return sent;
+
+        var nodes = Nodes();
+        if (nodes.Count == 0)
+            return 0;
+
+        var from = nodes.MinBy(node => Vector2.DistanceSquared(Position(node.Comp2, node.Comp1.Lead), at));
+        if (!TryLaunchSweep(from.Owner, out var uid) || !TryComp<WGAdsSweepComponent>(uid, out var comp)
+            || !TryComp<WGEncounterComponent>(uid, out var encounter))
+            return 0;
+
+        return StartHunt(campaign, (uid, comp, encounter), target, at, attack) ? 1 : 0;
+    }
+
+    /// <summary>Sends a sweep at a vessel: close on it, then attack it or hold beside it, then fly the rest of its route and home.</summary>
+    private bool StartHunt(WGAdsCampaignPrototype campaign, Entity<WGAdsSweepComponent, WGEncounterComponent> sweep,
+        EntityUid target, Vector2 at, bool attack)
+    {
+        var (uid, comp, _) = sweep;
+        var resume = comp.Interdicting != null ? comp.Resume.ToList() : RemainingRoute(sweep);
+        var queue = new List<WGCrewObjective>
+        {
+            new() { Kind = WGCrewObjectiveKind.GoTo, Position = at, Range = InterdictApproach },
+            attack
+                ? new WGCrewObjective { Kind = WGCrewObjectiveKind.Attack, Target = GetNetEntity(target) }
+                : new WGCrewObjective { Kind = WGCrewObjectiveKind.Hold, Duration = InterdictHold },
+        };
+        queue.AddRange(RouteOrders(comp, resume));
+        if (!_encounters.SetOrders(uid, comp.Lead, queue))
+            return false;
+
+        comp.Interdicting = target;
+        comp.Hunting = true;
+        comp.Attacking = attack;
+        comp.InterdictSince = _timing.CurTime;
+        comp.Resume = resume;
+        comp.TargetOutsideSince = null;
+        comp.TargetFarSince = null;
+        comp.OutsideSince = null;
+        Log.Info($"ADS sweep {ToPrettyString(uid)} pulled off patrol to {(attack ? "attack" : "cover")} {ToPrettyString(target)}.");
+
+        if (attack && !AdsHull(target))
+        {
+            var from = LeadGrid(uid, comp.Lead) is { } lead ? _transform.GetWorldPosition(lead) : comp.LastSeen;
+            WarnShip(campaign, target, from, "wg-ads-hunt-warning");
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Whether a hunt is done: run past its time, an attack on a hull back in ADS hands, or a hold beside an ADS ship
+    /// in trouble past its hold.
+    /// </summary>
+    private bool HuntOver(WGAdsSweepComponent sweep, EntityUid target)
+    {
+        var elapsed = _timing.CurTime - sweep.InterdictSince;
+        if (elapsed >= HuntTimeout)
+            return true;
+
+        return sweep.Attacking ? AdsHull(target) : elapsed >= TimeSpan.FromSeconds(InterdictHold) * 2;
+    }
+}

@@ -17,7 +17,7 @@ namespace Content.IntegrationTests.Tests._WG.ReaverCampaign;
 public sealed class WGReaverSeizedTest : WGReaverTestBase
 {
     /// <summary>
-    /// A reinforcement that lost its crew to a boarder is seized at once, hunted, flagged to its own side as an
+    /// A reinforcement that lost its crew to a boarder is seized at once, hunted wherever it goes, flagged to its own side as an
     /// attacker before it fires a shot, and its fire is no longer let pass.
     /// </summary>
     [Test]
@@ -61,6 +61,15 @@ public sealed class WGReaverSeizedTest : WGReaverTestBase
             Assert.That(Server.System<WGCrewSecuritySystem>().IsAuthorized(hubCrew, taken), Is.False, "It has no leave to dock.");
             Assert.That(alerts.ReportIncomingFire(hub, group, taken), Is.True, "Its fire is an attack now.");
             Assert.That(alerts.IsAttacker(hub, taken), Is.True);
+
+            // Wherever it is taken, the campaign keeps after it.
+            var hunter = SEntMan.GetComponent<WGReaverPatrolComponent>(patrol);
+            Assert.That(hunter.Recovering, Is.True, "The patrol is out to get the hull back.");
+            Assert.That(campaign.State(true)!.Stolen.ContainsKey(taken), Is.True, "The campaign remembers the stolen hull.");
+            Place(taken, CentreOf(Home) + new System.Numerics.Vector2(15000f, 0f));
+            campaign.CheckIntercepts();
+            campaign.CheckPatrols();
+            Assert.That(hunter.Intercepting, Is.EqualTo(taken), "The chase is not given up outside held space or out of reach.");
         });
     }
 

@@ -209,7 +209,7 @@ public sealed partial class WGReaverCampaignSystem
             }
 
             comp.LastSeen = _transform.GetWorldPosition(lead.Grid);
-            if (held.Count == 0 || InOrBeside(held, _territory.GridCell(lead.Grid)))
+            if (held.Count == 0 || comp.Recovering || InOrBeside(held, _territory.GridCell(lead.Grid)))
             {
                 comp.OutsideSince = null;
                 continue;

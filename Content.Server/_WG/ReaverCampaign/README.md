@@ -88,7 +88,9 @@ Reaver space has a cost. A crewed ship that stays a minute in held space (`inter
 within three cells, or a fresh one from the nearest stronghold, turned on it to close and attack, and is warned with
 the patrol's bearing and range; the patrol gives up when the ship is disabled or gone, or has been out of held space
 or out of reach for twenty seconds, then flies the rest of its route, and the ship is left alone for `interceptCooldown`.
-How many intercepts run at once is set by tier (`intercepts`). A ship that hits a stronghold or helps kill a patrol is
+How many intercepts run at once is set by tier (`intercepts`). A campaign hull boarders seize goes on the `Stolen` list
+(`.Stolen`): two patrols, at any range and past the leash, are kept after it, made up every 30 s, until it is broken or
+back in Reaver hands. A ship that hits a stronghold or helps kill a patrol is
 marked for half an hour: raids weigh it three times as heavy and hunt it anywhere on the map.
 
 `WGReaverCampaignSystem` is the driver, in partials by concern: `.Strongholds` (founding, regroup, breaking),
@@ -176,6 +178,7 @@ Ship raids favour laden ships (up to three times the weight for a hold worth 100
 - [`Content.Server/_WG/ReaverCampaign/Systems/WGReaverCampaignSystem.Retakes.cs`](Systems/WGReaverCampaignSystem.Retakes.cs)
 - [`Content.Server/_WG/ReaverCampaign/Systems/WGReaverCampaignSystem.Rewards.cs`](Systems/WGReaverCampaignSystem.Rewards.cs)
 - [`Content.Server/_WG/ReaverCampaign/Systems/WGReaverCampaignSystem.Spread.cs`](Systems/WGReaverCampaignSystem.Spread.cs)
+- [`Content.Server/_WG/ReaverCampaign/Systems/WGReaverCampaignSystem.Stolen.cs`](Systems/WGReaverCampaignSystem.Stolen.cs)
 - [`Content.Server/_WG/ReaverCampaign/Systems/WGReaverCampaignSystem.Strongholds.cs`](Systems/WGReaverCampaignSystem.Strongholds.cs)
 - [`Content.Server/_WG/ReaverCampaign/Systems/WGReaverCampaignSystem.Threat.cs`](Systems/WGReaverCampaignSystem.Threat.cs)
 

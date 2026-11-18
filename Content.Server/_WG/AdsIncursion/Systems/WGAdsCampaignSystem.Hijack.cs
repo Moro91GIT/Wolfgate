@@ -39,6 +39,9 @@ public sealed partial class WGAdsCampaignSystem
     /// <summary>How soon one ship's emergency is answered again.</summary>
     private static readonly TimeSpan EmergencyCooldown = TimeSpan.FromSeconds(30);
 
+    /// <summary>How often a hull still stolen has its hunters made up again.</summary>
+    private static readonly TimeSpan StolenRetry = TimeSpan.FromSeconds(30);
+
     private readonly Dictionary<EntityUid, TimeSpan> _emergencies = new();
 
     [Dependency] private WGCrewSystem _crew = default!;
@@ -52,10 +55,11 @@ public sealed partial class WGAdsCampaignSystem
 
     private void OnShipSeized(ref WGEncounterShipSeizedEvent args)
     {
-        if (!IsCampaignEncounter(args.Encounter))
+        if (!IsCampaignEncounter(args.Encounter) || State(true) is not { } state)
             return;
 
-        var sent = Hunt(args.Grid, HijackHunters, true);
+        state.Stolen[args.Grid] = _timing.CurTime + StolenRetry;
+        var sent = Hunt(args.Grid, HijackHunters, true, int.MaxValue);
         Log.Info($"ADS hull {ToPrettyString(args.Grid)} was seized; {sent} sweeps sent to destroy it.");
     }
 
@@ -73,6 +77,27 @@ public sealed partial class WGAdsCampaignSystem
         var byPlayer = args.Origin is { } origin && !TerminatingOrDeleted(origin) && HasComp<ActorComponent>(_crew.Wielder(origin));
         if (byPlayer || _alerts.GetSharedHostiles(grid, crew.Group).Count > 0)
             Emergency(grid, null);
+    }
+
+    /// <summary>Keeps sweeps after every hull boarders still hold, at any range; forgets those destroyed or taken back.</summary>
+    private void TickStolen(WGAdsCampaignComponent state)
+    {
+        var now = _timing.CurTime;
+        foreach (var (grid, next) in state.Stolen.ToList())
+        {
+            if (TerminatingOrDeleted(grid) || !HasComp<WGCrewSeizedHullComponent>(grid))
+            {
+                state.Stolen.Remove(grid);
+                continue;
+            }
+
+            if (now < next)
+                continue;
+
+            state.Stolen[grid] = now + StolenRetry;
+            if (!_status.IsDisabled(grid) && !_encounters.DockedAtStation(grid))
+                Hunt(grid, HijackHunters, true, int.MaxValue);
+        }
     }
 
     /// <summary>
@@ -133,11 +158,12 @@ public sealed partial class WGAdsCampaignSystem
     }
 
     /// <summary>
-    /// Pulls up to <paramref name="count"/> of the nearest sweeps within <see cref="HuntReach"/> off what they are doing
+    /// Pulls up to <paramref name="count"/> of the nearest sweeps within <paramref name="reach"/> cells (by default
+    /// <see cref="HuntReach"/>) off what they are doing
     /// to attack a vessel, or, without <paramref name="attack"/>, to close on it and hold. Launches one from the
     /// nearest node when none is near. Returns how many are on it.
     /// </summary>
-    private int Hunt(EntityUid target, int count, bool attack)
+    private int Hunt(EntityUid target, int count, bool attack, int reach = HuntReach)
     {
         if (Campaign is not { } campaign || State(true) is not { Finished: false } || TerminatingOrDeleted(target)
             || Transform(target).MapID != _territory.SectorMap)
@@ -154,7 +180,7 @@ public sealed partial class WGAdsCampaignSystem
                 continue;
 
             var position = _transform.GetWorldPosition(lead);
-            if (WGSectorHex.Distance(WGSectorHex.CellOf(position, _territory.CellSize), cell) <= HuntReach)
+            if (WGSectorHex.Distance(WGSectorHex.CellOf(position, _territory.CellSize), cell) <= reach)
                 near.Add((sweep, Vector2.DistanceSquared(position, at)));
         }
 
@@ -224,6 +250,10 @@ public sealed partial class WGAdsCampaignSystem
     /// </summary>
     private bool HuntOver(WGAdsSweepComponent sweep, EntityUid target)
     {
+        // A stolen hull is hunted until it is broken or back in ADS hands.
+        if (sweep.Attacking && HasComp<WGCrewSeizedHullComponent>(target))
+            return false;
+
         var elapsed = _timing.CurTime - sweep.InterdictSince;
         if (elapsed >= HuntTimeout)
             return true;

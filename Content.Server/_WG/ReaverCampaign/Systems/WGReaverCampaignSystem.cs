@@ -262,6 +262,7 @@ public sealed partial class WGReaverCampaignSystem : EntitySystem
             TickSpread(campaign, state);
             TickPatrols(campaign, state);
             TickIntercepts(campaign, state, ships);
+            TickStolen(state);
             TickRaids(campaign, state);
             TickFunding(campaign, state);
         }

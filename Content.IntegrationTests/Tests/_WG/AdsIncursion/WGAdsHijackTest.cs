@@ -56,6 +56,7 @@ public sealed class WGAdsHijackTest : WGAdsTestBase
             Place(hunter, CentreOf(FarCell(AdsHome, 3)));
             ads.CheckSweeps();
             Assert.That(comp.Interdicting, Is.EqualTo(hull), "A hunt is not called back to held space.");
+            Assert.That(AdsState().Stolen.ContainsKey(hull), Is.True, "The ADS remembers the stolen hull until it is broken or retaken.");
         });
     }
 

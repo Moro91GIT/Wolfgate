@@ -37,7 +37,7 @@ public sealed partial class WGEncounterSeizureSystem : EntitySystem
 
     private TimeSpan _nextReport;
 
-    /// <summary>How long a ship must lie crewless with strangers aboard, or retaken with none, before it changes hands.</summary>
+    /// <summary>How long a seized ship's crew must be back aboard with no strangers before they take it back.</summary>
     public static readonly TimeSpan SeizeDelay = TimeSpan.FromSeconds(15);
 
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);

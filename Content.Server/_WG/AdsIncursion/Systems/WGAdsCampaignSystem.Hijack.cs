@@ -33,6 +33,9 @@ public sealed partial class WGAdsCampaignSystem
     /// <summary>How near a boarded ADS ship a vessel must be to be taken for the boarders' own.</summary>
     private const float BoardersRange = 1500f;
 
+    /// <summary>How many sweeps may be on hunts at once before an emergency launches no more.</summary>
+    private const int MaxHunting = 6;
+
     /// <summary>How long a hunt runs before the sweep gives up and flies on.</summary>
     private static readonly TimeSpan HuntTimeout = TimeSpan.FromMinutes(10);
 
@@ -74,7 +77,10 @@ public sealed partial class WGAdsCampaignSystem
         if (!TryComp<WGCrewComponent>(args.Mob, out var crew) || _crew.HomeGrid(args.Mob, crew) is not { } grid || !AdsHull(grid))
             return;
 
-        var byPlayer = args.Origin is { } origin && !TerminatingOrDeleted(origin) && HasComp<ActorComponent>(_crew.Wielder(origin));
+        // A body the consciousness system drives goes down with no origin, so a recent hit by a player counts too.
+        var since = _timing.CurTime - TimeSpan.FromSeconds(10);
+        var byPlayer = args.Origin is { } origin && !TerminatingOrDeleted(origin) && HasComp<ActorComponent>(_crew.Wielder(origin))
+                       || crew.Struck.Any(hit => hit.Value >= since && HasComp<ActorComponent>(hit.Key));
         if (byPlayer || _alerts.GetSharedHostiles(grid, crew.Group).Count > 0)
             Emergency(grid, null);
     }
@@ -92,6 +98,9 @@ public sealed partial class WGAdsCampaignSystem
             }
 
             if (now < next)
+                continue;
+
+            if (Held || state.Finished)
                 continue;
 
             state.Stolen[grid] = now + StolenRetry;
@@ -113,11 +122,15 @@ public sealed partial class WGAdsCampaignSystem
         if (_emergencies.TryGetValue(grid, out var next) && now < next)
             return;
 
-        _emergencies[grid] = now + EmergencyCooldown;
         var target = attacker ?? BoardersShip(grid);
         var sent = target is { } vessel && !AdsHull(vessel)
             ? Hunt(vessel, EmergencyHunters, true)
             : Hunt(grid, 1, false);
+        // Nobody could answer: the next report of it tries again.
+        if (sent == 0)
+            return;
+
+        _emergencies[grid] = now + EmergencyCooldown;
         Log.Info($"ADS ship {ToPrettyString(grid)} in an emergency; {sent} sweeps answer it.");
     }
 
@@ -160,23 +173,25 @@ public sealed partial class WGAdsCampaignSystem
     /// <summary>
     /// Pulls up to <paramref name="count"/> of the nearest sweeps within <paramref name="reach"/> cells (by default
     /// <see cref="HuntReach"/>) off what they are doing
-    /// to attack a vessel, or, without <paramref name="attack"/>, to close on it and hold. Launches one from the
-    /// nearest node when none is near. Returns how many are on it.
+    /// to attack a vessel, or, without <paramref name="attack"/>, to close on it and hold; a sweep covering a vessel
+    /// it is now told to attack is turned on it. Short of <paramref name="count"/>, launches one from the nearest
+    /// node that can while fewer than <see cref="MaxHunting"/> sweeps hunt. Returns how many are on it.
     /// </summary>
     private int Hunt(EntityUid target, int count, bool attack, int reach = HuntReach)
     {
-        if (Campaign is not { } campaign || State(true) is not { Finished: false } || TerminatingOrDeleted(target)
+        if (Held || Campaign is not { } campaign || State(true) is not { Finished: false } || TerminatingOrDeleted(target)
             || Transform(target).MapID != _territory.SectorMap)
             return 0;
 
         var at = _transform.GetWorldPosition(target);
         var cell = WGSectorHex.CellOf(at, _territory.CellSize);
         var sweeps = Sweeps();
-        var sent = sweeps.Count(sweep => sweep.Comp1.Hunting && sweep.Comp1.Interdicting == target);
+        var sent = sweeps.Count(sweep => sweep.Comp1.Hunting && sweep.Comp1.Interdicting == target && sweep.Comp1.Attacking == attack);
         var near = new List<(Entity<WGAdsSweepComponent, WGEncounterComponent> Sweep, float Distance)>();
         foreach (var sweep in sweeps)
         {
-            if (sweep.Comp1.Hunting || LeadGrid(sweep.Owner, sweep.Comp1.Lead) is not { } lead || lead == target)
+            var covering = attack && sweep.Comp1.Hunting && !sweep.Comp1.Attacking && sweep.Comp1.Interdicting == target;
+            if (sweep.Comp1.Hunting && !covering || LeadGrid(sweep.Owner, sweep.Comp1.Lead) is not { } lead || lead == target)
                 continue;
 
             var position = _transform.GetWorldPosition(lead);
@@ -193,19 +208,17 @@ public sealed partial class WGAdsCampaignSystem
                 sent++;
         }
 
-        if (sent > 0)
+        if (sent >= count || sweeps.Count(sweep => sweep.Comp1.Hunting) >= MaxHunting)
             return sent;
 
-        var nodes = Nodes();
-        if (nodes.Count == 0)
-            return 0;
+        foreach (var node in Nodes().OrderBy(node => Vector2.DistanceSquared(Position(node.Comp2, node.Comp1.Lead), at)))
+        {
+            if (TryLaunchSweep(node.Owner, out var uid) && TryComp<WGAdsSweepComponent>(uid, out var comp)
+                && TryComp<WGEncounterComponent>(uid, out var encounter))
+                return StartHunt(campaign, (uid, comp, encounter), target, at, attack) ? sent + 1 : sent;
+        }
 
-        var from = nodes.MinBy(node => Vector2.DistanceSquared(Position(node.Comp2, node.Comp1.Lead), at));
-        if (!TryLaunchSweep(from.Owner, out var uid) || !TryComp<WGAdsSweepComponent>(uid, out var comp)
-            || !TryComp<WGEncounterComponent>(uid, out var encounter))
-            return 0;
-
-        return StartHunt(campaign, (uid, comp, encounter), target, at, attack) ? 1 : 0;
+        return sent;
     }
 
     /// <summary>Sends a sweep at a vessel: close on it, then attack it or hold beside it, then fly the rest of its route and home.</summary>
@@ -238,7 +251,8 @@ public sealed partial class WGAdsCampaignSystem
         if (attack && !AdsHull(target))
         {
             var from = LeadGrid(uid, comp.Lead) is { } lead ? _transform.GetWorldPosition(lead) : comp.LastSeen;
-            WarnShip(campaign, target, from, "wg-ads-hunt-warning");
+            var stolen = HasComp<WGCrewSeizedHullComponent>(target);
+            WarnShip(campaign, target, from, stolen ? "wg-ads-stolen-warning" : "wg-ads-hunt-warning");
         }
 
         return true;
@@ -246,7 +260,7 @@ public sealed partial class WGAdsCampaignSystem
 
     /// <summary>
     /// Whether a hunt is done: run past its time, an attack on a hull back in ADS hands, or a hold beside an ADS ship
-    /// in trouble past its hold.
+    /// in trouble past half that time, which leaves room for the flight there.
     /// </summary>
     private bool HuntOver(WGAdsSweepComponent sweep, EntityUid target)
     {
@@ -258,6 +272,6 @@ public sealed partial class WGAdsCampaignSystem
         if (elapsed >= HuntTimeout)
             return true;
 
-        return sweep.Attacking ? AdsHull(target) : elapsed >= TimeSpan.FromSeconds(InterdictHold) * 2;
+        return sweep.Attacking ? AdsHull(target) : elapsed >= HuntTimeout / 2;
     }
 }

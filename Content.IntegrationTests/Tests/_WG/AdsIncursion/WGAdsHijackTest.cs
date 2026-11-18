@@ -28,6 +28,8 @@ public sealed class WGAdsHijackTest : WGAdsTestBase
     public async Task SeizedHullIsHuntedBySweeps()
     {
         await StartAds();
+        EntityUid hull = default, hunter = default;
+        WGAdsSweepComponent comp = default!;
         await Server.WaitAssertion(() =>
         {
             var ads = Server.System<WGAdsCampaignSystem>();
@@ -35,9 +37,10 @@ public sealed class WGAdsHijackTest : WGAdsTestBase
             var node = FoundNode(AdsHome);
             ads.SetTier(1);
             Assert.That(ads.TryLaunchSweep(node), Is.True);
-            var (sweep, comp, _) = ads.Sweeps().Single();
-            var hull = LeadOf(node);
-            var hunter = LeadOf(sweep);
+            var (sweep, sweepComp, _) = ads.Sweeps().Single();
+            comp = sweepComp;
+            hull = LeadOf(node);
+            hunter = LeadOf(sweep);
             Place(hunter, CentreOf(AdsHome) + new Vector2(800f, 0f));
             SEntMan.EnsureComponent<WGCrewShipProfileComponent>(hull).Profile = AdsProfile;
             SEntMan.EnsureComponent<WGCrewShipProfileComponent>(hunter).Profile = AdsProfile;
@@ -55,6 +58,13 @@ public sealed class WGAdsHijackTest : WGAdsTestBase
             // Leashing keeps a patrol in held space; a hunt follows its target out.
             Place(hunter, CentreOf(FarCell(AdsHome, 3)));
             ads.CheckSweeps();
+        });
+
+        // Past the delay a sweep out of held space is called back after.
+        await RunTicks(STiming.TickRate * 15);
+        await Server.WaitAssertion(() =>
+        {
+            Server.System<WGAdsCampaignSystem>().CheckSweeps();
             Assert.That(comp.Interdicting, Is.EqualTo(hull), "A hunt is not called back to held space.");
             Assert.That(AdsState().Stolen.ContainsKey(hull), Is.True, "The ADS remembers the stolen hull until it is broken or retaken.");
         });
@@ -88,9 +98,9 @@ public sealed class WGAdsHijackTest : WGAdsTestBase
             Assert.That(Server.System<WGCrewWeaponSystem>().IsEnemy(crew, player), Is.True, "The crew turns on the boarder.");
 
             var hunters = ads.Sweeps().Where(entry => entry.Comp1.Hunting).ToList();
-            Assert.That(hunters, Has.Count.EqualTo(1), "A fresh sweep is sent, the boarded one being busy.");
-            Assert.That(hunters[0].Comp1.Interdicting, Is.EqualTo(theirs), "It goes after the boarders' ship.");
-            Assert.That(hunters[0].Comp1.Attacking, Is.True);
+            Assert.That(hunters, Has.Count.EqualTo(2), "The sweep at hand and a fresh one make up the two hunters.");
+            Assert.That(hunters.All(hunt => hunt.Comp1.Interdicting == theirs && hunt.Comp1.Attacking), Is.True,
+                "Both go after the boarders' ship.");
         });
     }
 

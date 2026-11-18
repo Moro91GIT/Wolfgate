@@ -69,7 +69,17 @@ public sealed class WGReaverSeizedTest : WGReaverTestBase
             Place(taken, CentreOf(Home) + new System.Numerics.Vector2(15000f, 0f));
             campaign.CheckIntercepts();
             campaign.CheckPatrols();
-            Assert.That(hunter.Intercepting, Is.EqualTo(taken), "The chase is not given up outside held space or out of reach.");
+        });
+
+        // Past the twenty seconds an ordinary chase out of held space or out of reach is given up after.
+        await RunTicks(STiming.TickRate * 25);
+        await Server.WaitAssertion(() =>
+        {
+            var campaign = Server.System<WGReaverCampaignSystem>();
+            campaign.CheckIntercepts();
+            campaign.CheckPatrols();
+            Assert.That(SEntMan.GetComponent<WGReaverPatrolComponent>(patrol).Intercepting, Is.EqualTo(taken),
+                "The chase is not given up outside held space or out of reach.");
         });
     }
 

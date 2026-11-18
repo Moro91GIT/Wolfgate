@@ -130,13 +130,19 @@ public sealed class WGReaverFightTest : WGReaverTestBase
             campaign.CheckPatrols();
             Assert.That(SEntMan.GetComponent<WGEncounterComponent>(patrol).Resolution, Is.Null, "Both ships are in the fight.");
 
+            var waypoint = CentreOf(neighbour) + new Vector2(300f, 0f);
+            Assert.That(Server.System<WGEncounterSystem>().SetOrders(patrol, "lead", new List<WGCrewObjective>
+            {
+                new() { Kind = WGCrewObjectiveKind.GoTo, Position = waypoint, Range = 50f },
+            }), Is.True);
+
             KillCrew(patrol, "lead");
             campaign.CheckPatrols();
             var encounter = SEntMan.GetComponent<WGEncounterComponent>(patrol);
             Assert.That(encounter.Resolution, Is.Null, "The wing keeps the patrol going.");
             Assert.That(SEntMan.GetComponent<WGReaverPatrolComponent>(patrol).Lead, Is.EqualTo("wing"), "The wing takes the lead.");
-            Assert.That(Orders(patrol, "wing").Select(order => order.Kind), Has.No.Member(WGCrewObjectiveKind.Escort),
-                "It flies the lead's orders, not an escort of the lost lead.");
+            Assert.That(Orders(patrol, "wing").Select(order => order.Position), Has.Member(waypoint),
+                "It flies the lead's own remaining orders.");
 
             Place(Hull(patrol, "wing"), CentreOf(neighbour));
             KillCrew(patrol, "wing");

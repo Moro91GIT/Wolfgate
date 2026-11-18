@@ -12,6 +12,9 @@ public sealed partial class WGReaverCampaignSystem
     /// <summary>How many patrols hunt a hull taken from the campaign.</summary>
     public const int StolenHunters = 2;
 
+    /// <summary>How many patrols may be out after stolen hulls at once before no more are launched for them.</summary>
+    private const int MaxRecovering = 4;
+
     /// <summary>How often a hull still stolen has its hunters made up again.</summary>
     private static readonly TimeSpan StolenRetry = TimeSpan.FromSeconds(30);
 
@@ -27,7 +30,7 @@ public sealed partial class WGReaverCampaignSystem
                 continue;
             }
 
-            if (now < next)
+            if (now < next || !Running || Held || state.Finished)
                 continue;
 
             state.Stolen[grid] = now + StolenRetry;
@@ -37,7 +40,8 @@ public sealed partial class WGReaverCampaignSystem
 
     /// <summary>
     /// Turns the nearest free patrols, at any range, on a stolen hull until <see cref="StolenHunters"/> are on it,
-    /// launching one from the nearest stronghold when none is free. Returns how many are on it.
+    /// launching one from the nearest stronghold that can while it is short and fewer than <see cref="MaxRecovering"/>
+    /// patrols are out after stolen hulls. Returns how many are on it.
     /// </summary>
     public int TryRecover(EntityUid hull)
     {
@@ -72,20 +76,22 @@ public sealed partial class WGReaverCampaignSystem
             on++;
         }
 
-        if (on > 0)
+        if (on >= StolenHunters || patrols.Count(patrol => patrol.Comp1.Recovering) >= MaxRecovering)
             return on;
 
-        var standing = Strongholds();
-        if (standing.Count == 0)
-            return 0;
+        foreach (var stronghold in Strongholds().OrderBy(stronghold => Vector2.DistanceSquared(Position(stronghold.Comp2, stronghold.Comp1.Lead), at)))
+        {
+            if (!TryLaunchPatrol(stronghold.Owner, out var uid) || !TryComp<WGReaverPatrolComponent>(uid, out var comp)
+                || !TryComp<WGEncounterComponent>(uid, out var encounter))
+                continue;
 
-        var from = standing.MinBy(stronghold => Vector2.DistanceSquared(Position(stronghold.Comp2, stronghold.Comp1.Lead), at));
-        if (!TryLaunchPatrol(from.Owner, out var uid) || !TryComp<WGReaverPatrolComponent>(uid, out var comp)
-            || !TryComp<WGEncounterComponent>(uid, out var encounter)
-            || !StartIntercept(campaign, (uid, comp, encounter), hull, at, comp.Route.ToList()))
-            return 0;
+            if (!StartIntercept(campaign, (uid, comp, encounter), hull, at, comp.Route.ToList()))
+                return on;
 
-        comp.Recovering = true;
-        return 1;
+            comp.Recovering = true;
+            return on + 1;
+        }
+
+        return on;
     }
 }

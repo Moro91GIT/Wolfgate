@@ -31,11 +31,15 @@ public sealed partial class WGCrewRallySystem : EntitySystem
     [Dependency] private WGCrewAlertSystem _alerts = default!;
     [Dependency] private WGCrewWeaponSystem _weapons = default!;
 
+    /// <summary>How recently a crewman must have been hit for his attacker to be taken for the one who downed him.</summary>
+    private static readonly TimeSpan StruckWindow = TimeSpan.FromSeconds(10);
+
     /// <summary>How long one person tampering with one ship counts as one act.</summary>
     private static readonly TimeSpan TamperSpacing = TimeSpan.FromSeconds(2);
 
     private readonly Dictionary<(EntityUid Grid, EntityUid Culprit), TimeSpan> _tampered = new();
     private readonly List<EntityUid> _hostiles = new();
+    private readonly List<string> _groups = new();
     private readonly List<(EntityUid Grid, EntityUid Culprit)> _stale = new();
 
     public override void Initialize()
@@ -54,6 +58,8 @@ public sealed partial class WGCrewRallySystem : EntitySystem
             return;
 
         EntityUid? culprit = args.Origin is { } origin && !TerminatingOrDeleted(origin) ? _crew.Wielder(origin) : null;
+        // A body the consciousness system drives goes down with no origin: the last to hit him did it.
+        culprit ??= LastStriker(crew);
         if (culprit is { } who && (who == args.Mob || !HasComp<MobStateComponent>(who) || _crew.SameCrew(args.Mob, who)))
             culprit = null;
 
@@ -87,13 +93,32 @@ public sealed partial class WGCrewRallySystem : EntitySystem
         if (_tampered.TryGetValue(key, out var until) && now < until)
             return;
 
-        Prune(now);
-        _tampered[key] = now + TamperSpacing;
-        if (Witness(grid) is not { } witness || _crew.SameCrew(witness.Owner, culprit) || _crew.Forgives(witness.Owner, culprit)
-            || WGCompanyFamily.Same(CompOrNull<CompanyComponent>(grid)?.CompanyName.Id, CompOrNull<CompanyComponent>(culprit)?.CompanyName.Id))
+        if (WGCompanyFamily.Same(CompOrNull<CompanyComponent>(grid)?.CompanyName.Id, CompOrNull<CompanyComponent>(culprit)?.CompanyName.Id))
             return;
 
-        Rally(grid, witness.Comp.Group, culprit);
+        // Every crew aboard is asked: one that counts him its own or lets him off speaks for the ship.
+        _groups.Clear();
+        var query = EntityQueryEnumerator<WGCrewComponent>();
+        while (query.MoveNext(out var uid, out var crew))
+        {
+            if (HasComp<ActorComponent>(uid) || !_mobs.IsAlive(uid) || _crew.HomeGrid(uid, crew) != grid)
+                continue;
+
+            if (_crew.SameCrew(uid, culprit) || _crew.Forgives(uid, culprit))
+                return;
+
+            if (!_groups.Contains(crew.Group))
+                _groups.Add(crew.Group);
+        }
+
+        if (_groups.Count == 0)
+            return;
+
+        Prune(now);
+        _tampered[key] = now + TamperSpacing;
+        foreach (var group in _groups)
+            Rally(grid, group, culprit);
+
         var ev = new WGCrewShipTamperedEvent(grid, culprit);
         RaiseLocalEvent(ref ev);
     }
@@ -125,8 +150,9 @@ public sealed partial class WGCrewRallySystem : EntitySystem
             if (named is { } target)
                 Turn(uid, target);
 
-            // The alert already shares its hostiles with on-sight crew, and takes them back when it ends.
-            if (!crew.ShareAlerts || crew.Engagement != WGCrewEngagement.OnSight)
+            // The alert already arms on-sight crew with its hostiles, and takes them back when it ends. Station crew
+            // engage only an attacker they remember, so they are given the memory.
+            if (!crew.ShareAlerts || crew.Engagement != WGCrewEngagement.OnSight || _weapons.IsStationCrew(uid))
             {
                 foreach (var hostile in _hostiles)
                     Turn(uid, hostile);
@@ -144,22 +170,31 @@ public sealed partial class WGCrewRallySystem : EntitySystem
             return;
 
         if (TryComp<NPCRetaliationComponent>(uid, out var retaliation))
-            _retaliation.TryRetaliate((uid, retaliation), hostile);
+        {
+            // Upstream never remembers a friendly-faction attacker; the crew still answers him.
+            if (!_retaliation.TryRetaliate((uid, retaliation), hostile) && HasComp<MobStateComponent>(hostile)
+                && !_crew.SameCrew(uid, hostile) && !_crew.Forgives(uid, hostile))
+                _crew.Remember(uid, retaliation, hostile);
+        }
         else if (!_factions.IsEntityFriendly(uid, hostile))
             _factions.AggroEntity(uid, hostile);
     }
 
-    /// <summary>A living crewman serving the ship, whose crew speaks for it.</summary>
-    private Entity<WGCrewComponent>? Witness(EntityUid grid)
+    /// <summary>Whoever hit a crewman last, within <see cref="StruckWindow"/>.</summary>
+    private EntityUid? LastStriker(WGCrewComponent crew)
     {
-        var query = EntityQueryEnumerator<WGCrewComponent>();
-        while (query.MoveNext(out var uid, out var crew))
+        EntityUid? last = null;
+        var when = _timing.CurTime - StruckWindow;
+        foreach (var (attacker, at) in crew.Struck)
         {
-            if (!HasComp<ActorComponent>(uid) && _mobs.IsAlive(uid) && _crew.HomeGrid(uid, crew) == grid)
-                return (uid, crew);
+            if (at < when || TerminatingOrDeleted(attacker))
+                continue;
+
+            when = at;
+            last = attacker;
         }
 
-        return null;
+        return last;
     }
 
     private void Prune(TimeSpan now)

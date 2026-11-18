@@ -176,7 +176,7 @@ public sealed partial class WGCrewSystem : EntitySystem
     }
 
     /// <summary>Makes a crewman hostile to an attacker and remembers the attack for his memory's length.</summary>
-    private void Remember(EntityUid uid, NPCRetaliationComponent retaliation, EntityUid attacker)
+    public void Remember(EntityUid uid, NPCRetaliationComponent retaliation, EntityUid attacker)
     {
         _factions.AggroEntity(uid, attacker);
         if (retaliation.AttackMemoryLength is not { } length)

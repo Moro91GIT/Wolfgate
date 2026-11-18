@@ -246,12 +246,14 @@ public sealed partial class WGReaverCampaignSystem
         if (heir == null)
             return false;
 
-        var orders = LeadOrders(patrol);
         var old = comp.Lead;
-        if (!_encounters.SetOrders(uid, heir, orders))
+        // The lead's own queue may hold an order the heir cannot take, such as one on a target since gone.
+        if ((LeadQueue(patrol) is not { } queue || !_encounters.SetOrders(uid, heir, queue))
+            && !_encounters.SetOrders(uid, heir, FallbackOrders(comp)))
             return false;
 
         comp.Lead = heir;
+        comp.OutsideSince = null;
         var grid = GetNetEntity(encounter.Ships[heir].Grid);
         foreach (var (key, ship) in encounter.Ships)
         {
@@ -263,17 +265,21 @@ public sealed partial class WGReaverCampaignSystem
         return true;
     }
 
-    /// <summary>The orders a patrol's lead had left: read from its crew, else rebuilt from the chase it was on, else home.</summary>
-    private List<WGCrewObjective> LeadOrders(Entity<WGReaverPatrolComponent, WGEncounterComponent> patrol)
+    /// <summary>The orders a patrol's lead has left, read from its crew's queue; null if it has none.</summary>
+    private List<WGCrewObjective>? LeadQueue(Entity<WGReaverPatrolComponent, WGEncounterComponent> patrol)
     {
         var (_, comp, encounter) = patrol;
-        if (encounter.Ships.TryGetValue(comp.Lead, out var lead))
-        {
-            var grid = GetNetEntity(lead.Grid);
-            var row = _objectives.Snapshot().FirstOrDefault(crew => crew.Grid == grid && crew.Group == lead.Group);
-            if (row is { Objectives.Count: > 0 })
-                return row.Objectives.ToList();
-        }
+        return encounter.Ships.TryGetValue(comp.Lead, out var lead) && _objectives.TryGetQueue(lead.Grid, lead.Group, out var orders)
+               && orders.Count > 0
+            ? orders
+            : null;
+    }
+
+    /// <summary>A patrol's orders rebuilt from what it was doing: its recall, else its chase and the rest of its route, else home.</summary>
+    private List<WGCrewObjective> FallbackOrders(WGReaverPatrolComponent comp)
+    {
+        if (comp.Recalled && StrongholdLead(comp.Stronghold) is { } hub)
+            return RecallOrders(_transform.GetWorldPosition(hub), hub);
 
         var orders = new List<WGCrewObjective>();
         if (comp.Intercepting is { } target && !TerminatingOrDeleted(target))

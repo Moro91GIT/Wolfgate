@@ -36,8 +36,9 @@ encounter, cancels its crew's orders, frees its passengers, opens its clamps and
 never despawns. It gives no ownership; the encounter completes once it has no ships left.
 
 `WGEncounterSeizureSystem` marks a ship boarders hold (`WGCrewSeizedHullComponent`): at once when its whole crew is down
-with a stranger aboard, or when its crew is fighting a stranger at its helm. Every crewed ship of its own side (same crew
-profile or company family) within 15 km then takes it for an attacker that has opened fire and a declared threat,
+with a stranger aboard, or when its crew is fighting a stranger at its helm. Every other encounter ship of its own side
+(same crew profile or company family) within 15 km that is not a derelict or seized itself, and its escort formation,
+then takes it for an attacker that has opened fire and a declared threat,
 reported again every 5 s while it stays seized, so its colours excuse nothing and an interrogating zone asks it nothing.
 
 Encounter ships are simulated while nobody is near (`wg.encounters.simulate`, `WGEncounterSystem.Simulation.cs`). A

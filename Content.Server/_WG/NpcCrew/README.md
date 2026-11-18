@@ -242,7 +242,7 @@ company or the ship forgives him, and `WGCrewShipTamperedEvent` tells the campai
 Skill (`WGCrewSkills`) sets how crew fight as well as how well. The crew's skill is the baseline; a profile's
 `skillOffsets` raise or lower it per loadout (reaver hands a tier below, officers a tier above), clamped to
 Green..Elite. Every level fires the moment its gun is up: the shoot and re-acquire delays are zero, and a hit drops
-the crewman's cached threat check and replans him on the spot (`NPCCombatSystem.Crew.cs`). From Regular up, a crewman who knows of
+the crewman's cached threat check and replans him on the spot (`WGCrewSystem.OnBeforeCrewDamage`). From Regular up, a crewman who knows of
 a hostile aboard but may not hunt it braces: weapon drawn and loaded, facing its way, for up to 90 s without sight of
 it (`WGCrewWeaponSystem.Brace.cs`). Regulars and up also throw a grenade they carry (any slot item with a use timer;
 reaver riflemen carry one `ExGrenade`) at a known hostile out of sight for three seconds within nine tiles: shouted

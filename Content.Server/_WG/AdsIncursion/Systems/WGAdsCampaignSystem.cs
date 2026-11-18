@@ -226,6 +226,7 @@ public sealed partial class WGAdsCampaignSystem : EntitySystem
         TendSentinels();
         TendSweeps(state);
         TendInterdicts(state);
+        TickStolen(state);
         TendChallenges(state, !held);
         TendPickets();
         TendDreadnoughts();
@@ -243,7 +244,6 @@ public sealed partial class WGAdsCampaignSystem : EntitySystem
             TickSpread(campaign, state);
             TickSweeps(campaign, state);
             TickInterdicts(campaign, state, ships);
-            TickStolen(state);
             TickMining(campaign, state, ships, TimeSpan.FromSeconds(elapsed));
             TickChallenges(campaign, state);
             TickDreadnought(campaign, state);

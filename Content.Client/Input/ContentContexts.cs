@@ -1,5 +1,5 @@
-using Content.Shared._WF.AdminObserver; // WOLFGATE(AdminObserver)
-using Content.Shared._WF.RMCCore.Input; // WOLFGATE(Xenonids)
+using Content.Shared._WG.AdminObserver; // WOLFGATE(AdminObserver)
+using Content.Shared._WG.RMCCore.Input; // WOLFGATE(Xenonids)
 using Content.Shared.Input;
 using Robust.Shared.Input;
 
@@ -67,7 +67,7 @@ namespace Content.Client.Input
             human.AddFunction(ContentKeyFunctions.SwapHands);
             human.AddFunction(ContentKeyFunctions.SwapHandsPrevious); // Frontier
             human.AddFunction(ContentKeyFunctions.Drop);
-            human.AddFunction(ContentKeyFunctions.WFOfferItem); // WOLFGATE(ExtraInteractions): hold out the active item
+            human.AddFunction(ContentKeyFunctions.WGOfferItem); // WOLFGATE(ExtraInteractions): hold out the active item
             human.AddFunction(ContentKeyFunctions.UseItemInHand);
             human.AddFunction(ContentKeyFunctions.AltUseItemInHand);
             human.AddFunction(ContentKeyFunctions.OpenCharacterMenu);
@@ -157,8 +157,8 @@ namespace Content.Client.Input
             aghost.AddFunction(ContentKeyFunctions.TryPullObject);
             aghost.AddFunction(ContentKeyFunctions.MovePulledObject);
             aghost.AddFunction(ContentKeyFunctions.ReleasePulledObject);
-            aghost.AddFunction(WFAdminObserverKeys.WFToggleManifest); // WOLFGATE(AdminObserver): the manifest key works in the admin observer
-            aghost.AddFunction(WFAdminObserverKeys.WFOpenObserverPanel); // WOLFGATE(AdminObserver): the observer panel key works in the admin observer
+            aghost.AddFunction(WGAdminObserverKeys.WGToggleManifest); // WOLFGATE(AdminObserver): the manifest key works in the admin observer
+            aghost.AddFunction(WGAdminObserverKeys.WGOpenObserverPanel); // WOLFGATE(AdminObserver): the observer panel key works in the admin observer
 
             var ghost = contexts.New("ghost", "human");
             ghost.AddFunction(EngineKeyFunctions.MoveUp);
@@ -172,7 +172,7 @@ namespace Content.Client.Input
             common.AddFunction(ContentKeyFunctions.OpenTileSpawnWindow);
             common.AddFunction(ContentKeyFunctions.OpenDecalSpawnWindow);
             common.AddFunction(ContentKeyFunctions.OpenAdminMenu);
-            common.AddFunction(WFAdminObserverKeys.WFToggleAghost); // WOLFGATE(AdminObserver): the admin ghost key works from any body
+            common.AddFunction(WGAdminObserverKeys.WGToggleAghost); // WOLFGATE(AdminObserver): the admin ghost key works from any body
             common.AddFunction(ContentKeyFunctions.OpenGuidebook);
 
             // WOLFGATE(Xenonids) START: RMC's resist key and the xenonid input context xeno mobs use
